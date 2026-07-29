@@ -2,6 +2,30 @@
 <html lang="uk">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      ;(function () {
+        try {
+          var key = "churchfoundry-theme"
+          var stored = localStorage.getItem(key)
+          var theme =
+            stored === "light" || stored === "dark"
+              ? stored
+              : window.matchMedia &&
+                  typeof window.matchMedia("(prefers-color-scheme: dark)").matches === "boolean"
+                ? window.matchMedia("(prefers-color-scheme: dark)").matches
+                  ? "dark"
+                  : "light"
+                : "dark"
+          var root = document.documentElement
+          root.classList.remove("light", "dark")
+          root.classList.add(theme)
+          root.style.colorScheme = theme
+        } catch (e) {
+          document.documentElement.classList.add("dark")
+          document.documentElement.style.colorScheme = "dark"
+        }
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/splash_screens/icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />

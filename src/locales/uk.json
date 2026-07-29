@@ -7,5 +7,9 @@
   "home": {
     "language": "Мова",
     "getStarted": "Почати"
+  },
+  "theme": {
+    "switchToLight": "Увімкнути світлу тему",
+    "switchToDark": "Увімкнути темну тему"
   }
 }

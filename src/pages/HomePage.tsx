@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -27,7 +28,10 @@ export function HomePage() {
           <p className="text-center text-sm text-muted-foreground sm:text-base">
             {t("app.description")}
           </p>
-          <LanguageSwitcher />
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-6">
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </div>
         </CardContent>
         <CardFooter className="justify-center">
           <Button type="button" className="w-full sm:w-auto">

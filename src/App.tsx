@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router"
 
 import { SplashScreen } from "@/components/SplashScreen"
 import { useAuthSessionReady } from "@/hooks/useAuthSessionReady"
+import { ThemeProvider, useTheme } from "@/hooks/useTheme"
 import { HomePage } from "@/pages/HomePage"
 
 const queryClient = new QueryClient({
@@ -15,6 +16,8 @@ const queryClient = new QueryClient({
 })
 
 function AppShell() {
+  // Keep theme state mounted at the app root (syncs with FOWT inline script).
+  useTheme()
   const isAuthLoading = useAuthSessionReady()
 
   return (
@@ -32,7 +35,9 @@ function AppShell() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AppShell />
+      <ThemeProvider>
+        <AppShell />
+      </ThemeProvider>
     </QueryClientProvider>
   )
 }

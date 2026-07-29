@@ -7,5 +7,9 @@
   "home": {
     "language": "Language",
     "getStarted": "Get started"
+  },
+  "theme": {
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme"
   }
 }
