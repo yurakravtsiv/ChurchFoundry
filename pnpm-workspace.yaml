@@ -1,0 +1,2 @@
+minimumReleaseAgeExclude:
+  - pnpm@11.18.0

@@ -1,0 +1,11 @@
+{
+  "app": {
+    "name": "ChurchFoundry",
+    "tagline": "Church management in one place",
+    "description": "Members, inventory, room schedules, and ministries — handy from your phone."
+  },
+  "home": {
+    "language": "Language",
+    "getStarted": "Get started"
+  }
+}
