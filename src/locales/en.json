@@ -22,5 +22,9 @@
     "rooms": "Rooms",
     "ministries": "Ministries",
     "comingSoon": "This section is coming soon."
+  },
+  "refresh": {
+    "pull": "Pull to refresh",
+    "refreshing": "Refreshing…"
   }
 }
