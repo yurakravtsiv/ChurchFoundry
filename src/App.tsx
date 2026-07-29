@@ -6,9 +6,10 @@ import { GuestRoute, ProtectedRoute } from "@/components/ProtectedRoute"
 import { SplashScreen } from "@/components/SplashScreen"
 import { AuthProvider, useAuth } from "@/hooks/useAuth"
 import { ThemeProvider, useTheme } from "@/hooks/useTheme"
+import { ComingSoonPage } from "@/pages/ComingSoonPage"
 import { HomePage } from "@/pages/HomePage"
+import { InventoryPage } from "@/pages/InventoryPage"
 import { LoginPage } from "@/pages/LoginPage"
-import { PlaceholderPage } from "@/pages/PlaceholderPage"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,10 +37,10 @@ function AppShell() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/" element={<HomePage />} />
-              <Route path="/members" element={<PlaceholderPage titleKey="nav.members" />} />
-              <Route path="/inventory" element={<PlaceholderPage titleKey="nav.inventory" />} />
-              <Route path="/rooms" element={<PlaceholderPage titleKey="nav.rooms" />} />
-              <Route path="/ministries" element={<PlaceholderPage titleKey="nav.ministries" />} />
+              <Route path="/people" element={<ComingSoonPage />} />
+              <Route path="/services" element={<ComingSoonPage />} />
+              <Route path="/calendar" element={<ComingSoonPage />} />
+              <Route path="/inventory" element={<InventoryPage />} />
             </Route>
           </Route>
         </Routes>

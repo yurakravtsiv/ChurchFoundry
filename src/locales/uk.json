@@ -17,11 +17,13 @@
     "openMenu": "Відкрити меню",
     "menuDescription": "Розділи застосунку та налаштування",
     "home": "Головна",
-    "members": "Члени",
+    "people": "Люди",
+    "services": "Служіння",
+    "calendar": "Календар",
     "inventory": "Інвентар",
-    "rooms": "Кімнати",
-    "ministries": "Служіння",
-    "comingSoon": "Цей розділ з’явиться незабаром."
+    "comingSoon": "Незабаром",
+    "comingSoonMessage": "Незабаром...",
+    "inDevelopment": "У розробці..."
   },
   "refresh": {
     "pull": "Потягніть, щоб оновити",

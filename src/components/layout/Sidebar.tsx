@@ -1,4 +1,3 @@
-import { Boxes, CalendarDays, Church, Home, Users } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router"
 
@@ -11,15 +10,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { navItems } from "@/lib/nav"
 import { cn } from "@/lib/utils"
-
-const navItems = [
-  { to: "/", labelKey: "nav.home", icon: Home, end: true },
-  { to: "/members", labelKey: "nav.members", icon: Users, end: false },
-  { to: "/inventory", labelKey: "nav.inventory", icon: Boxes, end: false },
-  { to: "/rooms", labelKey: "nav.rooms", icon: CalendarDays, end: false },
-  { to: "/ministries", labelKey: "nav.ministries", icon: Church, end: false },
-] as const
 
 type SidebarProps = {
   open: boolean
@@ -64,15 +56,8 @@ function SidebarControls() {
 }
 
 function SidebarPanel({ onNavigate }: { onNavigate?: () => void }) {
-  const { t } = useTranslation()
-
   return (
     <div className="flex h-full flex-col gap-6">
-      <div className="hidden md:block">
-        <p className="px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {t("nav.main")}
-        </p>
-      </div>
       <SidebarNav onNavigate={onNavigate} />
       <SidebarControls />
     </div>
@@ -89,10 +74,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
       </aside>
 
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="left"
-          className="flex w-[min(100%,20rem)] flex-col bg-background p-0"
-        >
+        <SheetContent side="left" className="flex w-[min(100%,20rem)] flex-col bg-background p-0">
           <div className="flex h-full flex-col px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 pt-[max(1rem,env(safe-area-inset-top,0px))]">
             <SheetHeader className="text-left">
               <SheetTitle>{t("app.name")}</SheetTitle>

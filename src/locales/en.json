@@ -17,11 +17,13 @@
     "openMenu": "Open menu",
     "menuDescription": "App sections and settings",
     "home": "Home",
-    "members": "Members",
+    "people": "People",
+    "services": "Services",
+    "calendar": "Calendar",
     "inventory": "Inventory",
-    "rooms": "Rooms",
-    "ministries": "Ministries",
-    "comingSoon": "This section is coming soon."
+    "comingSoon": "Soon",
+    "comingSoonMessage": "Coming soon...",
+    "inDevelopment": "In development..."
   },
   "refresh": {
     "pull": "Pull to refresh",
