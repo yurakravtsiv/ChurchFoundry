@@ -55,11 +55,11 @@ export function SplashScreen({ isLoading }: SplashScreenProps) {
       role="status"
     >
       <img
-        src="/splash_screens/icon.png"
+        src="/favicon.svg"
         alt="ChurchFoundry"
         width={128}
         height={128}
-        className="size-32 animate-breathe select-none"
+        className="size-32 animate-breathe select-none border-0 outline-none ring-0 shadow-none"
         draggable={false}
       />
       <span className="sr-only">ChurchFoundry</span>
