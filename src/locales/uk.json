@@ -26,5 +26,19 @@
   "refresh": {
     "pull": "Потягніть, щоб оновити",
     "refreshing": "Оновлення…"
+  },
+  "auth": {
+    "login": "Увійти",
+    "loggingIn": "Вхід...",
+    "loginSubtitle": "Увійдіть, щоб продовжити",
+    "email": "Email",
+    "password": "Пароль",
+    "errors": {
+      "invalidCredentials": "Невірний email або пароль"
+    },
+    "validation": {
+      "email": "Введіть коректний email",
+      "password": "Пароль має містити щонайменше 6 символів"
+    }
   }
 }

@@ -26,5 +26,19 @@
   "refresh": {
     "pull": "Pull to refresh",
     "refreshing": "Refreshing…"
+  },
+  "auth": {
+    "login": "Log in",
+    "loggingIn": "Signing in...",
+    "loginSubtitle": "Sign in to continue",
+    "email": "Email",
+    "password": "Password",
+    "errors": {
+      "invalidCredentials": "Invalid email or password"
+    },
+    "validation": {
+      "email": "Enter a valid email",
+      "password": "Password must be at least 6 characters"
+    }
   }
 }
