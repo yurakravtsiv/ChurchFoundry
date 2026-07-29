@@ -1,0 +1,48 @@
+import { Menu } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import { Link } from "react-router"
+
+import { LanguageSwitcher } from "@/components/LanguageSwitcher"
+import { ThemeToggle } from "@/components/ThemeToggle"
+import { Button } from "@/components/ui/button"
+
+type HeaderProps = {
+  onOpenSidebar: () => void
+}
+
+export function Header({ onOpenSidebar }: HeaderProps) {
+  const { t } = useTranslation()
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="flex h-14 items-center gap-3 px-4 md:px-6">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={onOpenSidebar}
+          aria-label={t("nav.openMenu")}
+        >
+          <Menu className="size-5" />
+        </Button>
+
+        <Link to="/" className="flex min-w-0 items-center gap-2 font-semibold tracking-tight">
+          <img
+            src="/favicon.svg"
+            alt=""
+            width={28}
+            height={28}
+            className="size-7 shrink-0 rounded-md"
+          />
+          <span className="truncate text-base sm:text-lg">{t("app.name")}</span>
+        </Link>
+
+        <div className="ml-auto hidden items-center gap-3 md:flex">
+          <LanguageSwitcher showLabel={false} />
+          <ThemeToggle />
+        </div>
+      </div>
+    </header>
+  )
+}

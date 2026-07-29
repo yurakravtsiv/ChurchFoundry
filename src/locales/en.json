@@ -11,5 +11,16 @@
   "theme": {
     "switchToLight": "Switch to light theme",
     "switchToDark": "Switch to dark theme"
+  },
+  "nav": {
+    "main": "Navigation",
+    "openMenu": "Open menu",
+    "menuDescription": "App sections and settings",
+    "home": "Home",
+    "members": "Members",
+    "inventory": "Inventory",
+    "rooms": "Rooms",
+    "ministries": "Ministries",
+    "comingSoon": "This section is coming soon."
   }
 }

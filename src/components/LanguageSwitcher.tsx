@@ -1,9 +1,15 @@
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import type { SupportedLanguage } from "@/types"
 
-export function LanguageSwitcher() {
+type LanguageSwitcherProps = {
+  className?: string
+  showLabel?: boolean
+}
+
+export function LanguageSwitcher({ className, showLabel = true }: LanguageSwitcherProps) {
   const { t, i18n } = useTranslation()
   const current = i18n.language.startsWith("en") ? "en" : "uk"
 
@@ -12,9 +18,11 @@ export function LanguageSwitcher() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-3">
-      <span className="text-sm text-muted-foreground">{t("home.language")}</span>
-      <div className="flex gap-2">
+    <div className={cn("flex items-center gap-2", className)}>
+      {showLabel ? (
+        <span className="text-sm text-muted-foreground">{t("home.language")}</span>
+      ) : null}
+      <div className="flex gap-1">
         <Button
           type="button"
           size="sm"
