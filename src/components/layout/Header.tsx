@@ -15,32 +15,35 @@ export function Header({ onOpenSidebar }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="flex h-14 items-center gap-3 px-4 md:px-6">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={onOpenSidebar}
-          aria-label={t("nav.openMenu")}
-        >
-          <Menu className="size-5" />
-        </Button>
+      {/* Safe-area padding on the inner wrapper so header bg continues under the notch */}
+      <div className="pt-[env(safe-area-inset-top,0px)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
+        <div className="flex h-14 items-center gap-3 px-4 md:px-6">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={onOpenSidebar}
+            aria-label={t("nav.openMenu")}
+          >
+            <Menu className="size-5" />
+          </Button>
 
-        <Link to="/" className="flex min-w-0 items-center gap-2 font-semibold tracking-tight">
-          <img
-            src="/favicon.svg"
-            alt=""
-            width={28}
-            height={28}
-            className="size-7 shrink-0 rounded-md"
-          />
-          <span className="truncate text-base sm:text-lg">{t("app.name")}</span>
-        </Link>
+          <Link to="/" className="flex min-w-0 items-center gap-2 font-semibold tracking-tight">
+            <img
+              src="/favicon.svg"
+              alt=""
+              width={28}
+              height={28}
+              className="size-7 shrink-0 rounded-md"
+            />
+            <span className="truncate text-base sm:text-lg">{t("app.name")}</span>
+          </Link>
 
-        <div className="ml-auto hidden items-center gap-3 md:flex">
-          <LanguageSwitcher showLabel={false} />
-          <ThemeToggle />
+          <div className="ml-auto hidden items-center gap-3 md:flex">
+            <LanguageSwitcher showLabel={false} />
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </header>

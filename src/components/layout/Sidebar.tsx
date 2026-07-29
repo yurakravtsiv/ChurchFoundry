@@ -84,18 +84,23 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
 
   return (
     <>
-      <aside className="hidden w-60 shrink-0 border-r border-border bg-background md:flex md:flex-col md:px-3 md:py-4">
+      <aside className="hidden w-60 shrink-0 border-r border-border bg-background md:flex md:flex-col md:px-3 md:py-4 md:pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
         <SidebarPanel />
       </aside>
 
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="left" className="flex w-[min(100%,20rem)] flex-col p-4">
-          <SheetHeader className="text-left">
-            <SheetTitle>{t("app.name")}</SheetTitle>
-            <SheetDescription>{t("nav.menuDescription")}</SheetDescription>
-          </SheetHeader>
-          <div className="mt-4 flex min-h-0 flex-1 flex-col">
-            <SidebarPanel onNavigate={() => onOpenChange(false)} />
+        <SheetContent
+          side="left"
+          className="flex w-[min(100%,20rem)] flex-col bg-background p-0"
+        >
+          <div className="flex h-full flex-col px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 pt-[max(1rem,env(safe-area-inset-top,0px))]">
+            <SheetHeader className="text-left">
+              <SheetTitle>{t("app.name")}</SheetTitle>
+              <SheetDescription>{t("nav.menuDescription")}</SheetDescription>
+            </SheetHeader>
+            <div className="mt-4 flex min-h-0 flex-1 flex-col">
+              <SidebarPanel onNavigate={() => onOpenChange(false)} />
+            </div>
           </div>
         </SheetContent>
       </Sheet>
