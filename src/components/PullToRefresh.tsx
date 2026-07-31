@@ -176,10 +176,7 @@ export function PullToRefresh({
   return (
     <div
       ref={containerRef}
-      className={cn(
-        "relative min-w-0 flex-1 overflow-y-auto overscroll-y-contain bg-background pb-[env(safe-area-inset-bottom,0px)]",
-        className,
-      )}
+      className={cn("bg-background pb-[env(safe-area-inset-bottom,0px)]", className)}
     >
       <div
         className="pointer-events-none flex justify-center overflow-hidden transition-[height,opacity] duration-200 ease-out"

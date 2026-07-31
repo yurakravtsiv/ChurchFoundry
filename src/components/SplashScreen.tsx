@@ -47,7 +47,7 @@ export function SplashScreen({ isLoading }: SplashScreenProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex h-dvh min-h-dvh w-full items-center justify-center bg-[#0A0A0A] transition-opacity duration-[350ms] ease-out ${
+      className={`fixed inset-0 z-50 flex h-dvh min-h-dvh w-full items-center justify-center overflow-hidden overscroll-none bg-[#0A0A0A] transition-opacity duration-[350ms] ease-out ${
         opaque ? "opacity-100" : "opacity-0"
       }`}
       aria-busy={isLoading || !minTimeElapsed}
