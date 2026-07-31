@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from "react-router"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { GuestRoute, ProtectedRoute } from "@/components/ProtectedRoute"
 import { SplashScreen } from "@/components/SplashScreen"
+import { UpdateBanner } from "@/components/UpdateBanner"
 import { AuthProvider, useAuth } from "@/hooks/useAuth"
 import { ThemeProvider, useTheme } from "@/hooks/useTheme"
 import { ComingSoonPage } from "@/pages/ComingSoonPage"
@@ -28,6 +29,7 @@ function AppShell() {
   return (
     <>
       <SplashScreen isLoading={isAuthLoading} />
+      <UpdateBanner />
       <BrowserRouter>
         <Routes>
           <Route element={<GuestRoute />}>

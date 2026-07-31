@@ -31,6 +31,10 @@
     "pull": "Pull to refresh",
     "refreshing": "Refreshing…"
   },
+  "update": {
+    "available": "New version available",
+    "action": "Update"
+  },
   "auth": {
     "login": "Log in",
     "loggingIn": "Signing in...",
