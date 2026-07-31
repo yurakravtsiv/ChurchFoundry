@@ -22,19 +22,6 @@ export function AppLayout() {
           <Outlet />
         </PullToRefresh>
       </div>
-
-      {/*
-        Standalone iOS: paint the physical home-indicator band explicitly so
-        rubber-band / swipe gestures never reveal a default browser strip.
-      */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] bg-background"
-        style={{
-          height: "env(safe-area-inset-bottom, 0px)",
-          ...themeBackgroundStyle,
-        }}
-      />
     </div>
   )
 }
