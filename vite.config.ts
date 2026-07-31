@@ -37,7 +37,10 @@ export default defineConfig({
         theme_color: "#0A0A0A",
         background_color: "#0A0A0A",
         display: "standalone",
+        display_override: ["standalone", "fullscreen"],
         orientation: "portrait-primary",
+        id: "/",
+        scope: "/",
         start_url: "/",
         lang: "uk",
         icons: [
