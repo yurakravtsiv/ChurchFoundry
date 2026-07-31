@@ -18,10 +18,19 @@ export function useAppUpdate() {
     },
   })
 
+  const updateApp = async () => {
+    console.log("updating...")
+    try {
+      await updateServiceWorker(true)
+      console.log("done")
+    } catch (error) {
+      console.error("updateServiceWorker failed, falling back to reload", error)
+      window.location.reload()
+    }
+  }
+
   return {
     needRefresh,
-    updateApp: () => {
-      void updateServiceWorker(true)
-    },
+    updateApp,
   }
 }

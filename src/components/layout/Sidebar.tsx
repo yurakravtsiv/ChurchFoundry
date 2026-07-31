@@ -39,7 +39,7 @@ function SidebarVersion({ collapsed }: { collapsed?: boolean }) {
     return (
       <p
         className="truncate text-center text-[10px] leading-tight text-muted-foreground"
-        title={`v${__APP_VERSION__} (${__GIT_HASH__}) · ${formatBuildTime(__BUILD_TIME__)}`}
+        title={`${__GIT_HASH__} · ${formatBuildTime(__BUILD_TIME__)}`}
       >
         {__GIT_HASH__}
       </p>
@@ -48,9 +48,7 @@ function SidebarVersion({ collapsed }: { collapsed?: boolean }) {
 
   return (
     <div className="space-y-0.5 text-xs leading-tight text-muted-foreground">
-      <p>
-        v{__APP_VERSION__} ({__GIT_HASH__})
-      </p>
+      <p>{__GIT_HASH__}</p>
       <p>{formatBuildTime(__BUILD_TIME__)}</p>
     </div>
   )
@@ -110,9 +108,10 @@ function SidebarPanel({
     <div className="flex h-full flex-col gap-6">
       <SidebarNav onNavigate={onNavigate} collapsed={collapsed} />
       <SidebarControls />
-      <div className={cn("mt-auto space-y-3 border-t border-border pt-3", collapsed && "pt-2")}>
+      <div className="mt-auto space-y-3">
+        <SidebarVersion collapsed={collapsed} />
         {onToggleCollapsed ? (
-          <div className="hidden md:block">
+          <div className={cn("hidden border-t border-border pt-3 md:block", collapsed && "pt-2")}>
             <Button
               type="button"
               variant="ghost"
@@ -131,7 +130,6 @@ function SidebarPanel({
             </Button>
           </div>
         ) : null}
-        <SidebarVersion collapsed={collapsed} />
       </div>
     </div>
   )
