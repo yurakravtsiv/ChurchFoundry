@@ -40,4 +40,10 @@ export function applyThemeClass(theme: Theme) {
   root.classList.remove("light", "dark")
   root.classList.add(theme)
   root.style.colorScheme = theme
+
+  const themeColor = theme === "dark" ? "#0A0A0A" : "#FAFAFA"
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (meta) {
+    meta.setAttribute("content", themeColor)
+  }
 }

@@ -155,7 +155,7 @@ export function PullToRefresh({
     <div
       ref={containerRef}
       className={cn(
-        "relative min-w-0 flex-1 overflow-y-auto overscroll-y-contain pb-[env(safe-area-inset-bottom,0px)]",
+        "relative min-w-0 flex-1 overflow-y-auto overscroll-y-contain bg-background pb-[env(safe-area-inset-bottom,0px)]",
         className,
       )}
     >
