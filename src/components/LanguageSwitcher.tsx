@@ -25,7 +25,7 @@ export function LanguageSwitcher({ className, showLabel = true }: LanguageSwitch
       <div className="flex gap-1">
         <Button
           type="button"
-          size="sm"
+          className="h-9 px-3"
           variant={current === "uk" ? "default" : "outline"}
           onClick={() => setLanguage("uk")}
           aria-pressed={current === "uk"}
@@ -34,7 +34,7 @@ export function LanguageSwitcher({ className, showLabel = true }: LanguageSwitch
         </Button>
         <Button
           type="button"
-          size="sm"
+          className="h-9 px-3"
           variant={current === "en" ? "default" : "outline"}
           onClick={() => setLanguage("en")}
           aria-pressed={current === "en"}

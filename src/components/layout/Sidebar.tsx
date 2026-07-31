@@ -84,15 +84,6 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
   )
 }
 
-function SidebarControls() {
-  return (
-    <div className="flex items-center gap-3 border-t border-border pt-4 md:hidden">
-      <LanguageSwitcher />
-      <ThemeToggle />
-    </div>
-  )
-}
-
 function SidebarPanel({
   onNavigate,
   collapsed,
@@ -107,29 +98,34 @@ function SidebarPanel({
   return (
     <div className="flex h-full flex-col gap-6">
       <SidebarNav onNavigate={onNavigate} collapsed={collapsed} />
-      <SidebarControls />
       <div className="mt-auto space-y-3">
         <SidebarVersion collapsed={collapsed} />
-        {onToggleCollapsed ? (
-          <div className={cn("hidden border-t border-border pt-3 md:block", collapsed && "pt-2")}>
-            <Button
-              type="button"
-              variant="ghost"
-              size={collapsed ? "icon" : "sm"}
-              className={cn("w-full", !collapsed && "justify-start gap-2")}
-              onClick={onToggleCollapsed}
-              aria-label={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
-              title={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
-            >
-              {collapsed ? (
-                <ChevronsRight className="size-4" />
-              ) : (
-                <ChevronsLeft className="size-4" />
-              )}
-              {!collapsed ? <span>{t("nav.collapseSidebar")}</span> : null}
-            </Button>
+        <div className={cn("border-t border-border pt-3", collapsed && "pt-2")}>
+          <div className="flex items-center gap-3 md:hidden">
+            <LanguageSwitcher showLabel={false} />
+            <ThemeToggle />
           </div>
-        ) : null}
+          {onToggleCollapsed ? (
+            <div className="hidden md:block">
+              <Button
+                type="button"
+                variant="ghost"
+                size={collapsed ? "icon" : "sm"}
+                className={cn("w-full", !collapsed && "justify-start gap-2")}
+                onClick={onToggleCollapsed}
+                aria-label={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
+                title={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
+              >
+                {collapsed ? (
+                  <ChevronsRight className="size-4" />
+                ) : (
+                  <ChevronsLeft className="size-4" />
+                )}
+                {!collapsed ? <span>{t("nav.collapseSidebar")}</span> : null}
+              </Button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   )
@@ -173,7 +169,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
           <div className="flex h-full flex-col px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 pt-[max(1rem,env(safe-area-inset-top,0px))]">
             <SheetHeader className="text-left">
               <SheetTitle>{t("app.name")}</SheetTitle>
-              <SheetDescription>{t("nav.menuDescription")}</SheetDescription>
+              <SheetDescription className="sr-only">{t("nav.menuDescription")}</SheetDescription>
             </SheetHeader>
             <div className="mt-4 flex min-h-0 flex-1 flex-col">
               <SidebarPanel onNavigate={() => onOpenChange(false)} />
