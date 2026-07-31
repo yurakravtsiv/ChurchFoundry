@@ -23,6 +23,39 @@ type SidebarProps = {
   onOpenChange: (open: boolean) => void
 }
 
+function formatBuildTime(iso: string) {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+
+  const day = String(date.getDate()).padStart(2, "0")
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const hours = String(date.getHours()).padStart(2, "0")
+  const minutes = String(date.getMinutes()).padStart(2, "0")
+  return `${day}.${month} ${hours}:${minutes}`
+}
+
+function SidebarVersion({ collapsed }: { collapsed?: boolean }) {
+  if (collapsed) {
+    return (
+      <p
+        className="truncate text-center text-[10px] leading-tight text-muted-foreground"
+        title={`v${__APP_VERSION__} (${__GIT_HASH__}) · ${formatBuildTime(__BUILD_TIME__)}`}
+      >
+        {__GIT_HASH__}
+      </p>
+    )
+  }
+
+  return (
+    <div className="space-y-0.5 text-xs leading-tight text-muted-foreground">
+      <p>
+        v{__APP_VERSION__} ({__GIT_HASH__})
+      </p>
+      <p>{formatBuildTime(__BUILD_TIME__)}</p>
+    </div>
+  )
+}
+
 function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
   const { t } = useTranslation()
 
@@ -77,24 +110,29 @@ function SidebarPanel({
     <div className="flex h-full flex-col gap-6">
       <SidebarNav onNavigate={onNavigate} collapsed={collapsed} />
       <SidebarControls />
-      {onToggleCollapsed ? (
-        <div
-          className={cn("mt-auto hidden border-t border-border pt-3 md:block", collapsed && "pt-2")}
-        >
-          <Button
-            type="button"
-            variant="ghost"
-            size={collapsed ? "icon" : "sm"}
-            className={cn("w-full", !collapsed && "justify-start gap-2")}
-            onClick={onToggleCollapsed}
-            aria-label={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
-            title={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
-          >
-            {collapsed ? <ChevronsRight className="size-4" /> : <ChevronsLeft className="size-4" />}
-            {!collapsed ? <span>{t("nav.collapseSidebar")}</span> : null}
-          </Button>
-        </div>
-      ) : null}
+      <div className={cn("mt-auto space-y-3 border-t border-border pt-3", collapsed && "pt-2")}>
+        {onToggleCollapsed ? (
+          <div className="hidden md:block">
+            <Button
+              type="button"
+              variant="ghost"
+              size={collapsed ? "icon" : "sm"}
+              className={cn("w-full", !collapsed && "justify-start gap-2")}
+              onClick={onToggleCollapsed}
+              aria-label={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
+              title={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
+            >
+              {collapsed ? (
+                <ChevronsRight className="size-4" />
+              ) : (
+                <ChevronsLeft className="size-4" />
+              )}
+              {!collapsed ? <span>{t("nav.collapseSidebar")}</span> : null}
+            </Button>
+          </div>
+        ) : null}
+        <SidebarVersion collapsed={collapsed} />
+      </div>
     </div>
   )
 }

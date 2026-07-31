@@ -1,11 +1,28 @@
 /// <reference types="vitest/config" />
+import { execSync } from "node:child_process"
+import { readFileSync } from "node:fs"
 import path from "node:path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import { VitePWA } from "vite-plugin-pwa"
 
+const pkg = JSON.parse(readFileSync("./package.json", "utf-8")) as { version: string }
+
+function getGitHash() {
+  try {
+    return execSync("git rev-parse --short HEAD").toString().trim()
+  } catch {
+    return "unknown"
+  }
+}
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __GIT_HASH__: JSON.stringify(getGitHash()),
+  },
   plugins: [
     react(),
     tailwindcss(),
