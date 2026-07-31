@@ -9,6 +9,9 @@ const INDICATOR_MAX_PX = 56
 /** Degrees of rotation per pixel of finger travel (~full turn every 180px). */
 const ROTATION_DEG_PER_PX = 360 / 180
 
+/** Theme background — same token as html/body (not a hardcoded hex). */
+const themeBackgroundStyle = { backgroundColor: "hsl(var(--background))" } as const
+
 type PullToRefreshProps = {
   children: ReactNode
   onRefresh?: () => void | Promise<void>
@@ -174,40 +177,58 @@ export function PullToRefresh({
   const showIndicator = indicatorHeight > 4 || refreshing
 
   return (
+    // Shell fills the flex slot and always paints theme bg (incl. under home indicator).
     <div
-      ref={containerRef}
-      className={cn("bg-background pb-[env(safe-area-inset-bottom,0px)]", className)}
+      className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col bg-background", className)}
+      style={themeBackgroundStyle}
     >
+      {/* Scrollport — same theme bg so iOS rubber-band does not flash a default color */}
       <div
-        className="pointer-events-none flex justify-center overflow-hidden transition-[height,opacity] duration-200 ease-out"
-        style={{
-          height: indicatorHeight,
-          opacity: showIndicator ? 1 : 0,
-        }}
-        aria-hidden={!showIndicator}
+        ref={containerRef}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-background"
+        style={themeBackgroundStyle}
       >
+        {/*
+          min-h-full keeps short pages filling the viewport; bottom safe-area padding
+          is painted with the same theme bg (not transparent).
+        */}
         <div
-          className={cn(
-            "mt-2 flex size-9 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-transform duration-200",
-            readyToRefresh && !refreshing && "scale-110",
-          )}
-          role="status"
-          aria-live="polite"
-          aria-label={refreshing ? t("refresh.refreshing") : t("refresh.pull")}
+          className="min-h-full bg-background pb-[env(safe-area-inset-bottom,0px)]"
+          style={themeBackgroundStyle}
         >
-          <img
-            src="/favicon.svg"
-            alt=""
-            width={24}
-            height={24}
-            draggable={false}
-            className={cn("size-6 select-none", refreshing && "animate-spin")}
-            style={refreshing ? undefined : { transform: `rotate(${rotation}deg)` }}
-          />
+          <div
+            className="pointer-events-none flex justify-center overflow-hidden bg-background transition-[height,opacity] duration-200 ease-out"
+            style={{
+              height: indicatorHeight,
+              opacity: showIndicator ? 1 : 0,
+              ...themeBackgroundStyle,
+            }}
+            aria-hidden={!showIndicator}
+          >
+            <div
+              className={cn(
+                "mt-2 flex size-9 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-transform duration-200",
+                readyToRefresh && !refreshing && "scale-110",
+              )}
+              role="status"
+              aria-live="polite"
+              aria-label={refreshing ? t("refresh.refreshing") : t("refresh.pull")}
+            >
+              <img
+                src="/favicon.svg"
+                alt=""
+                width={24}
+                height={24}
+                draggable={false}
+                className={cn("size-6 select-none", refreshing && "animate-spin")}
+                style={refreshing ? undefined : { transform: `rotate(${rotation}deg)` }}
+              />
+            </div>
+          </div>
+
+          {children}
         </div>
       </div>
-
-      {children}
     </div>
   )
 }
