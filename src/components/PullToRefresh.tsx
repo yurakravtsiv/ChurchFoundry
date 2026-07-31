@@ -1,4 +1,3 @@
-import { ArrowDown, Loader2 } from "lucide-react"
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -7,6 +6,8 @@ import { cn } from "@/lib/utils"
 const PULL_THRESHOLD_PX = 80
 const MAX_PULL_PX = 120
 const INDICATOR_MAX_PX = 56
+/** Degrees of rotation per pixel of finger travel (~full turn every 180px). */
+const ROTATION_DEG_PER_PX = 360 / 180
 
 type PullToRefreshProps = {
   children: ReactNode
@@ -49,10 +50,20 @@ export function PullToRefresh({
   const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
   const startYRef = useRef(0)
+  const lastYRef = useRef(0)
   const pullingRef = useRef(false)
   const pullDistanceRef = useRef(0)
+  const rotationRef = useRef(0)
   const [pullDistance, setPullDistance] = useState(0)
+  const [rotation, setRotation] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+
+  const resetGesture = useCallback(() => {
+    pullDistanceRef.current = 0
+    rotationRef.current = 0
+    setPullDistance(0)
+    setRotation(0)
+  }, [])
 
   const runRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -62,10 +73,9 @@ export function PullToRefresh({
     } finally {
       // If onRefresh did not reload the page, hide the indicator.
       setRefreshing(false)
-      setPullDistance(0)
-      pullDistanceRef.current = 0
+      resetGesture()
     }
-  }, [onRefresh])
+  }, [onRefresh, resetGesture])
 
   useEffect(() => {
     const el = containerRef.current
@@ -78,7 +88,11 @@ export function PullToRefresh({
         pullingRef.current = false
         return
       }
-      startYRef.current = event.touches[0]?.clientY ?? 0
+      const y = event.touches[0]?.clientY ?? 0
+      startYRef.current = y
+      lastYRef.current = y
+      rotationRef.current = 0
+      setRotation(0)
       pullingRef.current = true
     }
 
@@ -90,16 +104,25 @@ export function PullToRefresh({
       // Mid-page scroll must stay native — abort pull gesture.
       if (el.scrollTop > 0) {
         pullingRef.current = false
-        if (pullDistanceRef.current !== 0) {
-          pullDistanceRef.current = 0
-          setPullDistance(0)
+        if (pullDistanceRef.current !== 0 || rotationRef.current !== 0) {
+          resetGesture()
         }
         return
       }
 
       const currentY = event.touches[0]?.clientY ?? 0
-      const delta = currentY - startYRef.current
-      if (delta <= 0) {
+      const moveDelta = currentY - lastYRef.current
+      lastYRef.current = currentY
+
+      // Clockwise when finger moves down, counter-clockwise when moving up.
+      // No continuous animation — angle only changes while touchmove fires.
+      if (moveDelta !== 0) {
+        rotationRef.current += moveDelta * ROTATION_DEG_PER_PX
+        setRotation(rotationRef.current)
+      }
+
+      const deltaFromStart = currentY - startYRef.current
+      if (deltaFromStart <= 0) {
         if (pullDistanceRef.current !== 0) {
           pullDistanceRef.current = 0
           setPullDistance(0)
@@ -108,7 +131,7 @@ export function PullToRefresh({
       }
 
       // Resist overscroll past the max pull distance.
-      const next = Math.min(delta * 0.55, MAX_PULL_PX)
+      const next = Math.min(deltaFromStart * 0.55, MAX_PULL_PX)
       pullDistanceRef.current = next
       setPullDistance(next)
 
@@ -130,8 +153,7 @@ export function PullToRefresh({
         return
       }
 
-      pullDistanceRef.current = 0
-      setPullDistance(0)
+      resetGesture()
     }
 
     el.addEventListener("touchstart", onTouchStart, { passive: true })
@@ -145,7 +167,7 @@ export function PullToRefresh({
       el.removeEventListener("touchend", onTouchEnd)
       el.removeEventListener("touchcancel", onTouchEnd)
     }
-  }, [refreshing, runRefresh])
+  }, [refreshing, resetGesture, runRefresh])
 
   const indicatorHeight = refreshing ? INDICATOR_MAX_PX : Math.min(pullDistance, INDICATOR_MAX_PX)
   const readyToRefresh = pullDistance >= PULL_THRESHOLD_PX
@@ -169,23 +191,22 @@ export function PullToRefresh({
       >
         <div
           className={cn(
-            "mt-2 flex size-9 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-sm transition-transform duration-200",
+            "mt-2 flex size-9 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-transform duration-200",
             readyToRefresh && !refreshing && "scale-110",
           )}
           role="status"
           aria-live="polite"
           aria-label={refreshing ? t("refresh.refreshing") : t("refresh.pull")}
         >
-          {refreshing ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <ArrowDown
-              className={cn(
-                "size-4 transition-transform duration-200",
-                readyToRefresh && "rotate-180",
-              )}
-            />
-          )}
+          <img
+            src="/favicon.svg"
+            alt=""
+            width={24}
+            height={24}
+            draggable={false}
+            className={cn("size-6 select-none", refreshing && "animate-spin")}
+            style={refreshing ? undefined : { transform: `rotate(${rotation}deg)` }}
+          />
         </div>
       </div>
 
