@@ -23,7 +23,9 @@
     "inventory": "Inventory",
     "comingSoon": "Soon",
     "comingSoonMessage": "Coming soon...",
-    "inDevelopment": "In development..."
+    "inDevelopment": "In development...",
+    "collapseSidebar": "Collapse",
+    "expandSidebar": "Expand"
   },
   "refresh": {
     "pull": "Pull to refresh",

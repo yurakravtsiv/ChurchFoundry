@@ -23,7 +23,9 @@
     "inventory": "Інвентар",
     "comingSoon": "Незабаром",
     "comingSoonMessage": "Незабаром...",
-    "inDevelopment": "У розробці..."
+    "inDevelopment": "У розробці...",
+    "collapseSidebar": "Згорнути",
+    "expandSidebar": "Розгорнути"
   },
   "refresh": {
     "pull": "Потягніть, щоб оновити",

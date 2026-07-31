@@ -6,12 +6,12 @@ export default {
     extend: {
       keyframes: {
         breathe: {
-          "0%, 100%": { transform: "scale(1)" },
-          "50%": { transform: "scale(1.08)" },
+          "0%, 100%": { transform: "scale(1)", opacity: "1" },
+          "50%": { transform: "scale(1.18)", opacity: "0.82" },
         },
       },
       animation: {
-        breathe: "breathe 2.4s ease-in-out infinite",
+        breathe: "breathe 2.2s ease-in-out infinite",
       },
     },
   },
