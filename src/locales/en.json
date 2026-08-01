@@ -66,7 +66,8 @@
       "category": "Category",
       "subcategory": "Subcategory",
       "availability": "Availability",
-      "location": "Location"
+      "location": "Location",
+      "clear": "Clear"
     },
     "availability": {
       "inChurch": "In church",

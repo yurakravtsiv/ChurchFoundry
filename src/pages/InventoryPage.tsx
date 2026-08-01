@@ -20,6 +20,7 @@ import {
   Pencil,
   Plus,
   Search,
+  X,
 } from "lucide-react"
 import { useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -114,6 +115,40 @@ function loadInventoryState() {
     subcategories: getSubcategories(),
     locations: getLocations(),
   }
+}
+
+function FilterClearButton({
+  visible,
+  label,
+  onClear,
+  className,
+}: {
+  visible: boolean
+  label: string
+  onClear: () => void
+  className?: string
+}) {
+  if (!visible) {
+    return null
+  }
+
+  return (
+    <button
+      type="button"
+      className={cn(
+        "absolute top-1/2 z-10 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-foreground",
+        className,
+      )}
+      onClick={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        onClear()
+      }}
+      aria-label={label}
+    >
+      <X className="size-3.5" aria-hidden />
+    </button>
+  )
 }
 
 export function InventoryPage() {
@@ -434,7 +469,13 @@ export function InventoryPage() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder={t("inventory.searchPlaceholder")}
-                  className="h-9 min-w-0 pl-8"
+                  className={cn("h-9 min-w-0 pl-8", search && "pr-8")}
+                />
+                <FilterClearButton
+                  visible={Boolean(search)}
+                  label={t("inventory.filters.clear")}
+                  className="right-2"
+                  onClear={() => setSearch("")}
                 />
               </div>
             </div>
@@ -443,48 +484,79 @@ export function InventoryPage() {
               <Label htmlFor="inventory-filter-category" className="truncate">
                 {t("inventory.filters.category")}
               </Label>
-              <Select
-                value={categoryFilter}
-                onValueChange={(value) => {
-                  setCategoryFilter(value)
-                  setSubcategoryFilter("all")
-                }}
-              >
-                <SelectTrigger id="inventory-filter-category" className="h-9 w-full min-w-0">
-                  <SelectValue placeholder={t("inventory.filters.all")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative min-w-0">
+                <Select
+                  value={categoryFilter}
+                  onValueChange={(value) => {
+                    setCategoryFilter(value)
+                    setSubcategoryFilter("all")
+                  }}
+                >
+                  <SelectTrigger
+                    id="inventory-filter-category"
+                    className={cn(
+                      "h-9 w-full min-w-0",
+                      categoryFilter !== "all" && "pr-8 [&>svg]:hidden",
+                    )}
+                  >
+                    <SelectValue placeholder={t("inventory.filters.all")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FilterClearButton
+                  visible={categoryFilter !== "all"}
+                  label={t("inventory.filters.clear")}
+                  className="right-2"
+                  onClear={() => {
+                    setCategoryFilter("all")
+                    setSubcategoryFilter("all")
+                  }}
+                />
+              </div>
             </div>
 
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="inventory-filter-subcategory" className="truncate">
                 {t("inventory.filters.subcategory")}
               </Label>
-              <Select
-                value={subcategoryFilter}
-                onValueChange={setSubcategoryFilter}
-                disabled={categoryFilter === "all"}
-              >
-                <SelectTrigger id="inventory-filter-subcategory" className="h-9 w-full min-w-0">
-                  <SelectValue placeholder={t("inventory.filters.all")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                  {filteredSubcategories.map((subcategory) => (
-                    <SelectItem key={subcategory.id} value={subcategory.id}>
-                      {subcategory.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative min-w-0">
+                <Select
+                  value={subcategoryFilter}
+                  onValueChange={setSubcategoryFilter}
+                  disabled={categoryFilter === "all"}
+                >
+                  <SelectTrigger
+                    id="inventory-filter-subcategory"
+                    className={cn(
+                      "h-9 w-full min-w-0",
+                      subcategoryFilter !== "all" && "pr-8 [&>svg]:hidden",
+                    )}
+                  >
+                    <SelectValue placeholder={t("inventory.filters.all")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                    {filteredSubcategories.map((subcategory) => (
+                      <SelectItem key={subcategory.id} value={subcategory.id}>
+                        {subcategory.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FilterClearButton
+                  visible={subcategoryFilter !== "all"}
+                  label={t("inventory.filters.clear")}
+                  className="right-2"
+                  onClear={() => setSubcategoryFilter("all")}
+                />
+              </div>
             </div>
           </div>
 
@@ -493,35 +565,65 @@ export function InventoryPage() {
               <Label htmlFor="inventory-filter-availability" className="truncate">
                 {t("inventory.filters.availability")}
               </Label>
-              <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
-                <SelectTrigger id="inventory-filter-availability" className="h-9 w-full min-w-0">
-                  <SelectValue placeholder={t("inventory.filters.all")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                  <SelectItem value="in_church">{t("inventory.availability.inChurch")}</SelectItem>
-                  <SelectItem value="borrowed">{t("inventory.availability.borrowed")}</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative min-w-0">
+                <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+                  <SelectTrigger
+                    id="inventory-filter-availability"
+                    className={cn(
+                      "h-9 w-full min-w-0",
+                      availabilityFilter !== "all" && "pr-8 [&>svg]:hidden",
+                    )}
+                  >
+                    <SelectValue placeholder={t("inventory.filters.all")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                    <SelectItem value="in_church">
+                      {t("inventory.availability.inChurch")}
+                    </SelectItem>
+                    <SelectItem value="borrowed">{t("inventory.availability.borrowed")}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FilterClearButton
+                  visible={availabilityFilter !== "all"}
+                  label={t("inventory.filters.clear")}
+                  className="right-2"
+                  onClear={() => setAvailabilityFilter("all")}
+                />
+              </div>
             </div>
 
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="inventory-filter-location" className="truncate">
                 {t("inventory.filters.location")}
               </Label>
-              <Select value={locationFilter} onValueChange={setLocationFilter}>
-                <SelectTrigger id="inventory-filter-location" className="h-9 w-full min-w-0">
-                  <SelectValue placeholder={t("inventory.filters.all")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                  {locations.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative min-w-0">
+                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                  <SelectTrigger
+                    id="inventory-filter-location"
+                    className={cn(
+                      "h-9 w-full min-w-0",
+                      locationFilter !== "all" && "pr-8 [&>svg]:hidden",
+                    )}
+                  >
+                    <SelectValue placeholder={t("inventory.filters.all")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                    {locations.map((location) => (
+                      <SelectItem key={location.id} value={location.id}>
+                        {location.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FilterClearButton
+                  visible={locationFilter !== "all"}
+                  label={t("inventory.filters.clear")}
+                  className="right-2"
+                  onClear={() => setLocationFilter("all")}
+                />
+              </div>
             </div>
 
             <TooltipProvider delayDuration={200}>
