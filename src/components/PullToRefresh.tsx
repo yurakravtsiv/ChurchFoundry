@@ -188,14 +188,8 @@ export function PullToRefresh({
         className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-background"
         style={themeBackgroundStyle}
       >
-        {/*
-          min-h-full keeps short pages filling the viewport; bottom safe-area padding
-          is painted with the same theme bg (not transparent).
-        */}
-        <div
-          className="min-h-full bg-background pb-[env(safe-area-inset-bottom,0px)]"
-          style={themeBackgroundStyle}
-        >
+        {/* min-h-full keeps short pages filling the viewport with theme bg. */}
+        <div className="min-h-full bg-background" style={themeBackgroundStyle}>
           <div
             className="pointer-events-none flex justify-center overflow-hidden bg-background transition-[height,opacity] duration-200 ease-out"
             style={{

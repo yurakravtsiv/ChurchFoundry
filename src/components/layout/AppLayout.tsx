@@ -26,7 +26,7 @@ export function AppLayout() {
         </PullToRefresh>
         */}
         <div
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-background pb-[env(safe-area-inset-bottom,0px)]"
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-background"
           style={themeBackgroundStyle}
         >
           <Outlet />
