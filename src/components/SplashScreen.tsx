@@ -3,7 +3,9 @@ import { useEffect, useState } from "react"
 import { applyThemeClass, resolveTheme } from "@/lib/theme"
 
 type SplashScreenProps = {
-  isLoading: boolean
+  /** When true, start (or keep) the splash sequence. */
+  active: boolean
+  onFinished?: () => void
 }
 
 const MIN_VISIBLE_MS = 3000
@@ -11,12 +13,23 @@ const FADE_MS = 350
 /** Light system-style splash (matches default iOS launch canvas). */
 const SPLASH_BG = "#FFFFFF"
 
-export function SplashScreen({ isLoading }: SplashScreenProps) {
+export function SplashScreen({ active, onFinished }: SplashScreenProps) {
+  const [mounted, setMounted] = useState(false)
+  const [opaque, setOpaque] = useState(false)
   const [minTimeElapsed, setMinTimeElapsed] = useState(false)
-  const [mounted, setMounted] = useState(true)
-  const [opaque, setOpaque] = useState(true)
 
   useEffect(() => {
+    if (!active) {
+      setMounted(false)
+      setOpaque(false)
+      setMinTimeElapsed(false)
+      return
+    }
+
+    setMounted(true)
+    setOpaque(true)
+    setMinTimeElapsed(false)
+
     const timeoutId = window.setTimeout(() => {
       setMinTimeElapsed(true)
     }, MIN_VISIBLE_MS)
@@ -24,29 +37,30 @@ export function SplashScreen({ isLoading }: SplashScreenProps) {
     return () => {
       window.clearTimeout(timeoutId)
     }
-  }, [])
+  }, [active])
 
   useEffect(() => {
-    const canHide = !isLoading && minTimeElapsed
-
-    if (!canHide) {
-      setMounted(true)
-      setOpaque(true)
+    if (!active || !mounted || !minTimeElapsed) {
       return
     }
 
     setOpaque(false)
     const timeoutId = window.setTimeout(() => {
       setMounted(false)
+      onFinished?.()
     }, FADE_MS)
 
     return () => {
       window.clearTimeout(timeoutId)
     }
-  }, [isLoading, minTimeElapsed])
+  }, [active, mounted, minTimeElapsed, onFinished])
 
   // Keep status-bar / home-indicator chrome light while splash is up.
   useEffect(() => {
+    if (!mounted) {
+      return
+    }
+
     if (!opaque) {
       applyThemeClass(resolveTheme())
       return
@@ -65,7 +79,7 @@ export function SplashScreen({ isLoading }: SplashScreenProps) {
     meta.setAttribute("name", "theme-color")
     meta.setAttribute("content", SPLASH_BG)
     parent.appendChild(meta)
-  }, [opaque])
+  }, [mounted, opaque])
 
   if (!mounted) {
     return null
@@ -76,7 +90,7 @@ export function SplashScreen({ isLoading }: SplashScreenProps) {
       className={`splash-screen fixed inset-0 z-50 bg-white transition-opacity duration-[350ms] ease-out ${
         opaque ? "opacity-100" : "opacity-0"
       }`}
-      aria-busy={isLoading || !minTimeElapsed}
+      aria-busy={!minTimeElapsed}
       aria-live="polite"
       role="status"
     >
