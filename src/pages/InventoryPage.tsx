@@ -58,21 +58,6 @@ import {
 import { cn } from "@/lib/utils"
 import type { AvailabilityStatus, InventoryItem } from "@/types/inventory"
 
-function formatWarrantyDate(value: string | null, locale: string) {
-  if (!value) {
-    return "—"
-  }
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return "—"
-  }
-  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "uk-UA", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date)
-}
-
 function loadInventoryState() {
   return {
     items: getInventoryItems(),
@@ -83,9 +68,8 @@ function loadInventoryState() {
 }
 
 export function InventoryPage() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const navigate = useNavigate()
-  const locale = i18n.language.startsWith("en") ? "en" : "uk"
 
   const [{ items, categories, subcategories, locations }, setInventoryState] =
     useState(loadInventoryState)
@@ -284,34 +268,12 @@ export function InventoryPage() {
         enableSorting: false,
       },
       {
-        accessorKey: "supplier",
-        header: t("inventory.columns.supplier"),
-        cell: ({ row }) => row.original.supplier || "—",
-        enableSorting: false,
-      },
-      {
-        accessorKey: "price",
-        header: t("inventory.columns.price"),
-        cell: ({ row }) => (row.original.price === null ? "—" : row.original.price.toFixed(2)),
-        enableSorting: false,
-      },
-      {
-        accessorKey: "serialNumber",
-        header: t("inventory.columns.serialNumber"),
-        cell: ({ row }) => row.original.serialNumber || "—",
-        enableSorting: false,
-      },
-      {
-        accessorKey: "warrantyUntil",
-        header: t("inventory.columns.warrantyUntil"),
-        cell: ({ row }) => formatWarrantyDate(row.original.warrantyUntil, locale),
-        enableSorting: false,
-      },
-      {
         accessorKey: "comment",
         header: t("inventory.columns.comment"),
         cell: ({ row }) => (
-          <span className="line-clamp-2 max-w-[14rem]">{row.original.comment || "—"}</span>
+          <span className="line-clamp-2 min-w-[12rem] max-w-[28rem]">
+            {row.original.comment || "—"}
+          </span>
         ),
         enableSorting: false,
       },
@@ -350,7 +312,7 @@ export function InventoryPage() {
         enableSorting: false,
       },
     ],
-    [categoryNameById, locale, locationNameById, navigate, subcategoryNameById, t],
+    [categoryNameById, locationNameById, navigate, subcategoryNameById, t],
   )
 
   const table = useReactTable({
