@@ -21,6 +21,7 @@ import { useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
 
+import { InventoryItemForm } from "@/components/inventory/InventoryItemForm"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -57,6 +58,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   archiveInventoryItem,
+  createInventoryItem,
   getCategories,
   getInventoryItems,
   getSubcategories,
@@ -100,8 +102,25 @@ export function InventoryPage() {
   const [availabilityFilter, setAvailabilityFilter] = useState("all")
   const [showArchived, setShowArchived] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
+  const [createFormDirty, setCreateFormDirty] = useState(false)
+  const [discardCreateOpen, setDiscardCreateOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [archiveTarget, setArchiveTarget] = useState<InventoryItem | null>(null)
+
+  const requestCloseCreate = useCallback(() => {
+    if (createFormDirty) {
+      setDiscardCreateOpen(true)
+      return
+    }
+    setCreateOpen(false)
+    setCreateFormDirty(false)
+  }, [createFormDirty])
+
+  const confirmDiscardCreate = useCallback(() => {
+    setDiscardCreateOpen(false)
+    setCreateFormDirty(false)
+    setCreateOpen(false)
+  }, [])
 
   const refreshItems = useCallback(() => {
     setInventoryState(loadInventoryState())
@@ -504,12 +523,54 @@ export function InventoryPage() {
         </div>
       )}
 
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
+      <Dialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            setCreateOpen(true)
+            setCreateFormDirty(false)
+            return
+          }
+          requestCloseCreate()
+        }}
+      >
+        <DialogContent className="flex max-h-[90vh] max-w-lg flex-col gap-0 overflow-hidden p-0">
+          <DialogHeader className="shrink-0 space-y-1.5 border-b bg-background px-6 py-4 pr-12 text-left">
             <DialogTitle>{t("inventory.create")}</DialogTitle>
-            <DialogDescription>{t("inventory.createStub")}</DialogDescription>
+            <DialogDescription>{t("inventory.form.createDescription")}</DialogDescription>
           </DialogHeader>
+          <InventoryItemForm
+            mode="create"
+            onDirtyChange={setCreateFormDirty}
+            onCancel={requestCloseCreate}
+            onSubmit={(data) => {
+              createInventoryItem(data)
+              setCreateFormDirty(false)
+              setCreateOpen(false)
+              refreshItems()
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={discardCreateOpen} onOpenChange={setDiscardCreateOpen}>
+        <DialogContent
+          className="z-[70] max-w-sm"
+          onPointerDownOutside={(event) => event.preventDefault()}
+          onInteractOutside={(event) => event.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("inventory.form.discardTitle")}</DialogTitle>
+            <DialogDescription>{t("inventory.form.discardDescription")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDiscardCreateOpen(false)}>
+              {t("inventory.form.discardStay")}
+            </Button>
+            <Button type="button" variant="destructive" onClick={confirmDiscardCreate}>
+              {t("inventory.form.discardConfirm")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
