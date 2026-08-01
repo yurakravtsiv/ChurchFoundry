@@ -54,6 +54,8 @@
     },
     "archiveConfirmTitle": "Архівувати «{{name}}»?",
     "archiveConfirmDescription": "Архівовані предмети можна знову показати через перемикач архіву.",
+    "unarchiveConfirmTitle": "Розархівувати «{{name}}»?",
+    "unarchiveConfirmDescription": "Предмет знову з’явиться в активному списку інвентарю.",
     "empty": {
       "title": "Інвентар поки порожній",
       "createFirst": "Створити перший предмет",
@@ -89,6 +91,7 @@
       "menu": "Дії",
       "edit": "Редагувати",
       "archive": "Архівувати",
+      "unarchive": "Розархівувати",
       "cancel": "Скасувати"
     },
     "form": {

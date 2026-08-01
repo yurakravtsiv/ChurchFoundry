@@ -54,6 +54,8 @@
     },
     "archiveConfirmTitle": "Archive “{{name}}”?",
     "archiveConfirmDescription": "Archived items can be shown again with the archive toggle.",
+    "unarchiveConfirmTitle": "Unarchive “{{name}}”?",
+    "unarchiveConfirmDescription": "The item will appear again in the active inventory list.",
     "empty": {
       "title": "Inventory is empty",
       "createFirst": "Create first item",
@@ -89,6 +91,7 @@
       "menu": "Actions",
       "edit": "Edit",
       "archive": "Archive",
+      "unarchive": "Unarchive",
       "cancel": "Cancel"
     },
     "form": {

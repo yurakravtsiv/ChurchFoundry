@@ -65,6 +65,7 @@ import {
   getInventoryItems,
   getLocations,
   getSubcategories,
+  unarchiveInventoryItem,
 } from "@/lib/inventoryStorage"
 import { cn } from "@/lib/utils"
 import type {
@@ -328,11 +329,11 @@ export function InventoryPage() {
                 <DropdownMenuItem onClick={() => navigate(`/inventory/${item.id}`)}>
                   {t("inventory.actions.edit")}
                 </DropdownMenuItem>
-                {!item.archived ? (
-                  <DropdownMenuItem onClick={() => setArchiveTarget(item)}>
-                    {t("inventory.actions.archive")}
-                  </DropdownMenuItem>
-                ) : null}
+                <DropdownMenuItem onClick={() => setArchiveTarget(item)}>
+                  {item.archived
+                    ? t("inventory.actions.unarchive")
+                    : t("inventory.actions.archive")}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )
@@ -353,11 +354,15 @@ export function InventoryPage() {
     getSortedRowModel: getSortedRowModel(),
   })
 
-  const confirmArchive = () => {
+  const confirmArchiveAction = () => {
     if (!archiveTarget) {
       return
     }
-    archiveInventoryItem(archiveTarget.id)
+    if (archiveTarget.archived) {
+      unarchiveInventoryItem(archiveTarget.id)
+    } else {
+      archiveInventoryItem(archiveTarget.id)
+    }
     setArchiveTarget(null)
     refreshItems()
   }
@@ -579,7 +584,10 @@ export function InventoryPage() {
               {table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="cursor-pointer"
+                  className={cn(
+                    "cursor-pointer",
+                    row.original.archived && "bg-muted/50 text-muted-foreground opacity-70",
+                  )}
                   onClick={() => navigate(`/inventory/${row.original.id}`)}
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -673,16 +681,29 @@ export function InventoryPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {t("inventory.archiveConfirmTitle", { name: archiveTarget?.name ?? "" })}
+              {t(
+                archiveTarget?.archived
+                  ? "inventory.unarchiveConfirmTitle"
+                  : "inventory.archiveConfirmTitle",
+                { name: archiveTarget?.name ?? "" },
+              )}
             </DialogTitle>
-            <DialogDescription>{t("inventory.archiveConfirmDescription")}</DialogDescription>
+            <DialogDescription>
+              {t(
+                archiveTarget?.archived
+                  ? "inventory.unarchiveConfirmDescription"
+                  : "inventory.archiveConfirmDescription",
+              )}
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setArchiveTarget(null)}>
               {t("inventory.actions.cancel")}
             </Button>
-            <Button type="button" onClick={confirmArchive}>
-              {t("inventory.actions.archive")}
+            <Button type="button" onClick={confirmArchiveAction}>
+              {archiveTarget?.archived
+                ? t("inventory.actions.unarchive")
+                : t("inventory.actions.archive")}
             </Button>
           </DialogFooter>
         </DialogContent>

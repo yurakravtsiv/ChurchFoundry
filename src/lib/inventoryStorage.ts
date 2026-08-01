@@ -250,6 +250,10 @@ export function archiveInventoryItem(id: string): InventoryItem | undefined {
   return updateInventoryItem(id, { archived: true })
 }
 
+export function unarchiveInventoryItem(id: string): InventoryItem | undefined {
+  return updateInventoryItem(id, { archived: false })
+}
+
 export function getInventoryItemById(id: string): InventoryItem | undefined {
   return getInventoryItems().find((item) => item.id === id)
 }
