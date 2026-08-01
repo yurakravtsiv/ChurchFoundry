@@ -1,10 +1,18 @@
+import { RefreshCw } from "lucide-react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link, useLocation } from "react-router"
 
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { LogoutButton } from "@/components/LogoutButton"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { Button } from "@/components/ui/button"
+import { useStandalonePwa } from "@/hooks/useStandalonePwa"
 import { navItems } from "@/lib/nav"
+import { reloadApp } from "@/lib/reloadApp"
+import { cn } from "@/lib/utils"
+
+const REFRESH_SPIN_MS = 1000
 
 type HeaderProps = {
   onOpenSidebar: () => void
@@ -23,6 +31,18 @@ function useCurrentPageLabelKey() {
 export function Header({ onOpenSidebar }: HeaderProps) {
   const { t } = useTranslation()
   const pageLabelKey = useCurrentPageLabelKey()
+  const isStandalone = useStandalonePwa()
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = () => {
+    if (refreshing) {
+      return
+    }
+    setRefreshing(true)
+    window.setTimeout(() => {
+      void reloadApp()
+    }, REFRESH_SPIN_MS)
+  }
 
   // Diagnostic: backdrop-blur temporarily removed to test bottom-strip bug
   return (
@@ -57,6 +77,23 @@ export function Header({ onOpenSidebar }: HeaderProps) {
           <p className="pointer-events-none absolute inset-x-0 mx-auto max-w-[55%] truncate text-center text-sm font-semibold tracking-tight md:hidden">
             {t(pageLabelKey)}
           </p>
+
+          {isStandalone ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="ml-auto size-9 md:hidden"
+              disabled={refreshing}
+              onClick={handleRefresh}
+              aria-label={refreshing ? t("refresh.refreshing") : t("refresh.action")}
+            >
+              <RefreshCw
+                className={cn("size-4", refreshing && "animate-spin [animation-duration:0.8s]")}
+                aria-hidden
+              />
+            </Button>
+          ) : null}
 
           <div className="ml-auto hidden items-center gap-3 md:flex">
             <LanguageSwitcher showLabel={false} />

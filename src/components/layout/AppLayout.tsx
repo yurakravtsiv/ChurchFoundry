@@ -3,7 +3,6 @@ import { Outlet } from "react-router"
 
 import { Header } from "@/components/layout/Header"
 import { Sidebar } from "@/components/layout/Sidebar"
-import { PullToRefresh } from "@/components/PullToRefresh"
 
 const themeBackgroundStyle = { backgroundColor: "hsl(var(--background))" } as const
 
@@ -21,9 +20,17 @@ export function AppLayout() {
         style={themeBackgroundStyle}
       >
         <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
-        <PullToRefresh>
-          <Outlet />
-        </PullToRefresh>
+        <div
+          className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-background"
+          style={themeBackgroundStyle}
+        >
+          <div
+            className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-background"
+            style={themeBackgroundStyle}
+          >
+            <Outlet />
+          </div>
+        </div>
       </div>
     </div>
   )

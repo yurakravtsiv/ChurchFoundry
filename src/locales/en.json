@@ -152,7 +152,7 @@
     }
   },
   "refresh": {
-    "pull": "Pull to refresh",
+    "action": "Refresh",
     "refreshing": "Refreshing…"
   },
   "update": {
