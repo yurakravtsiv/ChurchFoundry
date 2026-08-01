@@ -151,6 +151,9 @@ export function InventoryPage() {
       if (query) {
         const haystack = [
           item.name,
+          categoryNameById.get(item.categoryId) ?? "",
+          subcategoryNameById.get(item.subcategoryId) ?? "",
+          item.location,
           String(item.quantity),
           item.availabilityComment,
           item.comment,
@@ -164,7 +167,16 @@ export function InventoryPage() {
       }
       return true
     })
-  }, [availabilityFilter, categoryFilter, items, search, showArchived, subcategoryFilter])
+  }, [
+    availabilityFilter,
+    categoryFilter,
+    categoryNameById,
+    items,
+    search,
+    showArchived,
+    subcategoryFilter,
+    subcategoryNameById,
+  ])
 
   const columns = useMemo<ColumnDef<InventoryItem>[]>(
     () => [
@@ -344,12 +356,14 @@ export function InventoryPage() {
           </Button>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <div className="flex w-full flex-col gap-1.5 sm:min-w-[220px] sm:max-w-md sm:flex-1">
-            <Label htmlFor="inventory-search">{t("inventory.searchPlaceholder")}</Label>
-            <div className="relative">
+        <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="inventory-search" className="truncate">
+              {t("inventory.searchPlaceholder")}
+            </Label>
+            <div className="relative min-w-0">
               <Search
-                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden
               />
               <Input
@@ -357,13 +371,15 @@ export function InventoryPage() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={t("inventory.searchPlaceholder")}
-                className="pl-9"
+                className="h-9 min-w-0 pl-8"
               />
             </div>
           </div>
 
-          <div className="flex w-full flex-col gap-1.5 sm:w-[200px]">
-            <Label htmlFor="inventory-filter-category">{t("inventory.filters.category")}</Label>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="inventory-filter-category" className="truncate">
+              {t("inventory.filters.category")}
+            </Label>
             <Select
               value={categoryFilter}
               onValueChange={(value) => {
@@ -371,7 +387,7 @@ export function InventoryPage() {
                 setSubcategoryFilter("all")
               }}
             >
-              <SelectTrigger id="inventory-filter-category" className="w-full">
+              <SelectTrigger id="inventory-filter-category" className="h-9 w-full min-w-0">
                 <SelectValue placeholder={t("inventory.filters.all")} />
               </SelectTrigger>
               <SelectContent>
@@ -385,8 +401,8 @@ export function InventoryPage() {
             </Select>
           </div>
 
-          <div className="flex w-full flex-col gap-1.5 sm:w-[200px]">
-            <Label htmlFor="inventory-filter-subcategory">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="inventory-filter-subcategory" className="truncate">
               {t("inventory.filters.subcategory")}
             </Label>
             <Select
@@ -394,7 +410,7 @@ export function InventoryPage() {
               onValueChange={setSubcategoryFilter}
               disabled={categoryFilter === "all"}
             >
-              <SelectTrigger id="inventory-filter-subcategory" className="w-full">
+              <SelectTrigger id="inventory-filter-subcategory" className="h-9 w-full min-w-0">
                 <SelectValue placeholder={t("inventory.filters.all")} />
               </SelectTrigger>
               <SelectContent>
@@ -408,12 +424,12 @@ export function InventoryPage() {
             </Select>
           </div>
 
-          <div className="flex w-full flex-col gap-1.5 sm:w-[200px]">
-            <Label htmlFor="inventory-filter-availability">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="inventory-filter-availability" className="truncate">
               {t("inventory.filters.availability")}
             </Label>
             <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
-              <SelectTrigger id="inventory-filter-availability" className="w-full">
+              <SelectTrigger id="inventory-filter-availability" className="h-9 w-full min-w-0">
                 <SelectValue placeholder={t("inventory.filters.all")} />
               </SelectTrigger>
               <SelectContent>
@@ -431,7 +447,7 @@ export function InventoryPage() {
                   type="button"
                   variant="outline"
                   size="icon"
-                  className={cn(showArchived && "border-primary text-primary")}
+                  className={cn("size-9 shrink-0", showArchived && "border-primary text-primary")}
                   onClick={() => setShowArchived((value) => !value)}
                   aria-pressed={showArchived}
                   aria-label={
