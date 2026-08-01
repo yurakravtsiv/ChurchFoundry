@@ -24,7 +24,8 @@ export function Header({ onOpenSidebar }: HeaderProps) {
   const pageLabelKey = useCurrentPageLabelKey()
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    {/* Diagnostic: backdrop-blur temporarily removed to test bottom-strip bug */}
+    <header className="sticky top-0 z-40 border-b border-border bg-background">
       {/* Safe-area padding on the inner wrapper so header bg continues under the notch */}
       <div className="pt-[env(safe-area-inset-top,0px)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
         <div className="relative flex h-14 items-center gap-3 px-4 md:px-6">
