@@ -34,22 +34,24 @@ export function prepareExportData(
   subcategories: Subcategory[],
   locations: Location[],
 ): InventoryExportRow[] {
-  return items.map((item) => ({
-    Назва: item.name,
-    Категорія: categories.find((category) => category.id === item.categoryId)?.name ?? "",
-    Підкатегорія:
-      subcategories.find((subcategory) => subcategory.id === item.subcategoryId)?.name ?? "",
-    Кількість: item.quantity,
-    Локація: locations.find((location) => location.id === item.locationId)?.name ?? "",
-    Наявність: item.availability === "in_church" ? "В церкві" : "Позичено",
-    "Коментар наявності": item.availabilityComment,
-    Постачальник: item.supplier,
-    Ціна: item.price ?? "",
-    Серійник: item.serialNumber,
-    "Гарантія до": item.warrantyUntil ?? "",
-    Коментар: item.comment,
-    Архівовано: item.archived ? "Так" : "Ні",
-  }))
+  return items
+    .filter((item) => !item.removed && !item.archived)
+    .map((item) => ({
+      Назва: item.name,
+      Категорія: categories.find((category) => category.id === item.categoryId)?.name ?? "",
+      Підкатегорія:
+        subcategories.find((subcategory) => subcategory.id === item.subcategoryId)?.name ?? "",
+      Кількість: item.quantity,
+      Локація: locations.find((location) => location.id === item.locationId)?.name ?? "",
+      Наявність: item.availability === "in_church" ? "В церкві" : "Позичено",
+      "Коментар наявності": item.availabilityComment,
+      Постачальник: item.supplier,
+      Ціна: item.price ?? "",
+      Серійник: item.serialNumber,
+      "Гарантія до": item.warrantyUntil ?? "",
+      Коментар: item.comment,
+      Архівовано: item.archived ? "Так" : "Ні",
+    }))
 }
 
 function autoFitColumns(data: InventoryExportRow[]): XLSX.ColInfo[] {
