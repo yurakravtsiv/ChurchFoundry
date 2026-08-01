@@ -45,8 +45,8 @@ export function applyThemeClass(theme: Theme) {
   root.classList.add(theme)
   root.style.colorScheme = theme
 
-  // Keep inline colors in sync with theme toggles (FOWT sets these before React mounts).
-  const themeColor = theme === "dark" ? "#0A0A0A" : "#FAFAFA"
+  // TEMP DIAG: green = uncovered/safe-area chrome; app surfaces use red --background.
+  const themeColor = "#00ff00"
   root.style.backgroundColor = themeColor
   if (document.body) {
     document.body.style.backgroundColor = themeColor

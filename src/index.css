@@ -45,7 +45,8 @@
 
 :root,
 .light {
-  --background: 0 0% 98%;
+  /* TEMP DIAG: app surfaces = red (was near-white) */
+  --background: 0 100% 50%;
   --foreground: 0 0% 6%;
   --card: 0 0% 100%;
   --card-foreground: 0 0% 6%;
@@ -68,7 +69,8 @@
 }
 
 .dark {
-  --background: 0 0% 4%;
+  /* TEMP DIAG: app surfaces = red (was near-black) */
+  --background: 0 100% 50%;
   --foreground: 0 0% 96%;
   --card: 0 0% 7%;
   --card-foreground: 0 0% 96%;
@@ -125,6 +127,11 @@ html.standalone .sheet-overlay {
   left: 0 !important;
 }
 
+/*
+  TEMP DIAGNOSTIC (safe-area strip):
+  - GREEN on html/body/theme-color = area NOT covered by the app shell (the strip)
+  - RED on #root / --background = app UI paint
+*/
 @layer base {
   * {
     @apply border-border;
@@ -133,37 +140,37 @@ html.standalone .sheet-overlay {
   html {
     height: 100%;
     -webkit-tap-highlight-color: transparent;
-    background-color: hsl(var(--background));
+    background-color: #00ff00;
   }
 
   html.dark {
-    background-color: #0a0a0a;
+    background-color: #00ff00;
   }
 
   html:not(.dark) {
-    background-color: hsl(0 0% 98%);
+    background-color: #00ff00;
   }
 
   body {
     margin: 0;
     height: 100%;
     min-height: 100dvh;
-    background-color: hsl(var(--background));
+    background-color: #00ff00;
     font-family: "Segoe UI", "Noto Sans", system-ui, -apple-system, sans-serif;
     @apply text-foreground antialiased;
   }
 
   html.dark body {
-    background-color: #0a0a0a;
+    background-color: #00ff00;
   }
 
   html:not(.dark) body {
-    background-color: hsl(0 0% 98%);
+    background-color: #00ff00;
   }
 
   #root {
     min-height: 100dvh;
-    background-color: hsl(var(--background));
+    background-color: #ff0000;
   }
 }
 
