@@ -12,12 +12,12 @@ export function AppLayout() {
 
   return (
     <div
-      className="flex min-h-[var(--app-height)] flex-col bg-background"
+      className="flex h-[var(--app-height)] max-h-[var(--app-height)] flex-col overflow-hidden bg-background"
       style={themeBackgroundStyle}
     >
       <Header onOpenSidebar={() => setSidebarOpen(true)} />
       <div
-        className="flex min-h-0 flex-1 bg-background pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]"
+        className="flex min-h-0 flex-1 overflow-hidden bg-background pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]"
         style={themeBackgroundStyle}
       >
         <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />

@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useEffect } from "react"
-import { BrowserRouter, Route, Routes } from "react-router"
+import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from "react-router"
 
 import { AppLayout } from "@/components/layout/AppLayout"
 import { GuestRoute, ProtectedRoute } from "@/components/ProtectedRoute"
@@ -24,6 +24,27 @@ const queryClient = new QueryClient({
   },
 })
 
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <>
+      <Route element={<GuestRoute />}>
+        <Route path="/login" element={<LoginPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/people" element={<ComingSoonPage />} />
+          <Route path="/services" element={<ComingSoonPage />} />
+          <Route path="/calendar" element={<ComingSoonPage />} />
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/inventory/:id" element={<InventoryItemDetailPage />} />
+        </Route>
+      </Route>
+    </>,
+  ),
+)
+
 function AppShell() {
   // Keep theme state mounted at the app root (syncs with FOWT inline script).
   useTheme()
@@ -42,24 +63,7 @@ function AppShell() {
   return (
     <>
       <UpdateBanner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<GuestRoute />}>
-            <Route path="/login" element={<LoginPage />} />
-          </Route>
-
-          <Route element={<ProtectedRoute />}>
-            <Route element={<AppLayout />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/people" element={<ComingSoonPage />} />
-              <Route path="/services" element={<ComingSoonPage />} />
-              <Route path="/calendar" element={<ComingSoonPage />} />
-              <Route path="/inventory" element={<InventoryPage />} />
-              <Route path="/inventory/:id" element={<InventoryItemDetailPage />} />
-            </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <RouterProvider router={router} />
     </>
   )
 }

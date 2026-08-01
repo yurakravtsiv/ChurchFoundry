@@ -547,6 +547,7 @@ export function InventoryPage() {
             <DialogDescription>{t("inventory.form.createDescription")}</DialogDescription>
           </DialogHeader>
           <InventoryItemForm
+            id="inventory-item-create-form"
             mode="create"
             onDirtyChange={setCreateFormDirty}
             onCancel={requestCloseCreate}
@@ -567,15 +568,24 @@ export function InventoryPage() {
           onInteractOutside={(event) => event.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle>{t("inventory.form.discardTitle")}</DialogTitle>
-            <DialogDescription>{t("inventory.form.discardDescription")}</DialogDescription>
+            <DialogTitle>{t("inventory.unsavedChanges.title")}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {t("inventory.unsavedChanges.title")}
+            </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={() => setDiscardCreateOpen(false)}>
-              {t("inventory.form.discardStay")}
+              {t("inventory.unsavedChanges.close")}
             </Button>
             <Button type="button" variant="destructive" onClick={confirmDiscardCreate}>
-              {t("inventory.form.discardConfirm")}
+              {t("inventory.unsavedChanges.no")}
+            </Button>
+            <Button
+              type="submit"
+              form="inventory-item-create-form"
+              onClick={() => setDiscardCreateOpen(false)}
+            >
+              {t("inventory.unsavedChanges.yes")}
             </Button>
           </DialogFooter>
         </DialogContent>

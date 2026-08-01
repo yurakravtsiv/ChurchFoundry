@@ -99,14 +99,25 @@ export function PullToRefresh({
     const icon = iconRef.current
     if (content) {
       content.style.transition = "none"
-      content.style.transform = `translateY(${distance}px)`
+      // Clear transform at rest so sticky page headers keep working.
+      if (distance === 0) {
+        content.style.removeProperty("transform")
+        content.style.removeProperty("will-change")
+      } else {
+        content.style.transform = `translateY(${distance}px)`
+        content.style.willChange = "transform"
+      }
     }
     if (indicator) {
       indicator.style.transition = "none"
       indicator.style.opacity = String(pullOpacity(distance, refreshingRef.current))
     }
     if (icon && !refreshingRef.current) {
-      icon.style.transform = `rotate(${rotationDeg}deg)`
+      if (rotationDeg === 0) {
+        icon.style.removeProperty("transform")
+      } else {
+        icon.style.transform = `rotate(${rotationDeg}deg)`
+      }
     }
   }, [])
 
@@ -314,11 +325,18 @@ export function PullToRefresh({
 
         <div
           ref={contentRef}
-          className="min-h-full bg-background will-change-transform"
+          className="min-h-full bg-background"
           style={{
             ...themeBackgroundStyle,
-            transform: `translateY(${contentOffset}px)`,
-            transition: contentTransition,
+            // Only apply transform while offset — a persistent transform/will-change
+            // breaks `position: sticky` for page headers inside this scrollport.
+            ...(contentOffset !== 0 || refreshing
+              ? {
+                  transform: `translateY(${contentOffset}px)`,
+                  willChange: "transform" as const,
+                  transition: contentTransition,
+                }
+              : { transition: contentTransition }),
           }}
         >
           {children}

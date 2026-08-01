@@ -35,16 +35,20 @@
     "showArchived": "Показати архівовані",
     "hideArchived": "Приховати архівовані",
     "itemNotFound": "Предмет не знайдено",
+    "unsavedChanges": {
+      "title": "Зберегти зміни?",
+      "close": "Закрити",
+      "no": "Ні",
+      "yes": "Так",
+      "cancelTitle": "Скасувати зміни?",
+      "cancelConfirm": "Так, скасувати"
+    },
     "detail": {
       "backToInventory": "Назад до інвентарю",
       "returnToInventory": "Повернутись до інвентарю",
       "qrTitle": "QR-код предмету",
       "qrHint": "Роздрукуйте і прикріпіть до предмета. При скануванні відкриється ця сторінка.",
-      "saved": "Збережено ✓",
-      "discardTitle": "Скасувати зміни?",
-      "discardDescription": "Незбережені дані буде втрачено.",
-      "discardStay": "Скасувати",
-      "discardConfirm": "Так, скасувати"
+      "saved": "Збережено ✓"
     },
     "archiveConfirmTitle": "Архівувати «{{name}}»?",
     "archiveConfirmDescription": "Архівовані предмети можна знову показати через перемикач архіву.",
@@ -119,10 +123,6 @@
       "setAvatar": "Зробити головним фото",
       "removePhoto": "Видалити фото",
       "save": "Зберегти",
-      "discardTitle": "Закрити без збереження?",
-      "discardDescription": "Унесені зміни буде втрачено.",
-      "discardStay": "Продовжити редагування",
-      "discardConfirm": "Закрити",
       "validation": {
         "nameRequired": "Вкажіть назву",
         "categoryRequired": "Оберіть категорію",

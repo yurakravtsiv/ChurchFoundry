@@ -29,9 +29,18 @@ type InventoryItemFormProps = {
   initialData?: InventoryItem
   onSubmit: (data: InventoryItemFormValues) => void
   onCancel: () => void
+  onInvalid?: () => void
   onDirtyChange?: (dirty: boolean) => void
   /** Overrides the default save button label (e.g. brief “Saved” feedback). */
   submitLabel?: string
+  /**
+   * `dialog` — sticky footer, scrollable body inside a constrained popup.
+   * `page` — natural page flow; action buttons are omitted (render them outside via `id`).
+   */
+  layout?: "dialog" | "page"
+  /** Form element id — use with external submit buttons (`form` attribute). */
+  id?: string
+  onBusyChange?: (busy: boolean) => void
 }
 
 function toDateInputValue(value: string | null | undefined) {
@@ -77,13 +86,18 @@ function SelectCreateAction({
 }
 
 export function InventoryItemForm({
-  mode,
+  mode: _mode,
   initialData,
   onSubmit,
   onCancel,
+  onInvalid,
   onDirtyChange,
   submitLabel,
+  layout = "dialog",
+  id,
+  onBusyChange,
 }: InventoryItemFormProps) {
+  const isPageLayout = layout === "page"
   const { t } = useTranslation()
   const [categories, setCategories] = useState(() => getCategories())
   const [subcategories, setSubcategories] = useState(() => getSubcategories())
@@ -92,7 +106,11 @@ export function InventoryItemForm({
   const [categorySelectOpen, setCategorySelectOpen] = useState(false)
   const [subcategorySelectOpen, setSubcategorySelectOpen] = useState(false)
   const [isCompressing, setIsCompressing] = useState(false)
-  const skipSubcategoryResetRef = useRef(mode === "edit")
+
+  useEffect(() => {
+    onBusyChange?.(isCompressing)
+  }, [isCompressing, onBusyChange])
+  const previousCategoryIdRef = useRef<string | null>(null)
   const pendingCategoryIdRef = useRef<string | null>(null)
   const pendingSubcategoryIdRef = useRef<string | null>(null)
 
@@ -147,31 +165,47 @@ export function InventoryItemForm({
 
   type FormValues = z.infer<typeof schema>
 
+  const initialDataKey = initialData ? `${initialData.id}:${initialData.updatedAt}` : "create"
+
+  const defaultValues = useMemo(
+    () => ({
+      name: initialData?.name ?? "",
+      categoryId: initialData?.categoryId ?? "",
+      subcategoryId: initialData?.subcategoryId ?? "",
+      quantity: initialData?.quantity ?? 1,
+      location: initialData?.location ?? "",
+      availability: initialData?.availability ?? ("in_church" as const),
+      availabilityComment: initialData?.availabilityComment ?? "",
+      supplier: initialData?.supplier ?? "",
+      serialNumber: initialData?.serialNumber ?? "",
+      warrantyUntil: toDateInputValue(initialData?.warrantyUntil),
+      comment: initialData?.comment ?? "",
+      photos: initialData?.photos ? [...initialData.photos] : [],
+      avatarPhotoId: initialData?.avatarPhotoId ?? null,
+    }),
+    // Recreate only when the persisted item revision changes (or create form mounts).
+    // biome-ignore lint/correctness/useExhaustiveDependencies: keyed by initialDataKey
+    [initialDataKey],
+  )
+
   const {
     control,
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: {
-      name: initialData?.name ?? "",
-      categoryId: initialData?.categoryId ?? "",
-      subcategoryId: initialData?.subcategoryId ?? "",
-      quantity: initialData?.quantity ?? 1,
-      location: initialData?.location ?? "",
-      availability: initialData?.availability ?? "in_church",
-      availabilityComment: initialData?.availabilityComment ?? "",
-      supplier: initialData?.supplier ?? "",
-      serialNumber: initialData?.serialNumber ?? "",
-      warrantyUntil: toDateInputValue(initialData?.warrantyUntil),
-      comment: initialData?.comment ?? "",
-      photos: initialData?.photos ?? [],
-      avatarPhotoId: initialData?.avatarPhotoId ?? null,
-    },
+    defaultValues,
   })
+
+  // Keep defaults in sync and clear false dirty state after mount/effects.
+  useEffect(() => {
+    previousCategoryIdRef.current = defaultValues.categoryId
+    reset(defaultValues)
+  }, [defaultValues, reset])
 
   useEffect(() => {
     onDirtyChange?.(isDirty)
@@ -187,14 +221,17 @@ export function InventoryItemForm({
     [categoryId, subcategories],
   )
 
-  // Reset subcategory when category changes (skip first paint in edit mode).
-  // biome-ignore lint/correctness/useExhaustiveDependencies: categoryId must trigger the reset
+  // Reset subcategory only when the user actually changes category.
   useEffect(() => {
-    if (skipSubcategoryResetRef.current) {
-      skipSubcategoryResetRef.current = false
+    if (previousCategoryIdRef.current === null) {
+      previousCategoryIdRef.current = categoryId
       return
     }
-    setValue("subcategoryId", "")
+    if (previousCategoryIdRef.current === categoryId) {
+      return
+    }
+    previousCategoryIdRef.current = categoryId
+    setValue("subcategoryId", "", { shouldDirty: true, shouldValidate: true })
   }, [categoryId, setValue])
 
   // Select newly created category once it is in the options list.
@@ -231,25 +268,30 @@ export function InventoryItemForm({
     }
   }, [categories, categoryId, setValue])
 
-  const submitForm = handleSubmit((values: FormValues) => {
-    const payload: InventoryItemFormValues = {
-      name: values.name.trim(),
-      categoryId: values.categoryId,
-      subcategoryId: values.subcategoryId,
-      quantity: values.quantity,
-      location: values.location?.trim() ?? "",
-      availability: values.availability,
-      availabilityComment:
-        values.availability === "borrowed" ? (values.availabilityComment?.trim() ?? "") : "",
-      supplier: values.supplier?.trim() ?? "",
-      serialNumber: values.serialNumber?.trim() ?? "",
-      warrantyUntil: values.warrantyUntil ? values.warrantyUntil : null,
-      comment: values.comment?.trim() ?? "",
-      photos: values.photos ?? [],
-      avatarPhotoId: values.avatarPhotoId ?? null,
-    }
-    onSubmit(payload)
-  })
+  const submitForm = handleSubmit(
+    (values: FormValues) => {
+      const payload: InventoryItemFormValues = {
+        name: values.name.trim(),
+        categoryId: values.categoryId,
+        subcategoryId: values.subcategoryId,
+        quantity: values.quantity,
+        location: values.location?.trim() ?? "",
+        availability: values.availability,
+        availabilityComment:
+          values.availability === "borrowed" ? (values.availabilityComment?.trim() ?? "") : "",
+        supplier: values.supplier?.trim() ?? "",
+        serialNumber: values.serialNumber?.trim() ?? "",
+        warrantyUntil: values.warrantyUntil ? values.warrantyUntil : null,
+        comment: values.comment?.trim() ?? "",
+        photos: values.photos ?? [],
+        avatarPhotoId: values.avatarPhotoId ?? null,
+      }
+      onSubmit(payload)
+    },
+    () => {
+      onInvalid?.()
+    },
+  )
 
   const onPhotosSelected = async (fileList: FileList | null) => {
     if (!fileList?.length) {
@@ -283,8 +325,14 @@ export function InventoryItemForm({
 
   return (
     <>
-      <form className="flex min-h-0 flex-1 flex-col" onSubmit={(event) => void submitForm(event)}>
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+      <form
+        id={id}
+        className={cn(isPageLayout ? "block" : "flex min-h-0 flex-1 flex-col")}
+        onSubmit={(event) => void submitForm(event)}
+      >
+        <div
+          className={cn("space-y-4 px-6 py-4", !isPageLayout && "min-h-0 flex-1 overflow-y-auto")}
+        >
           <div className="space-y-2">
             <Label htmlFor="inventory-item-name">{t("inventory.form.name")} *</Label>
             <Input
@@ -378,7 +426,7 @@ export function InventoryItemForm({
               type="number"
               min={1}
               step={1}
-              {...register("quantity")}
+              {...register("quantity", { valueAsNumber: true })}
             />
             {errors.quantity ? (
               <p className="text-sm text-destructive">{errors.quantity.message}</p>
@@ -539,14 +587,16 @@ export function InventoryItemForm({
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col-reverse gap-2 border-t bg-background px-6 py-4 sm:flex-row sm:justify-end">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            {t("inventory.actions.cancel")}
-          </Button>
-          <Button type="submit" disabled={isCompressing}>
-            {submitLabel ?? t("inventory.form.save")}
-          </Button>
-        </div>
+        {isPageLayout ? null : (
+          <div className="flex shrink-0 flex-col-reverse gap-2 border-t bg-background px-6 py-4 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              {t("inventory.actions.cancel")}
+            </Button>
+            <Button type="submit" disabled={isCompressing}>
+              {submitLabel ?? t("inventory.form.save")}
+            </Button>
+          </div>
+        )}
       </form>
 
       <CreateCategoryDialog

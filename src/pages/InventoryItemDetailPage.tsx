@@ -1,7 +1,7 @@
 import { ArrowLeft, PackageX } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Link, useNavigate, useParams } from "react-router"
+import { useBlocker, useNavigate, useParams } from "react-router"
 
 import { InventoryItemForm } from "@/components/inventory/InventoryItemForm"
 import { ItemQrCode } from "@/components/inventory/ItemQrCode"
@@ -18,7 +18,9 @@ import {
 import { getInventoryItemById, updateInventoryItem } from "@/lib/inventoryStorage"
 import type { InventoryItem } from "@/types/inventory"
 
-const SAVED_FEEDBACK_MS = 1600
+const EDIT_FORM_ID = "inventory-item-edit-form"
+
+type UnsavedPrompt = "save" | "cancel"
 
 export function InventoryItemDetailPage() {
   const { t } = useTranslation()
@@ -28,40 +30,96 @@ export function InventoryItemDetailPage() {
     id ? getInventoryItemById(id) : undefined,
   )
   const [formDirty, setFormDirty] = useState(false)
-  const [discardOpen, setDiscardOpen] = useState(false)
-  const [showSaved, setShowSaved] = useState(false)
-  const savedTimeoutRef = useRef<number | null>(null)
+  const [formBusy, setFormBusy] = useState(false)
+  const [unsavedPrompt, setUnsavedPrompt] = useState<UnsavedPrompt | null>(null)
+  const allowLeaveRef = useRef(false)
+  const leaveAfterSaveRef = useRef(false)
+  const pendingLeaveToRef = useRef<string | null>(null)
+
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      !allowLeaveRef.current && formDirty && currentLocation.pathname !== nextLocation.pathname,
+  )
 
   useEffect(() => {
     setItem(id ? getInventoryItemById(id) : undefined)
     setFormDirty(false)
-    setShowSaved(false)
+    allowLeaveRef.current = false
   }, [id])
 
   useEffect(() => {
-    return () => {
-      if (savedTimeoutRef.current !== null) {
-        window.clearTimeout(savedTimeoutRef.current)
-      }
+    if (blocker.state === "blocked") {
+      setUnsavedPrompt("save")
     }
-  }, [])
+  }, [blocker.state])
+
+  useEffect(() => {
+    if (!formDirty) {
+      return
+    }
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ""
+    }
+    window.addEventListener("beforeunload", onBeforeUnload)
+    return () => window.removeEventListener("beforeunload", onBeforeUnload)
+  }, [formDirty])
 
   const goBackToInventory = () => {
     navigate("/inventory")
   }
 
-  const requestCancel = () => {
+  const requestLeave = () => {
     if (formDirty) {
-      setDiscardOpen(true)
+      setUnsavedPrompt("save")
       return
     }
     goBackToInventory()
   }
 
-  const confirmDiscard = () => {
-    setDiscardOpen(false)
-    setFormDirty(false)
+  const requestCancel = () => {
+    if (formDirty) {
+      setUnsavedPrompt("cancel")
+      return
+    }
     goBackToInventory()
+  }
+
+  const stayOnPage = () => {
+    leaveAfterSaveRef.current = false
+    pendingLeaveToRef.current = null
+    setUnsavedPrompt(null)
+    if (blocker.state === "blocked") {
+      blocker.reset()
+    }
+  }
+
+  const confirmDiscard = () => {
+    leaveAfterSaveRef.current = false
+    pendingLeaveToRef.current = null
+    allowLeaveRef.current = true
+    setUnsavedPrompt(null)
+    setFormDirty(false)
+    if (blocker.state === "blocked") {
+      blocker.proceed()
+      return
+    }
+    goBackToInventory()
+  }
+
+  const confirmSaveAndLeave = () => {
+    if (blocker.state === "blocked") {
+      pendingLeaveToRef.current = `${blocker.location.pathname}${blocker.location.search}`
+      blocker.reset()
+    } else {
+      pendingLeaveToRef.current = "/inventory"
+    }
+    leaveAfterSaveRef.current = true
+    setUnsavedPrompt(null)
+    const form = document.getElementById(EDIT_FORM_ID)
+    if (form instanceof HTMLFormElement) {
+      form.requestSubmit()
+    }
   }
 
   if (!item) {
@@ -83,47 +141,76 @@ export function InventoryItemDetailPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 bg-background px-4 py-6 sm:px-6 md:py-8">
-      <div className="space-y-4">
-        <Link
-          to="/inventory"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" aria-hidden />
-          {t("inventory.detail.backToInventory")}
-        </Link>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{item.name}</h1>
-      </div>
+    <main className="bg-background">
+      <header className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-6">
+        <div className="mx-auto w-full max-w-[1400px] space-y-3">
+          <button
+            type="button"
+            onClick={requestLeave}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+            {t("inventory.detail.backToInventory")}
+          </button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <h1 className="min-w-0 text-2xl font-semibold tracking-tight sm:text-3xl">
+              {item.name}
+            </h1>
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+              {formDirty ? (
+                <Button type="button" variant="outline" onClick={requestCancel}>
+                  {t("inventory.actions.cancel")}
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                disabled={formBusy}
+                onClick={() => {
+                  if (!formDirty) {
+                    goBackToInventory()
+                    return
+                  }
+                  const form = document.getElementById(EDIT_FORM_ID)
+                  if (form instanceof HTMLFormElement) {
+                    form.requestSubmit()
+                  }
+                }}
+              >
+                {t("inventory.form.save")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <div className="grid gap-6 md:grid-cols-3 md:items-start">
-        <div className="overflow-hidden rounded-xl border bg-card md:col-span-2">
+      <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-4 py-6 sm:px-6 md:grid-cols-3 md:items-start md:py-8">
+        <div className="min-w-0 rounded-xl border bg-card md:col-span-2">
           <InventoryItemForm
             key={item.updatedAt}
+            id={EDIT_FORM_ID}
             mode="edit"
+            layout="page"
             initialData={item}
-            submitLabel={showSaved ? t("inventory.detail.saved") : undefined}
-            onDirtyChange={(dirty) => {
-              setFormDirty(dirty)
-              if (dirty) {
-                setShowSaved(false)
-              }
-            }}
+            onBusyChange={setFormBusy}
+            onDirtyChange={setFormDirty}
             onCancel={requestCancel}
+            onInvalid={() => {
+              leaveAfterSaveRef.current = false
+              pendingLeaveToRef.current = null
+            }}
             onSubmit={(data) => {
               const updated = updateInventoryItem(item.id, data)
               if (!updated) {
+                leaveAfterSaveRef.current = false
+                pendingLeaveToRef.current = null
                 return
               }
-              setItem(updated)
+              leaveAfterSaveRef.current = false
+              allowLeaveRef.current = true
               setFormDirty(false)
-              setShowSaved(true)
-              if (savedTimeoutRef.current !== null) {
-                window.clearTimeout(savedTimeoutRef.current)
-              }
-              savedTimeoutRef.current = window.setTimeout(() => {
-                setShowSaved(false)
-                savedTimeoutRef.current = null
-              }, SAVED_FEEDBACK_MS)
+              const next = pendingLeaveToRef.current ?? "/inventory"
+              pendingLeaveToRef.current = null
+              navigate(next)
             }}
           />
         </div>
@@ -141,20 +228,54 @@ export function InventoryItemDetailPage() {
         </Card>
       </div>
 
-      <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
+      <Dialog
+        open={unsavedPrompt !== null}
+        onOpenChange={(open) => {
+          if (open) {
+            return
+          }
+          stayOnPage()
+        }}
+      >
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t("inventory.detail.discardTitle")}</DialogTitle>
-            <DialogDescription>{t("inventory.detail.discardDescription")}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setDiscardOpen(false)}>
-              {t("inventory.detail.discardStay")}
-            </Button>
-            <Button type="button" variant="destructive" onClick={confirmDiscard}>
-              {t("inventory.detail.discardConfirm")}
-            </Button>
-          </DialogFooter>
+          {unsavedPrompt === "cancel" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>{t("inventory.unsavedChanges.cancelTitle")}</DialogTitle>
+                <DialogDescription className="sr-only">
+                  {t("inventory.unsavedChanges.cancelTitle")}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button type="button" variant="outline" onClick={stayOnPage}>
+                  {t("inventory.unsavedChanges.close")}
+                </Button>
+                <Button type="button" variant="destructive" onClick={confirmDiscard}>
+                  {t("inventory.unsavedChanges.cancelConfirm")}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>{t("inventory.unsavedChanges.title")}</DialogTitle>
+                <DialogDescription className="sr-only">
+                  {t("inventory.unsavedChanges.title")}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button type="button" variant="outline" onClick={stayOnPage}>
+                  {t("inventory.unsavedChanges.close")}
+                </Button>
+                <Button type="button" variant="destructive" onClick={confirmDiscard}>
+                  {t("inventory.unsavedChanges.no")}
+                </Button>
+                <Button type="button" onClick={confirmSaveAndLeave}>
+                  {t("inventory.unsavedChanges.yes")}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </main>

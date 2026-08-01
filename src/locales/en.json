@@ -35,16 +35,20 @@
     "showArchived": "Show archived",
     "hideArchived": "Hide archived",
     "itemNotFound": "Item not found",
+    "unsavedChanges": {
+      "title": "Save changes?",
+      "close": "Close",
+      "no": "No",
+      "yes": "Yes",
+      "cancelTitle": "Discard changes?",
+      "cancelConfirm": "Yes, discard"
+    },
     "detail": {
       "backToInventory": "Back to inventory",
       "returnToInventory": "Return to inventory",
       "qrTitle": "Item QR code",
       "qrHint": "Print and attach it to the item. Scanning opens this page.",
-      "saved": "Saved ✓",
-      "discardTitle": "Discard changes?",
-      "discardDescription": "Unsaved changes will be lost.",
-      "discardStay": "Cancel",
-      "discardConfirm": "Yes, discard"
+      "saved": "Saved ✓"
     },
     "archiveConfirmTitle": "Archive “{{name}}”?",
     "archiveConfirmDescription": "Archived items can be shown again with the archive toggle.",
@@ -119,10 +123,6 @@
       "setAvatar": "Set as main photo",
       "removePhoto": "Remove photo",
       "save": "Save",
-      "discardTitle": "Close without saving?",
-      "discardDescription": "Your changes will be lost.",
-      "discardStay": "Keep editing",
-      "discardConfirm": "Close",
       "validation": {
         "nameRequired": "Name is required",
         "categoryRequired": "Category is required",
