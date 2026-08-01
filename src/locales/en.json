@@ -27,6 +27,9 @@
     "collapseSidebar": "Collapse",
     "expandSidebar": "Expand"
   },
+  "inventory": {
+    "downloadQr": "Download as image"
+  },
   "refresh": {
     "pull": "Pull to refresh",
     "refreshing": "Refreshing…"

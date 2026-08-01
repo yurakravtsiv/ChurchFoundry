@@ -27,6 +27,9 @@
     "collapseSidebar": "Згорнути",
     "expandSidebar": "Розгорнути"
   },
+  "inventory": {
+    "downloadQr": "Завантажити як зображення"
+  },
   "refresh": {
     "pull": "Потягніть, щоб оновити",
     "refreshing": "Оновлення…"
