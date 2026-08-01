@@ -30,6 +30,8 @@ type InventoryItemFormProps = {
   onSubmit: (data: InventoryItemFormValues) => void
   onCancel: () => void
   onDirtyChange?: (dirty: boolean) => void
+  /** Overrides the default save button label (e.g. brief “Saved” feedback). */
+  submitLabel?: string
 }
 
 function toDateInputValue(value: string | null | undefined) {
@@ -80,6 +82,7 @@ export function InventoryItemForm({
   onSubmit,
   onCancel,
   onDirtyChange,
+  submitLabel,
 }: InventoryItemFormProps) {
   const { t } = useTranslation()
   const [categories, setCategories] = useState(() => getCategories())
@@ -541,7 +544,7 @@ export function InventoryItemForm({
             {t("inventory.actions.cancel")}
           </Button>
           <Button type="submit" disabled={isCompressing}>
-            {t("inventory.form.save")}
+            {submitLabel ?? t("inventory.form.save")}
           </Button>
         </div>
       </form>

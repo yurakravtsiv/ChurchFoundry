@@ -35,6 +35,17 @@
     "showArchived": "Показати архівовані",
     "hideArchived": "Приховати архівовані",
     "itemNotFound": "Предмет не знайдено",
+    "detail": {
+      "backToInventory": "Назад до інвентарю",
+      "returnToInventory": "Повернутись до інвентарю",
+      "qrTitle": "QR-код предмету",
+      "qrHint": "Роздрукуйте і прикріпіть до предмета. При скануванні відкриється ця сторінка.",
+      "saved": "Збережено ✓",
+      "discardTitle": "Скасувати зміни?",
+      "discardDescription": "Незбережені дані буде втрачено.",
+      "discardStay": "Скасувати",
+      "discardConfirm": "Так, скасувати"
+    },
     "archiveConfirmTitle": "Архівувати «{{name}}»?",
     "archiveConfirmDescription": "Архівовані предмети можна знову показати через перемикач архіву.",
     "empty": {

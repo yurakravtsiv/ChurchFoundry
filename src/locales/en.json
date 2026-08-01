@@ -35,6 +35,17 @@
     "showArchived": "Show archived",
     "hideArchived": "Hide archived",
     "itemNotFound": "Item not found",
+    "detail": {
+      "backToInventory": "Back to inventory",
+      "returnToInventory": "Return to inventory",
+      "qrTitle": "Item QR code",
+      "qrHint": "Print and attach it to the item. Scanning opens this page.",
+      "saved": "Saved ✓",
+      "discardTitle": "Discard changes?",
+      "discardDescription": "Unsaved changes will be lost.",
+      "discardStay": "Cancel",
+      "discardConfirm": "Yes, discard"
+    },
     "archiveConfirmTitle": "Archive “{{name}}”?",
     "archiveConfirmDescription": "Archived items can be shown again with the archive toggle.",
     "empty": {

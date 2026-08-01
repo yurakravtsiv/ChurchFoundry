@@ -7,16 +7,7 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table"
-import {
-  ArrowUpDown,
-  Eye,
-  EyeOff,
-  MoreHorizontal,
-  Package,
-  Plus,
-  Search,
-  Wrench,
-} from "lucide-react"
+import { ArrowUpDown, Eye, EyeOff, MoreVertical, Package, Plus, Search, Wrench } from "lucide-react"
 import { useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
@@ -294,7 +285,7 @@ export function InventoryPage() {
                   onClick={(event) => event.stopPropagation()}
                   aria-label={t("inventory.actions.menu")}
                 >
-                  <MoreHorizontal className="size-4" />
+                  <MoreVertical className="size-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
