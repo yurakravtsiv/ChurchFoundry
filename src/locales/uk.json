@@ -67,7 +67,8 @@
       "subcategory": "Підкатегорія",
       "availability": "Наявність",
       "location": "Локація",
-      "clear": "Скинути"
+      "clear": "Скинути",
+      "clearAll": "Скинути всі фільтри"
     },
     "availability": {
       "inChurch": "В церкві",

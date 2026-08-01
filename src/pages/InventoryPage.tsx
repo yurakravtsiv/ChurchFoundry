@@ -15,6 +15,7 @@ import {
   EyeOff,
   FileSpreadsheet,
   FileText,
+  FilterX,
   MoreVertical,
   Package,
   Pencil,
@@ -409,6 +410,23 @@ export function InventoryPage() {
 
   const openCreate = () => setCreateOpen(true)
 
+  const hasActiveFilters =
+    Boolean(search) ||
+    categoryFilter !== "all" ||
+    subcategoryFilter !== "all" ||
+    availabilityFilter !== "all" ||
+    locationFilter !== "all" ||
+    showArchived
+
+  const clearAllFilters = () => {
+    setSearch("")
+    setCategoryFilter("all")
+    setSubcategoryFilter("all")
+    setAvailabilityFilter("all")
+    setLocationFilter("all")
+    setShowArchived(false)
+  }
+
   const runExport = async (format: "xlsx" | "pdf") => {
     const exportItems = filteredItems.filter((item) => !item.removed && !item.archived)
     if (exportItems.length === 0) {
@@ -627,30 +645,52 @@ export function InventoryPage() {
             </div>
 
             <TooltipProvider delayDuration={200}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className={cn("size-9 shrink-0", showArchived && "border-primary text-primary")}
-                    onClick={() => setShowArchived((value) => !value)}
-                    aria-pressed={showArchived}
-                    aria-label={
-                      showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")
-                    }
-                  >
-                    {showArchived ? (
-                      <Eye className="size-4" aria-hidden />
-                    ) : (
-                      <EyeOff className="size-4" aria-hidden />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")}
-                </TooltipContent>
-              </Tooltip>
+              <div className="flex shrink-0 items-end gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className={cn(
+                        "size-9 shrink-0",
+                        showArchived && "border-primary text-primary",
+                      )}
+                      onClick={() => setShowArchived((value) => !value)}
+                      aria-pressed={showArchived}
+                      aria-label={
+                        showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")
+                      }
+                    >
+                      {showArchived ? (
+                        <Eye className="size-4" aria-hidden />
+                      ) : (
+                        <EyeOff className="size-4" aria-hidden />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")}
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="size-9 shrink-0"
+                      disabled={!hasActiveFilters}
+                      onClick={clearAllFilters}
+                      aria-label={t("inventory.filters.clearAll")}
+                    >
+                      <FilterX className="size-4" aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("inventory.filters.clearAll")}</TooltipContent>
+                </Tooltip>
+              </div>
             </TooltipProvider>
           </div>
         </div>
