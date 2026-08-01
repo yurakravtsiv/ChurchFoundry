@@ -52,6 +52,7 @@ import {
   createInventoryItem,
   getCategories,
   getInventoryItems,
+  getLocations,
   getSubcategories,
 } from "@/lib/inventoryStorage"
 import { cn } from "@/lib/utils"
@@ -77,6 +78,7 @@ function loadInventoryState() {
     items: getInventoryItems(),
     categories: getCategories(),
     subcategories: getSubcategories(),
+    locations: getLocations(),
   }
 }
 
@@ -85,12 +87,14 @@ export function InventoryPage() {
   const navigate = useNavigate()
   const locale = i18n.language.startsWith("en") ? "en" : "uk"
 
-  const [{ items, categories, subcategories }, setInventoryState] = useState(loadInventoryState)
+  const [{ items, categories, subcategories, locations }, setInventoryState] =
+    useState(loadInventoryState)
   const [sorting, setSorting] = useState<SortingState>([])
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [subcategoryFilter, setSubcategoryFilter] = useState("all")
   const [availabilityFilter, setAvailabilityFilter] = useState("all")
+  const [locationFilter, setLocationFilter] = useState("all")
   const [showArchived, setShowArchived] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [createFormDirty, setCreateFormDirty] = useState(false)
@@ -125,6 +129,10 @@ export function InventoryPage() {
     return new Map(subcategories.map((subcategory) => [subcategory.id, subcategory.name]))
   }, [subcategories])
 
+  const locationNameById = useMemo(() => {
+    return new Map(locations.map((location) => [location.id, location.name]))
+  }, [locations])
+
   const filteredSubcategories = useMemo(() => {
     if (categoryFilter === "all") {
       return []
@@ -148,12 +156,15 @@ export function InventoryPage() {
       if (availabilityFilter !== "all" && item.availability !== availabilityFilter) {
         return false
       }
+      if (locationFilter !== "all" && item.locationId !== locationFilter) {
+        return false
+      }
       if (query) {
         const haystack = [
           item.name,
           categoryNameById.get(item.categoryId) ?? "",
           subcategoryNameById.get(item.subcategoryId) ?? "",
-          item.location,
+          locationNameById.get(item.locationId) ?? "",
           String(item.quantity),
           item.availabilityComment,
           item.comment,
@@ -172,6 +183,8 @@ export function InventoryPage() {
     categoryFilter,
     categoryNameById,
     items,
+    locationFilter,
+    locationNameById,
     search,
     showArchived,
     subcategoryFilter,
@@ -247,9 +260,9 @@ export function InventoryPage() {
         ),
       },
       {
-        accessorKey: "location",
+        accessorKey: "locationId",
         header: t("inventory.columns.location"),
-        cell: ({ row }) => row.original.location || "—",
+        cell: ({ row }) => locationNameById.get(row.original.locationId) || "—",
         enableSorting: false,
       },
       {
@@ -331,7 +344,7 @@ export function InventoryPage() {
         enableSorting: false,
       },
     ],
-    [categoryNameById, locale, navigate, subcategoryNameById, t],
+    [categoryNameById, locale, locationNameById, navigate, subcategoryNameById, t],
   )
 
   const table = useReactTable({
@@ -371,7 +384,7 @@ export function InventoryPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2">
+        <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2">
           <div className="flex min-w-0 flex-col gap-1.5">
             <Label htmlFor="inventory-search" className="truncate">
               {t("inventory.searchPlaceholder")}
@@ -451,6 +464,25 @@ export function InventoryPage() {
                 <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
                 <SelectItem value="in_church">{t("inventory.availability.inChurch")}</SelectItem>
                 <SelectItem value="borrowed">{t("inventory.availability.borrowed")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="inventory-filter-location" className="truncate">
+              {t("inventory.filters.location")}
+            </Label>
+            <Select value={locationFilter} onValueChange={setLocationFilter}>
+              <SelectTrigger id="inventory-filter-location" className="h-9 w-full min-w-0">
+                <SelectValue placeholder={t("inventory.filters.all")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                {locations.map((location) => (
+                  <SelectItem key={location.id} value={location.id}>
+                    {location.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

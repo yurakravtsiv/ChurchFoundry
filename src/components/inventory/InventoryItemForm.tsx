@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { CreateCategoryDialog } from "@/components/inventory/CreateCategoryDialog"
+import { CreateLocationDialog } from "@/components/inventory/CreateLocationDialog"
 import { CreateSubcategoryDialog } from "@/components/inventory/CreateSubcategoryDialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,7 +19,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { compressImage, getCategories, getSubcategories } from "@/lib/inventoryStorage"
+import {
+  compressImage,
+  getCategories,
+  getLocations,
+  getSubcategories,
+} from "@/lib/inventoryStorage"
 import { cn } from "@/lib/utils"
 import type { CreateInventoryItemInput, InventoryItem, InventoryPhoto } from "@/types/inventory"
 
@@ -101,10 +107,13 @@ export function InventoryItemForm({
   const { t } = useTranslation()
   const [categories, setCategories] = useState(() => getCategories())
   const [subcategories, setSubcategories] = useState(() => getSubcategories())
+  const [locations, setLocations] = useState(() => getLocations())
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false)
   const [createSubcategoryOpen, setCreateSubcategoryOpen] = useState(false)
+  const [createLocationOpen, setCreateLocationOpen] = useState(false)
   const [categorySelectOpen, setCategorySelectOpen] = useState(false)
   const [subcategorySelectOpen, setSubcategorySelectOpen] = useState(false)
+  const [locationSelectOpen, setLocationSelectOpen] = useState(false)
   const [isCompressing, setIsCompressing] = useState(false)
 
   useEffect(() => {
@@ -113,6 +122,7 @@ export function InventoryItemForm({
   const previousCategoryIdRef = useRef<string | null>(null)
   const pendingCategoryIdRef = useRef<string | null>(null)
   const pendingSubcategoryIdRef = useRef<string | null>(null)
+  const pendingLocationIdRef = useRef<string | null>(null)
 
   const schema = useMemo(
     () =>
@@ -133,7 +143,7 @@ export function InventoryItemForm({
               .number({ error: t("inventory.form.validation.quantityRequired") })
               .min(1, t("inventory.form.validation.quantityMin")),
           ),
-          location: z.string().optional().default(""),
+          locationId: z.string().min(1, t("inventory.form.validation.locationRequired")),
           availability: z.enum(["in_church", "borrowed"]),
           availabilityComment: z.string().optional().default(""),
           supplier: z.string().optional().default(""),
@@ -173,7 +183,7 @@ export function InventoryItemForm({
       categoryId: initialData?.categoryId ?? "",
       subcategoryId: initialData?.subcategoryId ?? "",
       quantity: initialData?.quantity ?? 1,
-      location: initialData?.location ?? "",
+      locationId: initialData?.locationId ?? "",
       availability: initialData?.availability ?? ("in_church" as const),
       availabilityComment: initialData?.availabilityComment ?? "",
       supplier: initialData?.supplier ?? "",
@@ -257,6 +267,17 @@ export function InventoryItemForm({
     setSubcategorySelectOpen(false)
   }, [subcategories, setValue])
 
+  // Select newly created location once it is in the options list.
+  useEffect(() => {
+    const pendingId = pendingLocationIdRef.current
+    if (!pendingId || !locations.some((location) => location.id === pendingId)) {
+      return
+    }
+    pendingLocationIdRef.current = null
+    setValue("locationId", pendingId, { shouldDirty: true, shouldValidate: true })
+    setLocationSelectOpen(false)
+  }, [locations, setValue])
+
   // If selected category no longer exists, clear both selects.
   useEffect(() => {
     if (pendingCategoryIdRef.current) {
@@ -275,7 +296,7 @@ export function InventoryItemForm({
         categoryId: values.categoryId,
         subcategoryId: values.subcategoryId,
         quantity: values.quantity,
-        location: values.location?.trim() ?? "",
+        locationId: values.locationId,
         availability: values.availability,
         availabilityComment:
           values.availability === "borrowed" ? (values.availabilityComment?.trim() ?? "") : "",
@@ -434,12 +455,40 @@ export function InventoryItemForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="inventory-item-location">{t("inventory.form.location")}</Label>
-            <Input
-              id="inventory-item-location"
-              {...register("location")}
-              placeholder={t("inventory.form.locationPlaceholder")}
+            <Label>{t("inventory.form.location")} *</Label>
+            <Controller
+              control={control}
+              name="locationId"
+              render={({ field }) => (
+                <Select
+                  open={locationSelectOpen}
+                  onOpenChange={setLocationSelectOpen}
+                  value={field.value || undefined}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger aria-label={t("inventory.form.location")}>
+                    <SelectValue placeholder={t("inventory.form.locationPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map((location) => (
+                      <SelectItem key={location.id} value={location.id}>
+                        {location.name}
+                      </SelectItem>
+                    ))}
+                    <SelectCreateAction
+                      label={t("inventory.form.createLocation")}
+                      onCreate={() => {
+                        setLocationSelectOpen(false)
+                        setCreateLocationOpen(true)
+                      }}
+                    />
+                  </SelectContent>
+                </Select>
+              )}
             />
+            {errors.locationId ? (
+              <p className="text-sm text-destructive">{errors.locationId.message}</p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -619,6 +668,17 @@ export function InventoryItemForm({
           pendingSubcategoryIdRef.current = subcategory.id
           setSubcategories((prev) =>
             prev.some((item) => item.id === subcategory.id) ? prev : [...prev, subcategory],
+          )
+        }}
+      />
+
+      <CreateLocationDialog
+        open={createLocationOpen}
+        onOpenChange={setCreateLocationOpen}
+        onCreated={(location) => {
+          pendingLocationIdRef.current = location.id
+          setLocations((prev) =>
+            prev.some((item) => item.id === location.id) ? prev : [...prev, location],
           )
         }}
       />

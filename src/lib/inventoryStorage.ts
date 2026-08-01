@@ -2,12 +2,14 @@ import type {
   Category,
   CreateInventoryItemInput,
   InventoryItem,
+  Location,
   Subcategory,
   UpdateInventoryItemInput,
 } from "@/types/inventory"
 
 const CATEGORIES_KEY = "churchfoundry:categories"
 const SUBCATEGORIES_KEY = "churchfoundry:subcategories"
+const LOCATIONS_KEY = "churchfoundry:locations"
 const INVENTORY_ITEMS_KEY = "churchfoundry:inventory-items"
 
 const IMAGE_MAX_SIDE_PX = 800
@@ -61,7 +63,58 @@ export function saveSubcategories(subcategories: Subcategory[]): void {
   writeJson(SUBCATEGORIES_KEY, subcategories)
 }
 
+export function getLocations(): Location[] {
+  return readJsonArray<Location>(LOCATIONS_KEY)
+}
+
+export function saveLocations(locations: Location[]): void {
+  writeJson(LOCATIONS_KEY, locations)
+}
+
+/** Migrates legacy `location: string` items to `locationId` + locations list. */
+function migrateLegacyLocationFields(): void {
+  const raw = readJsonArray<Record<string, unknown>>(INVENTORY_ITEMS_KEY)
+  const needsMigration = raw.some(
+    (item) => "location" in item || typeof item.locationId !== "string",
+  )
+  if (!needsMigration) {
+    return
+  }
+
+  let locations = getLocations()
+  const nameToId = new Map(locations.map((location) => [location.name.toLowerCase(), location.id]))
+
+  const migrated = raw.map((item) => {
+    const existingId = typeof item.locationId === "string" ? item.locationId : ""
+    if (existingId) {
+      const { location: _legacyLocation, ...rest } = item
+      return { ...rest, locationId: existingId }
+    }
+
+    const locationName = typeof item.location === "string" ? item.location.trim() : ""
+    let locationId = ""
+    if (locationName) {
+      const key = locationName.toLowerCase()
+      let id = nameToId.get(key)
+      if (!id) {
+        const created: Location = { id: newId(), name: locationName }
+        locations = [...locations, created]
+        nameToId.set(key, created.id)
+        id = created.id
+      }
+      locationId = id
+    }
+
+    const { location: _legacyLocation, ...rest } = item
+    return { ...rest, locationId }
+  })
+
+  saveLocations(locations)
+  writeJson(INVENTORY_ITEMS_KEY, migrated)
+}
+
 export function getInventoryItems(): InventoryItem[] {
+  migrateLegacyLocationFields()
   return readJsonArray<InventoryItem>(INVENTORY_ITEMS_KEY)
 }
 
@@ -85,6 +138,13 @@ export function createSubcategory(categoryId: string, name: string): Subcategory
   const next = [...getSubcategories(), subcategory]
   saveSubcategories(next)
   return subcategory
+}
+
+export function createLocation(name: string): Location {
+  const location: Location = { id: newId(), name: name.trim() }
+  const next = [...getLocations(), location]
+  saveLocations(next)
+  return location
 }
 
 /** Видаляє категорію і всі її підкатегорії каскадно. */

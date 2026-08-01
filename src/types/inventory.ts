@@ -9,6 +9,11 @@ export type Subcategory = {
   name: string
 }
 
+export type Location = {
+  id: string
+  name: string
+}
+
 export type AvailabilityStatus = "in_church" | "borrowed"
 
 export type InventoryPhoto = {
@@ -22,7 +27,7 @@ export type InventoryItem = {
   categoryId: string // обов'язкове
   subcategoryId: string // обов'язкове
   quantity: number // обов'язкове
-  location: string // поки просто string
+  locationId: string // обов'язкове
   availability: AvailabilityStatus // обов'язкове
   /** Обов'язкове тільки якщо availability === "borrowed". */
   availabilityComment: string

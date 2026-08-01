@@ -61,7 +61,8 @@
       "all": "All",
       "category": "Category",
       "subcategory": "Subcategory",
-      "availability": "Availability"
+      "availability": "Availability",
+      "location": "Location"
     },
     "availability": {
       "inChurch": "In church",
@@ -107,7 +108,11 @@
       "createAction": "Create",
       "quantity": "Quantity",
       "location": "Location",
-      "locationPlaceholder": "Where it is stored",
+      "locationPlaceholder": "Select a location",
+      "locationName": "Location name",
+      "locationNamePlaceholder": "e.g. Storage room",
+      "createLocation": "Create location",
+      "createLocationTitle": "New location",
       "availability": "Availability",
       "availabilityComment": "Availability comment",
       "availabilityCommentPlaceholder": "Who borrowed it / until when",
@@ -127,11 +132,13 @@
         "nameRequired": "Name is required",
         "categoryRequired": "Category is required",
         "subcategoryRequired": "Subcategory is required",
+        "locationRequired": "Location is required",
         "quantityRequired": "Quantity is required",
         "quantityMin": "Quantity must be at least 1",
         "availabilityCommentRequired": "Comment is required for borrowed items",
         "categoryNameRequired": "Category name is required",
-        "subcategoryNameRequired": "Subcategory name is required"
+        "subcategoryNameRequired": "Subcategory name is required",
+        "locationNameRequired": "Location name is required"
       }
     }
   },

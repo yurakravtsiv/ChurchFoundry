@@ -61,7 +61,8 @@
       "all": "Усі",
       "category": "Категорія",
       "subcategory": "Підкатегорія",
-      "availability": "Наявність"
+      "availability": "Наявність",
+      "location": "Локація"
     },
     "availability": {
       "inChurch": "В церкві",
@@ -107,7 +108,11 @@
       "createAction": "Створити",
       "quantity": "Кількість",
       "location": "Локація",
-      "locationPlaceholder": "Де зберігається",
+      "locationPlaceholder": "Оберіть локацію",
+      "locationName": "Назва локації",
+      "locationNamePlaceholder": "Наприклад, Склад",
+      "createLocation": "Створити локацію",
+      "createLocationTitle": "Нова локація",
       "availability": "Наявність",
       "availabilityComment": "Коментар наявності",
       "availabilityCommentPlaceholder": "Кому позичено / до коли",
@@ -127,11 +132,13 @@
         "nameRequired": "Вкажіть назву",
         "categoryRequired": "Оберіть категорію",
         "subcategoryRequired": "Оберіть підкатегорію",
+        "locationRequired": "Оберіть локацію",
         "quantityRequired": "Вкажіть кількість",
         "quantityMin": "Кількість має бути щонайменше 1",
         "availabilityCommentRequired": "Вкажіть коментар для позиченого предмета",
         "categoryNameRequired": "Вкажіть назву категорії",
-        "subcategoryNameRequired": "Вкажіть назву підкатегорії"
+        "subcategoryNameRequired": "Вкажіть назву підкатегорії",
+        "locationNameRequired": "Вкажіть назву локації"
       }
     }
   },
