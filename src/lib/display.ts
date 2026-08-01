@@ -31,7 +31,8 @@ export function readSafeAreaInsetBottom(): number {
   return inset
 }
 
-/** Keep `html.standalone` + `--safe-area-bottom` in sync for PWA edge painting. */
+/** Keep `html.standalone` in sync. Only set --safe-area-bottom when measured > 0
+ *  (setting 0px would override CSS `env()` fallbacks and kill the strip fill). */
 export function syncStandaloneDisplay(isStandalone = isStandalonePwa()) {
   const root = document.documentElement
   root.classList.toggle("standalone", isStandalone)
@@ -41,5 +42,10 @@ export function syncStandaloneDisplay(isStandalone = isStandalonePwa()) {
     return
   }
 
-  root.style.setProperty("--safe-area-bottom", `${readSafeAreaInsetBottom()}px`)
+  const inset = readSafeAreaInsetBottom()
+  if (inset > 0) {
+    root.style.setProperty("--safe-area-bottom", `${inset}px`)
+  } else {
+    root.style.removeProperty("--safe-area-bottom")
+  }
 }

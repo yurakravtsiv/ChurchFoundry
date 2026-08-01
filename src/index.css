@@ -100,40 +100,29 @@ html.theme-switching *::after {
 }
 
 /*
-  Installed PWA: the fixed layer stops above the home indicator. Do NOT grow the
-  sheet box by that inset (it shoved the footer off-screen). Paint the band with
-  ::after instead so language/theme controls stay visible.
+  Installed PWA: fixed layers stop above the home indicator. Extend the box into
+  that band, then pad the content by the same amount (border-box) so the footer
+  stays visible while the background covers the strip.
 */
 html.standalone .sheet-overlay,
 html.standalone .drawer-sheet {
   top: 0 !important;
-  bottom: 0 !important;
+  bottom: calc(-1 * constant(safe-area-inset-bottom)) !important;
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px)) !important;
   height: auto !important;
   max-height: none !important;
-  overflow: visible !important;
+  box-sizing: border-box !important;
 }
 
 html.standalone .drawer-sheet {
-  min-height: 0 !important;
-}
-
-html.standalone .sheet-overlay::after,
-html.standalone .drawer-sheet::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  width: 100%;
-  top: 100%;
-  height: var(--safe-area-bottom, env(safe-area-inset-bottom, 0px));
-  pointer-events: none;
-}
-
-html.standalone .sheet-overlay::after {
-  background-color: rgb(0 0 0 / 0.8);
-}
-
-html.standalone .drawer-sheet::after {
+  padding-bottom: constant(safe-area-inset-bottom) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
   background-color: hsl(var(--background));
+}
+
+html.standalone .sheet-overlay {
+  right: 0 !important;
+  left: 0 !important;
 }
 
 @layer base {

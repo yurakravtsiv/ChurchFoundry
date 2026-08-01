@@ -169,14 +169,13 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="left"
-          className="drawer-sheet flex h-full flex-col gap-0 overflow-visible bg-background p-0"
+          className="drawer-sheet flex h-full flex-col gap-0 bg-background p-0"
         >
           <div
             className={cn(
-              "flex h-full min-h-0 flex-1 flex-col bg-background px-4 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 pt-[max(1rem,env(safe-area-inset-top,0px))]",
-              // Browser: keep controls above the home indicator / browser chrome.
-              // PWA: no extra pad — home-indicator band is painted by ::after.
-              isStandalone ? "pb-3" : "pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]",
+              "flex h-full min-h-0 flex-1 flex-col bg-background px-4 pb-3 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 pt-[max(1rem,env(safe-area-inset-top,0px))]",
+              // Browser: extra bottom inset for chrome. PWA: sheet CSS pads the safe band.
+              !isStandalone && "pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]",
             )}
           >
             <SheetHeader className="text-left">
