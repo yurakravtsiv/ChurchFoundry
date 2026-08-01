@@ -16,6 +16,71 @@
   }
 }
 
+/* Splash: scale only — keep icon fully opaque (no opacity pulse). */
+@keyframes splash-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes sheet-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes sheet-slide-out-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes sheet-slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes sheet-slide-out-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -41,6 +106,23 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --animate-breathe: breathe 2.2s ease-in-out infinite;
+  --animate-splash-breathe: splash-breathe 2.2s ease-in-out infinite;
+}
+
+.sheet-overlay[data-state="open"] {
+  animation: sheet-overlay-in 320ms ease-out both;
+}
+
+.sheet-overlay[data-state="closed"] {
+  animation: sheet-overlay-out 240ms ease-in both;
+}
+
+.drawer-sheet[data-state="open"] {
+  animation: sheet-slide-in-left 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.drawer-sheet[data-state="closed"] {
+  animation: sheet-slide-out-left 280ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 :root,
@@ -138,6 +220,11 @@ html.standalone .sheet-overlay {
 @layer base {
   * {
     @apply border-border;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
   }
 
   html {

@@ -95,12 +95,16 @@ export function SplashScreen({ active, onFinished }: SplashScreenProps) {
       role="status"
     >
       <div className="splash-screen__mark">
+        {/*
+          192px matches the centered apple-touch-icon size on iOS launch screens,
+          so the React splash continues from the system splash without a size jump.
+        */}
         <img
-          src="/favicon.svg"
+          src="/splash_screens/icon.png"
           alt="ChurchFoundry"
-          width={128}
-          height={128}
-          className="size-32 animate-breathe select-none border-0 outline-none ring-0 shadow-none"
+          width={192}
+          height={192}
+          className="size-48 animate-splash-breathe select-none border-0 outline-none ring-0 shadow-none"
           draggable={false}
         />
       </div>

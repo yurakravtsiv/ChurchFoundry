@@ -70,7 +70,7 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
           title={collapsed ? t(labelKey) : undefined}
           className={({ isActive }) =>
             cn(
-              "flex items-center rounded-md text-sm font-medium transition-colors",
+              "flex items-center rounded-md text-sm font-medium transition-[padding,gap,background-color,color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
               collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2",
               isActive
                 ? "bg-secondary text-secondary-foreground"
@@ -79,7 +79,17 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
           }
         >
           <Icon className="size-4 shrink-0" />
-          <span className={cn(collapsed && "sr-only")}>{t(labelKey)}</span>
+          <span
+            className={cn(
+              "truncate transition-[opacity,max-width] duration-200 ease-out",
+              collapsed
+                ? "pointer-events-none max-w-0 overflow-hidden opacity-0"
+                : "max-w-[12rem] opacity-100",
+            )}
+            aria-hidden={collapsed || undefined}
+          >
+            {t(labelKey)}
+          </span>
         </NavLink>
       ))}
     </nav>
@@ -163,7 +173,8 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
     <>
       <aside
         className={cn(
-          "hidden shrink-0 border-r border-border bg-background transition-[width] duration-200 md:flex md:flex-col md:py-4",
+          "hidden shrink-0 overflow-hidden border-r border-border bg-background md:flex md:flex-col md:py-4",
+          "transition-[width,padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
           collapsed ? "w-16 px-2" : "w-60 px-3",
         )}
       >
@@ -171,10 +182,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
       </aside>
 
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="left"
-          className="drawer-sheet flex h-full flex-col gap-0 bg-background p-0"
-        >
+        <SheetContent side="left" className="flex h-full flex-col gap-0 bg-background p-0">
           <div
             className={cn(
               "flex h-full min-h-0 flex-1 flex-col bg-background px-4 pb-3 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 pt-[max(1rem,env(safe-area-inset-top,0px))]",
