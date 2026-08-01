@@ -22,14 +22,18 @@
     "calendar": "Календар",
     "inventory": "Інвентар",
     "comingSoon": "Незабаром",
-    "comingSoonMessage": "Незабаром...",
-    "inDevelopment": "У розробці..."
+    "comingSoonMessage": "Незабаром..."
   },
   "inventory": {
     "downloadQr": "Завантажити як зображення",
     "searchPlaceholder": "Пошук…",
     "create": "Створити",
-    "exportXlsx": "Експорт в .xlsx",
+    "export": {
+      "label": "ЕКСПОРТ",
+      "xlsx": "XLSX",
+      "pdf": "PDF",
+      "empty": "Немає даних для експорту"
+    },
     "showArchived": "Показати архівовані",
     "hideArchived": "Приховати архівовані",
     "itemNotFound": "Предмет не знайдено",

@@ -7,7 +7,17 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, Eye, EyeOff, MoreVertical, Package, Plus, Search, Wrench } from "lucide-react"
+import {
+  ArrowUpDown,
+  Eye,
+  EyeOff,
+  FileSpreadsheet,
+  FileText,
+  MoreVertical,
+  Package,
+  Plus,
+  Search,
+} from "lucide-react"
 import { useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
@@ -47,6 +57,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { exportToPdf, exportToXlsx, prepareExportData } from "@/lib/inventoryExport"
 import {
   archiveInventoryItem,
   createInventoryItem,
@@ -117,7 +128,6 @@ export function InventoryPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [createFormDirty, setCreateFormDirty] = useState(false)
   const [discardCreateOpen, setDiscardCreateOpen] = useState(false)
-  const [exportOpen, setExportOpen] = useState(false)
   const [archiveTarget, setArchiveTarget] = useState<InventoryItem | null>(null)
 
   const requestCloseCreate = useCallback(() => {
@@ -354,6 +364,19 @@ export function InventoryPage() {
 
   const openCreate = () => setCreateOpen(true)
 
+  const runExport = (format: "xlsx" | "pdf") => {
+    const data = prepareExportData(filteredItems, categories, subcategories, locations)
+    if (data.length === 0) {
+      window.alert(t("inventory.export.empty"))
+      return
+    }
+    if (format === "xlsx") {
+      exportToXlsx(data)
+      return
+    }
+    exportToPdf(data)
+  }
+
   const isStorageEmpty = items.length === 0
   const isFilterEmpty = !isStorageEmpty && filteredItems.length === 0
 
@@ -365,9 +388,19 @@ export function InventoryPage() {
             <Plus className="size-4" />
             {t("inventory.create")}
           </Button>
-          <Button type="button" variant="outline" onClick={() => setExportOpen(true)}>
-            {t("inventory.exportXlsx")}
-          </Button>
+          <div className="ml-4 flex items-center gap-2">
+            <span className="text-sm font-medium tracking-wide text-muted-foreground">
+              {t("inventory.export.label")}
+            </span>
+            <Button type="button" variant="outline" size="sm" onClick={() => runExport("xlsx")}>
+              <FileSpreadsheet className="size-4" />
+              {t("inventory.export.xlsx")}
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => runExport("pdf")}>
+              <FileText className="size-4" />
+              {t("inventory.export.pdf")}
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2">
@@ -621,25 +654,6 @@ export function InventoryPage() {
               {t("inventory.unsavedChanges.yes")}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader className="sr-only">
-            <DialogTitle>{t("inventory.exportXlsx")}</DialogTitle>
-            <DialogDescription>{t("nav.inDevelopment")}</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <Wrench
-              className="mb-6 size-24 animate-breathe text-muted-foreground sm:size-28"
-              strokeWidth={1.25}
-              aria-hidden
-            />
-            <p className="text-2xl font-medium tracking-tight text-muted-foreground">
-              {t("nav.inDevelopment")}
-            </p>
-          </div>
         </DialogContent>
       </Dialog>
 

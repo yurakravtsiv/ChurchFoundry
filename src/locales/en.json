@@ -22,14 +22,18 @@
     "calendar": "Calendar",
     "inventory": "Inventory",
     "comingSoon": "Soon",
-    "comingSoonMessage": "Coming soon...",
-    "inDevelopment": "In development..."
+    "comingSoonMessage": "Coming soon..."
   },
   "inventory": {
     "downloadQr": "Download as image",
     "searchPlaceholder": "Search…",
     "create": "Create",
-    "exportXlsx": "Export to .xlsx",
+    "export": {
+      "label": "EXPORT",
+      "xlsx": "XLSX",
+      "pdf": "PDF",
+      "empty": "No data to export"
+    },
     "showArchived": "Show archived",
     "hideArchived": "Hide archived",
     "itemNotFound": "Item not found",
