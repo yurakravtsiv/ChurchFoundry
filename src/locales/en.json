@@ -23,9 +23,7 @@
     "inventory": "Inventory",
     "comingSoon": "Soon",
     "comingSoonMessage": "Coming soon...",
-    "inDevelopment": "In development...",
-    "collapseSidebar": "Collapse",
-    "expandSidebar": "Expand"
+    "inDevelopment": "In development..."
   },
   "inventory": {
     "downloadQr": "Download as image",

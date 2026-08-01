@@ -23,9 +23,7 @@
     "inventory": "Інвентар",
     "comingSoon": "Незабаром",
     "comingSoonMessage": "Незабаром...",
-    "inDevelopment": "У розробці...",
-    "collapseSidebar": "Згорнути",
-    "expandSidebar": "Розгорнути"
+    "inDevelopment": "У розробці..."
   },
   "inventory": {
     "downloadQr": "Завантажити як зображення",
