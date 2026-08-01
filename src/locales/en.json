@@ -33,7 +33,8 @@
   },
   "update": {
     "available": "New version available",
-    "action": "Update"
+    "action": "Update",
+    "dismiss": "Dismiss"
   },
   "auth": {
     "login": "Log in",

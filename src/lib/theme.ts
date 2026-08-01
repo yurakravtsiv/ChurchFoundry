@@ -41,9 +41,19 @@ export function applyThemeClass(theme: Theme) {
   root.classList.add(theme)
   root.style.colorScheme = theme
 
+  // Keep inline colors in sync with theme toggles (FOWT sets these before React mounts).
   const themeColor = theme === "dark" ? "#0A0A0A" : "#FAFAFA"
-  const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) {
-    meta.setAttribute("content", themeColor)
+  root.style.backgroundColor = themeColor
+  if (document.body) {
+    document.body.style.backgroundColor = themeColor
   }
+
+  // iOS/PWA often caches theme-color; recreate the meta tag so the safe-area chrome updates live.
+  const existing = document.querySelector('meta[name="theme-color"]')
+  const parent = existing?.parentElement ?? document.head
+  existing?.remove()
+  const meta = document.createElement("meta")
+  meta.setAttribute("name", "theme-color")
+  meta.setAttribute("content", themeColor)
+  parent.appendChild(meta)
 }

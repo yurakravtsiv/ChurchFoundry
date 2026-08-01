@@ -5,7 +5,7 @@ const RELOAD_FALLBACK_MS = 1500
 
 export function useAppUpdate() {
   const {
-    needRefresh: [needRefresh],
+    needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(swUrl, registration) {
@@ -30,7 +30,13 @@ export function useAppUpdate() {
     },
   })
 
+  const dismissUpdate = () => {
+    setNeedRefresh(false)
+  }
+
   const updateApp = async () => {
+    // Hide the banner immediately; reload continues in the background.
+    setNeedRefresh(false)
     console.log("[pwa] updateApp: before updateServiceWorker(true)")
 
     // Schedule immediately so a hung activation (e.g. other tabs holding the old SW)
@@ -53,5 +59,6 @@ export function useAppUpdate() {
   return {
     needRefresh,
     updateApp,
+    dismissUpdate,
   }
 }
