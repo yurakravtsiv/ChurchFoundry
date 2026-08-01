@@ -40,6 +40,12 @@
     "login": "Увійти",
     "loggingIn": "Вхід...",
     "loginSubtitle": "Увійдіть, щоб продовжити",
+    "logout": "Вийти",
+    "loggingOut": "Вихід...",
+    "logoutConfirmTitle": "Вийти з облікового запису?",
+    "logoutConfirmDescription": "Ви впевнені, що хочете вийти?",
+    "logoutConfirm": "Вийти",
+    "logoutCancel": "Скасувати",
     "email": "Email",
     "password": "Пароль",
     "errors": {

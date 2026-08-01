@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router"
 
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
+import { LogoutButton } from "@/components/LogoutButton"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { Button } from "@/components/ui/button"
 import {
@@ -102,9 +103,12 @@ function SidebarPanel({
       <div className="mt-auto space-y-3">
         <SidebarVersion collapsed={collapsed} />
         <div className={cn("border-t border-border pt-3", collapsed && "pt-2")}>
-          <div className="flex items-center gap-3 md:hidden">
-            <LanguageSwitcher showLabel={false} />
-            <ThemeToggle />
+          <div className="flex items-center justify-between gap-3 md:hidden">
+            <div className="flex items-center gap-3">
+              <LanguageSwitcher showLabel={false} />
+              <ThemeToggle />
+            </div>
+            <LogoutButton onSignedOut={onNavigate} />
           </div>
           {onToggleCollapsed ? (
             <div className="hidden md:block">

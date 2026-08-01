@@ -40,6 +40,12 @@
     "login": "Log in",
     "loggingIn": "Signing in...",
     "loginSubtitle": "Sign in to continue",
+    "logout": "Log out",
+    "loggingOut": "Signing out...",
+    "logoutConfirmTitle": "Log out of your account?",
+    "logoutConfirmDescription": "Are you sure you want to log out?",
+    "logoutConfirm": "Log out",
+    "logoutCancel": "Cancel",
     "email": "Email",
     "password": "Password",
     "errors": {
