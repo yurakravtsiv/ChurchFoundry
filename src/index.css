@@ -99,36 +99,25 @@ html.theme-switching *::after {
   animation: none !important;
 }
 
-/* Block iOS rubber-band while splash covers the UI. */
+/* Block iOS rubber-band while splash covers the UI (no body position lock). */
 html.splash-open,
 html.splash-open body {
   overflow: hidden !important;
   overscroll-behavior: none !important;
-  touch-action: none;
 }
 
-/*
-  Splash sits in the safe viewport on iOS, so flex-center is high by ~half the
-  home-indicator inset. padding-top shifts optical center down; ::after paints
-  the home-indicator band so the black cover stays full-bleed.
-*/
 .splash-screen {
-  inset: 0;
-  box-sizing: border-box;
-  padding-top: var(--splash-shift, env(safe-area-inset-bottom, 0px));
   overflow: hidden;
   overscroll-behavior: none;
   touch-action: none;
 }
 
-.splash-screen::after {
-  content: "";
+/* Same geometric center as the native iOS launch image. */
+.splash-screen__mark {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  height: var(--splash-shift, env(safe-area-inset-bottom, 0px));
-  background: #0a0a0a;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
 }
 
 @layer base {

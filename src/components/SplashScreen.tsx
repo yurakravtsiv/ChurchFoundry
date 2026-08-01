@@ -10,16 +10,6 @@ const MIN_VISIBLE_MS = 3000
 const FADE_MS = 350
 const SPLASH_BG = "#0A0A0A"
 
-function readSafeAreaInsetBottom(): number {
-  const probe = document.createElement("div")
-  probe.style.cssText =
-    "position:fixed;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom,0px)"
-  document.body.appendChild(probe)
-  const inset = Number.parseFloat(getComputedStyle(probe).paddingBottom) || 0
-  probe.remove()
-  return inset
-}
-
 export function SplashScreen({ isLoading }: SplashScreenProps) {
   const [minTimeElapsed, setMinTimeElapsed] = useState(false)
   const [mounted, setMounted] = useState(true)
@@ -76,32 +66,16 @@ export function SplashScreen({ isLoading }: SplashScreenProps) {
     parent.appendChild(meta)
   }, [opaque])
 
-  // Lock document scroll/overscroll while splash is up — iOS rubber-band
-  // otherwise shifts the "centered" logo when the layer is short by the home indicator.
+  // Prevent iOS rubber-band while splash is visible — do not lock body with
+  // position:fixed (that shifts the layer and makes the logo jump up vs the
+  // native launch image).
   useLayoutEffect(() => {
     if (!mounted) {
       return
     }
 
     const root = document.documentElement
-    const body = document.body
-    const scrollY = window.scrollY
-
-    const syncShift = () => {
-      root.style.setProperty("--splash-shift", `${readSafeAreaInsetBottom()}px`)
-    }
-
     root.classList.add("splash-open")
-    syncShift()
-    // iOS often reports 0 on the first paint, then updates the inset.
-    const rafId = window.requestAnimationFrame(syncShift)
-    const timeoutId = window.setTimeout(syncShift, 100)
-
-    body.style.position = "fixed"
-    body.style.top = `-${scrollY}px`
-    body.style.left = "0"
-    body.style.right = "0"
-    body.style.width = "100%"
 
     const preventTouchScroll = (event: TouchEvent) => {
       event.preventDefault()
@@ -109,17 +83,8 @@ export function SplashScreen({ isLoading }: SplashScreenProps) {
     document.addEventListener("touchmove", preventTouchScroll, { passive: false })
 
     return () => {
-      window.cancelAnimationFrame(rafId)
-      window.clearTimeout(timeoutId)
       root.classList.remove("splash-open")
-      root.style.removeProperty("--splash-shift")
-      body.style.position = ""
-      body.style.top = ""
-      body.style.left = ""
-      body.style.right = ""
-      body.style.width = ""
       document.removeEventListener("touchmove", preventTouchScroll)
-      window.scrollTo(0, scrollY)
     }
   }, [mounted])
 
@@ -129,21 +94,27 @@ export function SplashScreen({ isLoading }: SplashScreenProps) {
 
   return (
     <div
-      className={`splash-screen fixed z-50 flex items-center justify-center bg-[#0A0A0A] transition-opacity duration-[350ms] ease-out ${
+      className={`splash-screen fixed inset-0 z-50 bg-[#0A0A0A] transition-opacity duration-[350ms] ease-out ${
         opaque ? "opacity-100" : "opacity-0"
       }`}
       aria-busy={isLoading || !minTimeElapsed}
       aria-live="polite"
       role="status"
     >
-      <img
-        src="/favicon.svg"
-        alt="ChurchFoundry"
-        width={128}
-        height={128}
-        className="size-32 animate-breathe select-none border-0 outline-none ring-0 shadow-none"
-        draggable={false}
-      />
+      {/*
+        Absolute 50/50 matches the native apple-touch-startup-image mark.
+        No safe-area padding — that offset was causing the handoff jump.
+      */}
+      <div className="splash-screen__mark">
+        <img
+          src="/favicon.svg"
+          alt="ChurchFoundry"
+          width={128}
+          height={128}
+          className="size-32 animate-breathe select-none border-0 outline-none ring-0 shadow-none"
+          draggable={false}
+        />
+      </div>
       <span className="sr-only">ChurchFoundry</span>
     </div>
   )
