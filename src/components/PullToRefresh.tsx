@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 const PULL_THRESHOLD_PX = 80
 const MAX_PULL_PX = 120
 const INDICATOR_MAX_PX = 56
+const SETTLE_MS = 200
 /** Degrees of rotation per pixel of finger travel (~full turn every 180px). */
 const ROTATION_DEG_PER_PX = 360 / 180
 
@@ -45,6 +46,10 @@ async function defaultRefresh() {
   }
 }
 
+function pullOpacity(distance: number, refreshing: boolean) {
+  return refreshing ? 1 : Math.min(1, distance / 36)
+}
+
 export function PullToRefresh({
   children,
   onRefresh = defaultRefresh,
@@ -52,33 +57,84 @@ export function PullToRefresh({
 }: PullToRefreshProps) {
   const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const indicatorRef = useRef<HTMLDivElement>(null)
+  const iconRef = useRef<HTMLImageElement>(null)
   const startYRef = useRef(0)
   const lastYRef = useRef(0)
   const pullingRef = useRef(false)
   const pullDistanceRef = useRef(0)
   const rotationRef = useRef(0)
+  const refreshingRef = useRef(false)
+  const settleTimerRef = useRef<number | null>(null)
   const [pullDistance, setPullDistance] = useState(0)
-  const [rotation, setRotation] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  /** True only while animating release/snap — never during an active drag. */
+  const [settling, setSettling] = useState(false)
+
+  const clearSettleTimer = useCallback(() => {
+    if (settleTimerRef.current !== null) {
+      window.clearTimeout(settleTimerRef.current)
+      settleTimerRef.current = null
+    }
+  }, [])
+
+  const beginSettle = useCallback(() => {
+    clearSettleTimer()
+    setSettling(true)
+    settleTimerRef.current = window.setTimeout(() => {
+      setSettling(false)
+      settleTimerRef.current = null
+    }, SETTLE_MS)
+  }, [clearSettleTimer])
+
+  /** Apply drag visuals immediately (no React render lag, no CSS transition). */
+  const paintPull = useCallback((distance: number, rotationDeg: number) => {
+    const content = contentRef.current
+    const indicator = indicatorRef.current
+    const icon = iconRef.current
+    if (content) {
+      content.style.transition = "none"
+      content.style.transform = `translateY(${distance}px)`
+    }
+    if (indicator) {
+      indicator.style.transition = "none"
+      indicator.style.opacity = String(pullOpacity(distance, refreshingRef.current))
+    }
+    if (icon && !refreshingRef.current) {
+      icon.style.transform = `rotate(${rotationDeg}deg)`
+    }
+  }, [])
 
   const resetGesture = useCallback(() => {
     pullDistanceRef.current = 0
     rotationRef.current = 0
     setPullDistance(0)
-    setRotation(0)
-  }, [])
+    paintPull(0, 0)
+  }, [paintPull])
 
   const runRefresh = useCallback(async () => {
+    refreshingRef.current = true
     setRefreshing(true)
+    pullDistanceRef.current = INDICATOR_MAX_PX
     setPullDistance(INDICATOR_MAX_PX)
+    beginSettle()
     try {
       await onRefresh()
     } finally {
       // If onRefresh did not reload the page, hide the indicator.
+      refreshingRef.current = false
       setRefreshing(false)
+      beginSettle()
       resetGesture()
     }
-  }, [onRefresh, resetGesture])
+  }, [beginSettle, onRefresh, resetGesture])
+
+  useEffect(() => {
+    return () => {
+      clearSettleTimer()
+    }
+  }, [clearSettleTimer])
 
   useEffect(() => {
     const el = containerRef.current
@@ -87,7 +143,7 @@ export function PullToRefresh({
     }
 
     const onTouchStart = (event: TouchEvent) => {
-      if (refreshing || el.scrollTop > 0) {
+      if (refreshingRef.current || el.scrollTop > 0) {
         pullingRef.current = false
         return
       }
@@ -95,12 +151,14 @@ export function PullToRefresh({
       startYRef.current = y
       lastYRef.current = y
       rotationRef.current = 0
-      setRotation(0)
+      clearSettleTimer()
+      setSettling(false)
+      paintPull(pullDistanceRef.current, 0)
       pullingRef.current = true
     }
 
     const onTouchMove = (event: TouchEvent) => {
-      if (!pullingRef.current || refreshing) {
+      if (!pullingRef.current || refreshingRef.current) {
         return
       }
 
@@ -118,10 +176,8 @@ export function PullToRefresh({
       lastYRef.current = currentY
 
       // Clockwise when finger moves down, counter-clockwise when moving up.
-      // No continuous animation — angle only changes while touchmove fires.
       if (moveDelta !== 0) {
         rotationRef.current += moveDelta * ROTATION_DEG_PER_PX
-        setRotation(rotationRef.current)
       }
 
       const deltaFromStart = currentY - startYRef.current
@@ -129,6 +185,9 @@ export function PullToRefresh({
         if (pullDistanceRef.current !== 0) {
           pullDistanceRef.current = 0
           setPullDistance(0)
+          paintPull(0, rotationRef.current)
+        } else {
+          paintPull(0, rotationRef.current)
         }
         return
       }
@@ -137,6 +196,7 @@ export function PullToRefresh({
       const next = Math.min(deltaFromStart * 0.55, MAX_PULL_PX)
       pullDistanceRef.current = next
       setPullDistance(next)
+      paintPull(next, rotationRef.current)
 
       // Block native bounce only while actively pulling from the top.
       if (next > 0) {
@@ -151,11 +211,12 @@ export function PullToRefresh({
       pullingRef.current = false
 
       const distance = pullDistanceRef.current
-      if (distance >= PULL_THRESHOLD_PX && !refreshing) {
+      if (distance >= PULL_THRESHOLD_PX && !refreshingRef.current) {
         void runRefresh()
         return
       }
 
+      beginSettle()
       resetGesture()
     }
 
@@ -170,11 +231,14 @@ export function PullToRefresh({
       el.removeEventListener("touchend", onTouchEnd)
       el.removeEventListener("touchcancel", onTouchEnd)
     }
-  }, [refreshing, resetGesture, runRefresh])
+  }, [beginSettle, clearSettleTimer, paintPull, resetGesture, runRefresh])
 
-  const indicatorHeight = refreshing ? INDICATOR_MAX_PX : Math.min(pullDistance, INDICATOR_MAX_PX)
+  const contentOffset = refreshing ? INDICATOR_MAX_PX : pullDistance
   const readyToRefresh = pullDistance >= PULL_THRESHOLD_PX
-  const showIndicator = indicatorHeight > 4 || refreshing
+  const indicatorOpacity = pullOpacity(contentOffset, refreshing)
+  const showIndicator = indicatorOpacity > 0.02 || refreshing
+  const contentTransition = settling ? `transform ${SETTLE_MS}ms ease-out` : "none"
+  const indicatorTransition = settling ? `opacity ${SETTLE_MS}ms ease-out` : "none"
 
   return (
     // Shell fills the flex slot and always paints theme bg (incl. under home indicator).
@@ -185,40 +249,49 @@ export function PullToRefresh({
       {/* Scrollport — same theme bg so iOS rubber-band does not flash a default color */}
       <div
         ref={containerRef}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-background"
+        className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-background"
         style={themeBackgroundStyle}
       >
-        <div className="min-h-full bg-background" style={themeBackgroundStyle}>
+        {/* Overlay indicator — always above content; fades as the pull collapses. */}
+        <div
+          ref={indicatorRef}
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center pt-2"
+          style={{
+            opacity: indicatorOpacity,
+            transition: indicatorTransition,
+          }}
+          aria-hidden={!showIndicator}
+        >
           <div
-            className="pointer-events-none flex justify-center overflow-hidden bg-background transition-[height,opacity] duration-200 ease-out"
-            style={{
-              height: indicatorHeight,
-              opacity: showIndicator ? 1 : 0,
-              ...themeBackgroundStyle,
-            }}
-            aria-hidden={!showIndicator}
+            className={cn(
+              "flex size-9 items-center justify-center rounded-full bg-black shadow-sm",
+              readyToRefresh && !refreshing && "scale-110",
+            )}
+            role="status"
+            aria-live="polite"
+            aria-label={refreshing ? t("refresh.refreshing") : t("refresh.pull")}
           >
-            <div
-              className={cn(
-                "mt-2 flex size-9 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-transform duration-200",
-                readyToRefresh && !refreshing && "scale-110",
-              )}
-              role="status"
-              aria-live="polite"
-              aria-label={refreshing ? t("refresh.refreshing") : t("refresh.pull")}
-            >
-              <img
-                src="/favicon.svg"
-                alt=""
-                width={24}
-                height={24}
-                draggable={false}
-                className={cn("size-6 select-none", refreshing && "animate-spin")}
-                style={refreshing ? undefined : { transform: `rotate(${rotation}deg)` }}
-              />
-            </div>
+            <img
+              ref={iconRef}
+              src="/favicon.svg"
+              alt=""
+              width={24}
+              height={24}
+              draggable={false}
+              className={cn("size-6 select-none", refreshing && "animate-spin")}
+            />
           </div>
+        </div>
 
+        <div
+          ref={contentRef}
+          className="min-h-full bg-background will-change-transform"
+          style={{
+            ...themeBackgroundStyle,
+            transform: `translateY(${contentOffset}px)`,
+            transition: contentTransition,
+          }}
+        >
           {children}
         </div>
       </div>
