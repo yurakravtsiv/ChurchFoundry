@@ -365,16 +365,16 @@ export function InventoryPage() {
   const openCreate = () => setCreateOpen(true)
 
   const runExport = async (format: "xlsx" | "pdf") => {
-    const data = prepareExportData(filteredItems, categories, subcategories, locations)
-    if (data.length === 0) {
+    const exportItems = filteredItems.filter((item) => !item.removed && !item.archived)
+    if (exportItems.length === 0) {
       window.alert(t("inventory.export.empty"))
       return
     }
     if (format === "xlsx") {
-      exportToXlsx(data)
+      exportToXlsx(prepareExportData(exportItems, categories, subcategories, locations))
       return
     }
-    await exportToPdf(data)
+    await exportToPdf(exportItems, categories, subcategories, locations)
   }
 
   const isStorageEmpty = items.length === 0
