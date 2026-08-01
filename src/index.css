@@ -128,10 +128,13 @@ html.standalone .sheet-overlay {
   left: 0 !important;
 }
 
-/*
-  TEMP DIAG: red on html/body/theme-color = safe-area strip if the app shell
-  does not cover it. #root keeps the normal theme background.
-*/
+.splash-screen__mark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -140,32 +143,32 @@ html.standalone .sheet-overlay {
   html {
     height: 100%;
     -webkit-tap-highlight-color: transparent;
-    background-color: #ff0000;
+    background-color: hsl(var(--background));
   }
 
   html.dark {
-    background-color: #ff0000;
+    background-color: #0a0a0a;
   }
 
   html:not(.dark) {
-    background-color: #ff0000;
+    background-color: hsl(0 0% 98%);
   }
 
   body {
     margin: 0;
     min-height: 100%;
     min-height: var(--app-height);
-    background-color: #ff0000;
+    background-color: hsl(var(--background));
     font-family: "Segoe UI", "Noto Sans", system-ui, -apple-system, sans-serif;
     @apply text-foreground antialiased;
   }
 
   html.dark body {
-    background-color: #ff0000;
+    background-color: #0a0a0a;
   }
 
   html:not(.dark) body {
-    background-color: #ff0000;
+    background-color: hsl(0 0% 98%);
   }
 
   #root {
