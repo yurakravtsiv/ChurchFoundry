@@ -17,9 +17,11 @@ import { cn } from "@/lib/utils"
 type LogoutButtonProps = {
   className?: string
   onSignedOut?: () => void
+  /** Fires when the logout control is pressed (e.g. close the mobile drawer). */
+  onPress?: () => void
 }
 
-export function LogoutButton({ className, onSignedOut }: LogoutButtonProps) {
+export function LogoutButton({ className, onSignedOut, onPress }: LogoutButtonProps) {
   const { t } = useTranslation()
   const { signOut } = useAuth()
   const [open, setOpen] = useState(false)
@@ -43,7 +45,10 @@ export function LogoutButton({ className, onSignedOut }: LogoutButtonProps) {
         variant="outline"
         size="icon"
         className={cn(className)}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          onPress?.()
+          setOpen(true)
+        }}
         aria-label={t("auth.logout")}
         title={t("auth.logout")}
       >

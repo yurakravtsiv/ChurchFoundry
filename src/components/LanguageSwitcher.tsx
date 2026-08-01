@@ -7,14 +7,20 @@ import type { SupportedLanguage } from "@/types"
 type LanguageSwitcherProps = {
   className?: string
   showLabel?: boolean
+  onLanguageChange?: () => void
 }
 
-export function LanguageSwitcher({ className, showLabel = true }: LanguageSwitcherProps) {
+export function LanguageSwitcher({
+  className,
+  showLabel = true,
+  onLanguageChange,
+}: LanguageSwitcherProps) {
   const { t, i18n } = useTranslation()
   const current = i18n.language.startsWith("en") ? "en" : "uk"
 
   const setLanguage = (lng: SupportedLanguage) => {
     void i18n.changeLanguage(lng)
+    onLanguageChange?.()
   }
 
   return (

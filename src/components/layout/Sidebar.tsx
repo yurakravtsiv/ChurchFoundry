@@ -105,10 +105,10 @@ function SidebarPanel({
         <div className={cn("border-t border-border pt-3", collapsed && "pt-2")}>
           <div className="flex items-center justify-between gap-3 md:hidden">
             <div className="flex items-center gap-3">
-              <LanguageSwitcher showLabel={false} />
-              <ThemeToggle />
+              <LanguageSwitcher showLabel={false} onLanguageChange={onNavigate} />
+              <ThemeToggle onToggle={onNavigate} />
             </div>
-            <LogoutButton onSignedOut={onNavigate} />
+            <LogoutButton onPress={onNavigate} onSignedOut={onNavigate} />
           </div>
           {onToggleCollapsed ? (
             <div className="hidden md:block">
