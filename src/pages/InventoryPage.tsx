@@ -56,7 +56,41 @@ import {
   getSubcategories,
 } from "@/lib/inventoryStorage"
 import { cn } from "@/lib/utils"
-import type { AvailabilityStatus, InventoryItem } from "@/types/inventory"
+import type {
+  AvailabilityStatus,
+  Category,
+  InventoryItem,
+  Location,
+  Subcategory,
+} from "@/types/inventory"
+
+function itemMatchesSearch(
+  item: InventoryItem,
+  query: string,
+  categories: Category[],
+  subcategories: Subcategory[],
+  locations: Location[],
+): boolean {
+  const normalizedQuery = query.toLowerCase().trim()
+  if (!normalizedQuery) {
+    return true
+  }
+
+  const searchableValues = [
+    item.name,
+    String(item.quantity),
+    item.price != null ? String(item.price) : "",
+    item.availabilityComment,
+    item.supplier,
+    item.serialNumber,
+    item.comment,
+    categories.find((category) => category.id === item.categoryId)?.name ?? "",
+    subcategories.find((subcategory) => subcategory.id === item.subcategoryId)?.name ?? "",
+    locations.find((location) => location.id === item.locationId)?.name ?? "",
+  ]
+
+  return searchableValues.some((value) => value.toLowerCase().includes(normalizedQuery))
+}
 
 function loadInventoryState() {
   return {
@@ -125,8 +159,6 @@ export function InventoryPage() {
   }, [categoryFilter, subcategories])
 
   const filteredItems = useMemo(() => {
-    const query = search.trim().toLowerCase()
-
     return items.filter((item) => {
       if (!showArchived && item.archived) {
         return false
@@ -143,36 +175,22 @@ export function InventoryPage() {
       if (locationFilter !== "all" && item.locationId !== locationFilter) {
         return false
       }
-      if (query) {
-        const haystack = [
-          item.name,
-          categoryNameById.get(item.categoryId) ?? "",
-          subcategoryNameById.get(item.subcategoryId) ?? "",
-          locationNameById.get(item.locationId) ?? "",
-          String(item.quantity),
-          item.availabilityComment,
-          item.comment,
-          item.supplier,
-        ]
-          .join(" ")
-          .toLowerCase()
-        if (!haystack.includes(query)) {
-          return false
-        }
+      if (!itemMatchesSearch(item, search, categories, subcategories, locations)) {
+        return false
       }
       return true
     })
   }, [
     availabilityFilter,
+    categories,
     categoryFilter,
-    categoryNameById,
     items,
     locationFilter,
-    locationNameById,
+    locations,
     search,
     showArchived,
+    subcategories,
     subcategoryFilter,
-    subcategoryNameById,
   ])
 
   const columns = useMemo<ColumnDef<InventoryItem>[]>(
