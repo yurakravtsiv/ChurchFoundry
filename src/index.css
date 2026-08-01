@@ -90,6 +90,15 @@
   --radius: 0.5rem;
 }
 
+/* Snap theme colors instantly — applied only while toggling light/dark. */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
 @layer base {
   * {
     @apply border-border;

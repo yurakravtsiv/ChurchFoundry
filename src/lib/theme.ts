@@ -37,6 +37,10 @@ export function resolveTheme(): Theme {
 
 export function applyThemeClass(theme: Theme) {
   const root = document.documentElement
+
+  // Disable CSS transitions/animations for one frame so theme colors snap instantly.
+  root.classList.add("theme-switching")
+
   root.classList.remove("light", "dark")
   root.classList.add(theme)
   root.style.colorScheme = theme
@@ -56,4 +60,12 @@ export function applyThemeClass(theme: Theme) {
   meta.setAttribute("name", "theme-color")
   meta.setAttribute("content", themeColor)
   parent.appendChild(meta)
+
+  // Force style flush, then re-enable transitions on the next frames.
+  void root.offsetHeight
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      root.classList.remove("theme-switching")
+    })
+  })
 }
