@@ -107,6 +107,18 @@ html {
   --app-height: calc(100dvh + env(safe-area-inset-bottom, 0px));
 }
 
+/*
+  Dim the sheet via ::before so iOS Safari samples the themed background-color
+  for top/bottom chrome instead of locking onto opaque black/80.
+*/
+.sheet-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgb(0 0 0 / 0.8);
+  pointer-events: none;
+}
+
 html.standalone .sheet-overlay,
 html.standalone .drawer-sheet {
   top: 0 !important;

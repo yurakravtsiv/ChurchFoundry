@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from "react-router"
 
 import { AppLayout } from "@/components/layout/AppLayout"
 import { GuestRoute, ProtectedRoute } from "@/components/ProtectedRoute"
+import { SafariThemeChrome } from "@/components/SafariThemeChrome"
 import { SplashScreen } from "@/components/SplashScreen"
 import { UpdateBanner } from "@/components/UpdateBanner"
 import { AuthProvider, useAuth } from "@/hooks/useAuth"
@@ -66,6 +67,7 @@ function AppShell() {
 
   return (
     <>
+      <SafariThemeChrome />
       <SplashScreen active={splashActive} onFinished={onSplashFinished} />
       <UpdateBanner />
       <BrowserRouter>
