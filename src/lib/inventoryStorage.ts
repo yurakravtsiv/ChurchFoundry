@@ -47,8 +47,35 @@ function writeJson(key: string, value: unknown): boolean {
   }
 }
 
+function normalizeRemovedFlag<T extends { removed?: boolean }>(
+  entity: T,
+): T & { removed: boolean } {
+  if (typeof entity.removed === "boolean") {
+    return entity as T & { removed: boolean }
+  }
+  return { ...entity, removed: false }
+}
+
+function normalizeEntityList<T extends { removed?: boolean }>(
+  key: string,
+  entities: T[],
+): Array<T & { removed: boolean }> {
+  let dirty = false
+  const normalized = entities.map((entity) => {
+    const next = normalizeRemovedFlag(entity)
+    if (next !== entity) {
+      dirty = true
+    }
+    return next
+  })
+  if (dirty) {
+    writeJson(key, normalized)
+  }
+  return normalized
+}
+
 export function getCategories(): Category[] {
-  return readJsonArray<Category>(CATEGORIES_KEY)
+  return normalizeEntityList(CATEGORIES_KEY, readJsonArray<Category>(CATEGORIES_KEY))
 }
 
 export function saveCategories(categories: Category[]): void {
@@ -56,7 +83,7 @@ export function saveCategories(categories: Category[]): void {
 }
 
 export function getSubcategories(): Subcategory[] {
-  return readJsonArray<Subcategory>(SUBCATEGORIES_KEY)
+  return normalizeEntityList(SUBCATEGORIES_KEY, readJsonArray<Subcategory>(SUBCATEGORIES_KEY))
 }
 
 export function saveSubcategories(subcategories: Subcategory[]): void {
@@ -64,7 +91,7 @@ export function saveSubcategories(subcategories: Subcategory[]): void {
 }
 
 export function getLocations(): Location[] {
-  return readJsonArray<Location>(LOCATIONS_KEY)
+  return normalizeEntityList(LOCATIONS_KEY, readJsonArray<Location>(LOCATIONS_KEY))
 }
 
 export function saveLocations(locations: Location[]): void {
@@ -97,7 +124,7 @@ function migrateLegacyLocationFields(): void {
       const key = locationName.toLowerCase()
       let id = nameToId.get(key)
       if (!id) {
-        const created: Location = { id: newId(), name: locationName }
+        const created: Location = { id: newId(), name: locationName, removed: false }
         locations = [...locations, created]
         nameToId.set(key, created.id)
         id = created.id
@@ -113,14 +140,15 @@ function migrateLegacyLocationFields(): void {
   writeJson(INVENTORY_ITEMS_KEY, migrated)
 }
 
-function normalizeInventoryItemPrice(item: InventoryItem): InventoryItem {
-  if (typeof item.price === "number" && Number.isFinite(item.price)) {
-    return item
+function normalizeInventoryItem(item: InventoryItem): InventoryItem {
+  let next = item
+  if (!(typeof item.price === "number" && Number.isFinite(item.price)) && item.price !== null) {
+    next = { ...next, price: null }
   }
-  if (item.price === null) {
-    return item
+  if (typeof next.removed !== "boolean") {
+    next = { ...next, removed: false }
   }
-  return { ...item, price: null }
+  return next
 }
 
 export function getInventoryItems(): InventoryItem[] {
@@ -128,7 +156,7 @@ export function getInventoryItems(): InventoryItem[] {
   const items = readJsonArray<InventoryItem>(INVENTORY_ITEMS_KEY)
   let dirty = false
   const normalized = items.map((item) => {
-    const next = normalizeInventoryItemPrice(item)
+    const next = normalizeInventoryItem(item)
     if (next !== item) {
       dirty = true
     }
@@ -145,7 +173,7 @@ export function saveInventoryItems(items: InventoryItem[]): void {
 }
 
 export function createCategory(name: string): Category {
-  const category: Category = { id: newId(), name: name.trim() }
+  const category: Category = { id: newId(), name: name.trim(), removed: false }
   const next = [...getCategories(), category]
   saveCategories(next)
   return category
@@ -156,6 +184,7 @@ export function createSubcategory(categoryId: string, name: string): Subcategory
     id: newId(),
     categoryId,
     name: name.trim(),
+    removed: false,
   }
   const next = [...getSubcategories(), subcategory]
   saveSubcategories(next)
@@ -163,7 +192,7 @@ export function createSubcategory(categoryId: string, name: string): Subcategory
 }
 
 export function createLocation(name: string): Location {
-  const location: Location = { id: newId(), name: name.trim() }
+  const location: Location = { id: newId(), name: name.trim(), removed: false }
   const next = [...getLocations(), location]
   saveLocations(next)
   return location
@@ -185,6 +214,7 @@ export function createInventoryItem(data: CreateInventoryItemInput): InventoryIt
     id,
     qrCodeValue: `${origin}/inventory/${id}`,
     archived: false,
+    removed: false,
     createdAt: timestamp,
     updatedAt: timestamp,
   }

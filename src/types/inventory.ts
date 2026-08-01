@@ -1,17 +1,20 @@
 export type Category = {
   id: string
   name: string
+  removed: boolean
 }
 
 export type Subcategory = {
   id: string
   categoryId: string
   name: string
+  removed: boolean
 }
 
 export type Location = {
   id: string
   name: string
+  removed: boolean
 }
 
 export type AvailabilityStatus = "in_church" | "borrowed"
@@ -40,6 +43,7 @@ export type InventoryItem = {
   avatarPhotoId: string | null
   qrCodeValue: string // згенерований URL типу `${origin}/inventory/${id}`
   archived: boolean
+  removed: boolean
   createdAt: string
   updatedAt: string
 }
@@ -47,7 +51,7 @@ export type InventoryItem = {
 /** Поля, які задає викликач при створенні (id / qr / timestamps генерує storage). */
 export type CreateInventoryItemInput = Omit<
   InventoryItem,
-  "id" | "qrCodeValue" | "archived" | "createdAt" | "updatedAt" | "price"
+  "id" | "qrCodeValue" | "archived" | "removed" | "createdAt" | "updatedAt" | "price"
 > & {
   price?: number | null
 }
