@@ -100,27 +100,40 @@ html.theme-switching *::after {
 }
 
 /*
-  Installed PWA: iOS lays out position:fixed inside the safe viewport, so
-  inset/bottom:0 stops above the home indicator and body shows through as a
-  white strip. Pull overlay + drawer into that band.
-  --safe-area-bottom is measured in JS (env() alone is often 0 on first paint).
+  Installed PWA: the fixed layer stops above the home indicator. Do NOT grow the
+  sheet box by that inset (it shoved the footer off-screen). Paint the band with
+  ::after instead so language/theme controls stay visible.
 */
 html.standalone .sheet-overlay,
 html.standalone .drawer-sheet {
-  top: 0;
-  bottom: calc(-1 * var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)));
-  height: auto;
-  min-height: calc(100% + var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)));
-  max-height: none;
+  top: 0 !important;
+  bottom: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 html.standalone .drawer-sheet {
-  min-height: calc(100lvh + var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)));
+  min-height: 0 !important;
 }
 
-html.standalone .sheet-overlay {
-  right: 0;
+html.standalone .sheet-overlay::after,
+html.standalone .drawer-sheet::after {
+  content: "";
+  position: absolute;
   left: 0;
+  width: 100%;
+  top: 100%;
+  height: var(--safe-area-bottom, env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+html.standalone .sheet-overlay::after {
+  background-color: rgb(0 0 0 / 0.8);
+}
+
+html.standalone .drawer-sheet::after {
+  background-color: hsl(var(--background));
 }
 
 @layer base {
