@@ -99,6 +99,22 @@ html.theme-switching *::after {
   animation: none !important;
 }
 
+/*
+  Full-bleed splash: when the fixed containing block is the safe viewport,
+  bottom:0 stops above the home indicator and flex-centering sits too high.
+  Anchor top/sides and extend the bottom edge into the unsafe band.
+*/
+.splash-screen {
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  width: auto;
+  height: auto;
+  min-height: 100lvh;
+  overflow: hidden;
+}
+
 @layer base {
   * {
     @apply border-border;
