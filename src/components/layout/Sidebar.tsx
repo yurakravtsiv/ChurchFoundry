@@ -165,10 +165,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
       </aside>
 
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="left"
-          className="flex w-full max-w-none flex-col bg-background p-0 sm:max-w-none"
-        >
+        <SheetContent side="left" className="flex flex-col bg-background p-0">
           <div className="flex h-full flex-col bg-background px-4 pb-4 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 pt-[max(1rem,env(safe-area-inset-top,0px))]">
             <SheetHeader className="text-left">
               <SheetTitle>{t("app.name")}</SheetTitle>
