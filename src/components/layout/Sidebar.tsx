@@ -15,9 +15,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { useStandalonePwa } from "@/hooks/useStandalonePwa"
-import { useTheme } from "@/hooks/useTheme"
 import { navItems } from "@/lib/nav"
-import { applyThemeClass } from "@/lib/theme"
 import { cn } from "@/lib/utils"
 
 const SIDEBAR_COLLAPSED_KEY = "churchfoundry-sidebar-collapsed"
@@ -140,7 +138,6 @@ function SidebarPanel({
 
 export function Sidebar({ open, onOpenChange }: SidebarProps) {
   const { t } = useTranslation()
-  const { theme } = useTheme()
   const isStandalone = useStandalonePwa()
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -162,16 +159,6 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
     setCollapsed((value) => !value)
   }
 
-  const handleOpenChange = (next: boolean) => {
-    onOpenChange(next)
-    // Closing the drawer is when many mobile browsers finally re-read chrome colors.
-    if (!next) {
-      window.requestAnimationFrame(() => {
-        applyThemeClass(theme)
-      })
-    }
-  }
-
   return (
     <>
       <aside
@@ -183,7 +170,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
         <SidebarPanel collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       </aside>
 
-      <Sheet open={open} onOpenChange={handleOpenChange}>
+      <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="left"
           className="drawer-sheet flex h-full flex-col gap-0 bg-background p-0"

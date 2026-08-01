@@ -3,8 +3,6 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
 import * as React from "react"
 
-import { useTheme } from "@/hooks/useTheme"
-import { themeColorHex } from "@/lib/theme"
 import { cn } from "@/lib/utils"
 
 const Sheet = SheetPrimitive.Root
@@ -15,23 +13,16 @@ const SheetPortal = SheetPrimitive.Portal
 const SheetOverlay = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
->(({ className, ...props }, ref) => {
-  const { theme } = useTheme()
-  // Themed background-color (dimming via ::before) so Safari samples theme, not black/80.
-  // key remounts the layer on theme change so iOS re-tints top/bottom chrome while open.
-  return (
-    <SheetPrimitive.Overlay
-      key={theme}
-      className={cn(
-        "sheet-overlay fixed inset-0 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-        className,
-      )}
-      {...props}
-      style={{ backgroundColor: themeColorHex(theme), ...props.style }}
-      ref={ref}
-    />
-  )
-})
+>(({ className, ...props }, ref) => (
+  <SheetPrimitive.Overlay
+    className={cn(
+      "sheet-overlay fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className,
+    )}
+    {...props}
+    ref={ref}
+  />
+))
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 
 const sheetVariants = cva(

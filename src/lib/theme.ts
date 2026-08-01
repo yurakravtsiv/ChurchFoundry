@@ -39,35 +39,6 @@ export function themeColorHex(theme: Theme) {
   return theme === "dark" ? "#0A0A0A" : "#FAFAFA"
 }
 
-/** Sync html/body/#root + theme-color meta (Android / older iOS Safari). */
-export function syncBrowserChrome(theme: Theme) {
-  const themeColor = themeColorHex(theme)
-  const root = document.documentElement
-
-  root.style.backgroundColor = themeColor
-  if (document.body) {
-    document.body.style.backgroundColor = themeColor
-  }
-  const appRoot = document.getElementById("root")
-  if (appRoot) {
-    appRoot.style.backgroundColor = themeColor
-  }
-
-  // iOS/PWA often caches theme-color; recreate the meta tag so chrome updates.
-  document.querySelectorAll('meta[name="theme-color"]').forEach((node) => {
-    node.remove()
-  })
-  const meta = document.createElement("meta")
-  meta.setAttribute("name", "theme-color")
-  meta.setAttribute("content", themeColor)
-  document.head.appendChild(meta)
-
-  // Some WebKits only notice a content write after a blank frame.
-  meta.setAttribute("content", "")
-  void root.offsetHeight
-  meta.setAttribute("content", themeColor)
-}
-
 export function applyThemeClass(theme: Theme) {
   const root = document.documentElement
 
@@ -78,7 +49,22 @@ export function applyThemeClass(theme: Theme) {
   root.classList.add(theme)
   root.style.colorScheme = theme
 
-  syncBrowserChrome(theme)
+  // Keep inline colors in sync with theme toggles (FOWT sets these before React mounts).
+  const themeColor = themeColorHex(theme)
+  root.style.backgroundColor = themeColor
+  if (document.body) {
+    document.body.style.backgroundColor = themeColor
+  }
+
+  // iOS/PWA often caches theme-color; recreate the meta tag so the safe-area chrome updates live.
+  // Never blank content — an empty theme-color makes Safari fall back to white chrome.
+  const existing = document.querySelector('meta[name="theme-color"]')
+  const parent = existing?.parentElement ?? document.head
+  existing?.remove()
+  const meta = document.createElement("meta")
+  meta.setAttribute("name", "theme-color")
+  meta.setAttribute("content", themeColor)
+  parent.appendChild(meta)
 
   // Force style flush, then re-enable transitions on the next frames.
   void root.offsetHeight
