@@ -113,9 +113,31 @@ function migrateLegacyLocationFields(): void {
   writeJson(INVENTORY_ITEMS_KEY, migrated)
 }
 
+function normalizeInventoryItemPrice(item: InventoryItem): InventoryItem {
+  if (typeof item.price === "number" && Number.isFinite(item.price)) {
+    return item
+  }
+  if (item.price === null) {
+    return item
+  }
+  return { ...item, price: null }
+}
+
 export function getInventoryItems(): InventoryItem[] {
   migrateLegacyLocationFields()
-  return readJsonArray<InventoryItem>(INVENTORY_ITEMS_KEY)
+  const items = readJsonArray<InventoryItem>(INVENTORY_ITEMS_KEY)
+  let dirty = false
+  const normalized = items.map((item) => {
+    const next = normalizeInventoryItemPrice(item)
+    if (next !== item) {
+      dirty = true
+    }
+    return next
+  })
+  if (dirty) {
+    writeJson(INVENTORY_ITEMS_KEY, normalized)
+  }
+  return normalized
 }
 
 export function saveInventoryItems(items: InventoryItem[]): void {
@@ -159,6 +181,7 @@ export function createInventoryItem(data: CreateInventoryItemInput): InventoryIt
   const origin = typeof window !== "undefined" ? window.location.origin : ""
   const item: InventoryItem = {
     ...data,
+    price: data.price ?? null,
     id,
     qrCodeValue: `${origin}/inventory/${id}`,
     archived: false,

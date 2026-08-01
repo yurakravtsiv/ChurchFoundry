@@ -147,6 +147,16 @@ export function InventoryItemForm({
           availability: z.enum(["in_church", "borrowed"]),
           availabilityComment: z.string().optional().default(""),
           supplier: z.string().optional().default(""),
+          price: z.preprocess((value) => {
+            if (value === "" || value === null || value === undefined) {
+              return null
+            }
+            if (typeof value === "number" && Number.isNaN(value)) {
+              return null
+            }
+            const parsed = typeof value === "number" ? value : Number(value)
+            return Number.isFinite(parsed) ? parsed : null
+          }, z.number().min(0, t("inventory.form.validation.priceMin")).nullable()),
           serialNumber: z.string().optional().default(""),
           warrantyUntil: z.string().nullable().optional(),
           comment: z.string().optional().default(""),
@@ -187,6 +197,7 @@ export function InventoryItemForm({
       availability: initialData?.availability ?? ("in_church" as const),
       availabilityComment: initialData?.availabilityComment ?? "",
       supplier: initialData?.supplier ?? "",
+      price: initialData?.price ?? null,
       serialNumber: initialData?.serialNumber ?? "",
       warrantyUntil: toDateInputValue(initialData?.warrantyUntil),
       comment: initialData?.comment ?? "",
@@ -301,6 +312,7 @@ export function InventoryItemForm({
         availabilityComment:
           values.availability === "borrowed" ? (values.availabilityComment?.trim() ?? "") : "",
         supplier: values.supplier?.trim() ?? "",
+        price: values.price ?? null,
         serialNumber: values.serialNumber?.trim() ?? "",
         warrantyUntil: values.warrantyUntil ? values.warrantyUntil : null,
         comment: values.comment?.trim() ?? "",
@@ -544,6 +556,21 @@ export function InventoryItemForm({
               {...register("supplier")}
               placeholder={t("inventory.form.supplierPlaceholder")}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="inventory-item-price">{t("inventory.form.price")}</Label>
+            <Input
+              id="inventory-item-price"
+              type="number"
+              step="0.01"
+              min={0}
+              {...register("price")}
+              placeholder={t("inventory.form.pricePlaceholder")}
+            />
+            {errors.price ? (
+              <p className="text-sm text-destructive">{errors.price.message}</p>
+            ) : null}
           </div>
 
           <div className="space-y-2">

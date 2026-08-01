@@ -32,6 +32,7 @@ export type InventoryItem = {
   /** Обов'язкове тільки якщо availability === "borrowed". */
   availabilityComment: string
   supplier: string
+  price: number | null
   serialNumber: string
   warrantyUntil: string | null // дата ISO
   comment: string
@@ -46,8 +47,10 @@ export type InventoryItem = {
 /** Поля, які задає викликач при створенні (id / qr / timestamps генерує storage). */
 export type CreateInventoryItemInput = Omit<
   InventoryItem,
-  "id" | "qrCodeValue" | "archived" | "createdAt" | "updatedAt"
->
+  "id" | "qrCodeValue" | "archived" | "createdAt" | "updatedAt" | "price"
+> & {
+  price?: number | null
+}
 
 /** Часткове оновлення; id / createdAt / qrCodeValue не змінюються тут. */
 export type UpdateInventoryItemInput = Partial<

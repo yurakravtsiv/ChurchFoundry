@@ -290,6 +290,12 @@ export function InventoryPage() {
         enableSorting: false,
       },
       {
+        accessorKey: "price",
+        header: t("inventory.columns.price"),
+        cell: ({ row }) => (row.original.price === null ? "—" : row.original.price.toFixed(2)),
+        enableSorting: false,
+      },
+      {
         accessorKey: "serialNumber",
         header: t("inventory.columns.serialNumber"),
         cell: ({ row }) => row.original.serialNumber || "—",
