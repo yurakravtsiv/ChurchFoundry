@@ -41,9 +41,11 @@ async function defaultRefresh() {
     }
   } catch {
     // Still reload even if the service worker update check fails.
-  } finally {
-    window.location.reload()
   }
+
+  window.location.reload()
+  // Keep the spinning indicator up until the document is torn down.
+  await new Promise<void>(() => {})
 }
 
 function pullOpacity(distance: number, refreshing: boolean) {
@@ -118,11 +120,28 @@ export function PullToRefresh({
     setRefreshing(true)
     pullDistanceRef.current = INDICATOR_MAX_PX
     setPullDistance(INDICATOR_MAX_PX)
+    // Lock indicator fully visible while the page reloads.
+    if (indicatorRef.current) {
+      indicatorRef.current.style.transition = `opacity ${SETTLE_MS}ms ease-out`
+      indicatorRef.current.style.opacity = "1"
+    }
+    if (contentRef.current) {
+      contentRef.current.style.transition = `transform ${SETTLE_MS}ms ease-out`
+      contentRef.current.style.transform = `translateY(${INDICATOR_MAX_PX}px)`
+    }
+    // Clear drag rotation so CSS spin can take over cleanly.
+    if (iconRef.current) {
+      iconRef.current.style.transform = ""
+    }
     beginSettle()
     try {
       await onRefresh()
-    } finally {
-      // If onRefresh did not reload the page, hide the indicator.
+      // Custom onRefresh that does not reload — hide the indicator.
+      refreshingRef.current = false
+      setRefreshing(false)
+      beginSettle()
+      resetGesture()
+    } catch {
       refreshingRef.current = false
       setRefreshing(false)
       beginSettle()
@@ -266,6 +285,7 @@ export function PullToRefresh({
             className={cn(
               "flex size-9 items-center justify-center rounded-full bg-black shadow-sm",
               readyToRefresh && !refreshing && "scale-110",
+              refreshing && "scale-100",
             )}
             role="status"
             aria-live="polite"
@@ -278,7 +298,10 @@ export function PullToRefresh({
               width={24}
               height={24}
               draggable={false}
-              className={cn("size-6 select-none", refreshing && "animate-spin")}
+              className={cn(
+                "size-6 select-none",
+                refreshing && "animate-spin [animation-duration:0.8s]",
+              )}
             />
           </div>
         </div>
