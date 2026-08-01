@@ -3,6 +3,7 @@ import { Outlet } from "react-router"
 
 import { Header } from "@/components/layout/Header"
 import { Sidebar } from "@/components/layout/Sidebar"
+
 // Diagnostic: temporarily unused to test bottom strip without PTR.
 // import { PullToRefresh } from "@/components/PullToRefresh"
 

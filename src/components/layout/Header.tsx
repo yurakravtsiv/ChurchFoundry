@@ -23,8 +23,8 @@ export function Header({ onOpenSidebar }: HeaderProps) {
   const { t } = useTranslation()
   const pageLabelKey = useCurrentPageLabelKey()
 
+  // Diagnostic: backdrop-blur temporarily removed to test bottom-strip bug
   return (
-    {/* Diagnostic: backdrop-blur temporarily removed to test bottom-strip bug */}
     <header className="sticky top-0 z-40 border-b border-border bg-background">
       {/* Safe-area padding on the inner wrapper so header bg continues under the notch */}
       <div className="pt-[env(safe-area-inset-top,0px)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">

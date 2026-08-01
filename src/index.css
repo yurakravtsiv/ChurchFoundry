@@ -112,9 +112,7 @@
   body {
     margin: 0;
     height: 100%;
-    min-height: 100%;
     min-height: 100dvh;
-    min-height: -webkit-fill-available;
     background-color: hsl(var(--background));
     font-family: "Segoe UI", "Noto Sans", system-ui, -apple-system, sans-serif;
     @apply text-foreground antialiased;
@@ -129,9 +127,14 @@
   }
 
   #root {
-    min-height: 100%;
     min-height: 100dvh;
-    min-height: -webkit-fill-available;
     background-color: hsl(var(--background));
+  }
+}
+
+@supports (min-height: -webkit-fill-available) {
+  body,
+  #root {
+    min-height: -webkit-fill-available;
   }
 }
