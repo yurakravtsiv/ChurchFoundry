@@ -8,6 +8,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import {
+  Archive,
+  ArchiveRestore,
   ArrowUpDown,
   Eye,
   EyeOff,
@@ -15,6 +17,7 @@ import {
   FileText,
   MoreVertical,
   Package,
+  Pencil,
   Plus,
   Search,
 } from "lucide-react"
@@ -327,9 +330,11 @@ export function InventoryPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
                 <DropdownMenuItem onClick={() => navigate(`/inventory/${item.id}`)}>
+                  <Pencil />
                   {t("inventory.actions.edit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setArchiveTarget(item)}>
+                  {item.archived ? <ArchiveRestore /> : <Archive />}
                   {item.archived
                     ? t("inventory.actions.unarchive")
                     : t("inventory.actions.archive")}
@@ -413,135 +418,139 @@ export function InventoryPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2">
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="inventory-search" className="truncate">
-              {t("inventory.searchPlaceholder")}
-            </Label>
-            <div className="relative min-w-0">
-              <Search
-                className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden
-              />
-              <Input
-                id="inventory-search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder={t("inventory.searchPlaceholder")}
-                className="h-9 min-w-0 pl-8"
-              />
+        <div className="flex flex-col gap-2 md:grid md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end md:gap-2">
+          <div className="grid grid-cols-3 items-end gap-2 md:contents">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="inventory-search" className="truncate">
+                {t("inventory.searchPlaceholder")}
+              </Label>
+              <div className="relative min-w-0">
+                <Search
+                  className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
+                <Input
+                  id="inventory-search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder={t("inventory.searchPlaceholder")}
+                  className="h-9 min-w-0 pl-8"
+                />
+              </div>
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="inventory-filter-category" className="truncate">
+                {t("inventory.filters.category")}
+              </Label>
+              <Select
+                value={categoryFilter}
+                onValueChange={(value) => {
+                  setCategoryFilter(value)
+                  setSubcategoryFilter("all")
+                }}
+              >
+                <SelectTrigger id="inventory-filter-category" className="h-9 w-full min-w-0">
+                  <SelectValue placeholder={t("inventory.filters.all")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="inventory-filter-subcategory" className="truncate">
+                {t("inventory.filters.subcategory")}
+              </Label>
+              <Select
+                value={subcategoryFilter}
+                onValueChange={setSubcategoryFilter}
+                disabled={categoryFilter === "all"}
+              >
+                <SelectTrigger id="inventory-filter-subcategory" className="h-9 w-full min-w-0">
+                  <SelectValue placeholder={t("inventory.filters.all")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                  {filteredSubcategories.map((subcategory) => (
+                    <SelectItem key={subcategory.id} value={subcategory.id}>
+                      {subcategory.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="inventory-filter-category" className="truncate">
-              {t("inventory.filters.category")}
-            </Label>
-            <Select
-              value={categoryFilter}
-              onValueChange={(value) => {
-                setCategoryFilter(value)
-                setSubcategoryFilter("all")
-              }}
-            >
-              <SelectTrigger id="inventory-filter-category" className="h-9 w-full min-w-0">
-                <SelectValue placeholder={t("inventory.filters.all")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2 md:contents">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="inventory-filter-availability" className="truncate">
+                {t("inventory.filters.availability")}
+              </Label>
+              <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+                <SelectTrigger id="inventory-filter-availability" className="h-9 w-full min-w-0">
+                  <SelectValue placeholder={t("inventory.filters.all")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                  <SelectItem value="in_church">{t("inventory.availability.inChurch")}</SelectItem>
+                  <SelectItem value="borrowed">{t("inventory.availability.borrowed")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="inventory-filter-subcategory" className="truncate">
-              {t("inventory.filters.subcategory")}
-            </Label>
-            <Select
-              value={subcategoryFilter}
-              onValueChange={setSubcategoryFilter}
-              disabled={categoryFilter === "all"}
-            >
-              <SelectTrigger id="inventory-filter-subcategory" className="h-9 w-full min-w-0">
-                <SelectValue placeholder={t("inventory.filters.all")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                {filteredSubcategories.map((subcategory) => (
-                  <SelectItem key={subcategory.id} value={subcategory.id}>
-                    {subcategory.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="inventory-filter-location" className="truncate">
+                {t("inventory.filters.location")}
+              </Label>
+              <Select value={locationFilter} onValueChange={setLocationFilter}>
+                <SelectTrigger id="inventory-filter-location" className="h-9 w-full min-w-0">
+                  <SelectValue placeholder={t("inventory.filters.all")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                  {locations.map((location) => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="inventory-filter-availability" className="truncate">
-              {t("inventory.filters.availability")}
-            </Label>
-            <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
-              <SelectTrigger id="inventory-filter-availability" className="h-9 w-full min-w-0">
-                <SelectValue placeholder={t("inventory.filters.all")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                <SelectItem value="in_church">{t("inventory.availability.inChurch")}</SelectItem>
-                <SelectItem value="borrowed">{t("inventory.availability.borrowed")}</SelectItem>
-              </SelectContent>
-            </Select>
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className={cn("size-9 shrink-0", showArchived && "border-primary text-primary")}
+                    onClick={() => setShowArchived((value) => !value)}
+                    aria-pressed={showArchived}
+                    aria-label={
+                      showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")
+                    }
+                  >
+                    {showArchived ? (
+                      <Eye className="size-4" aria-hidden />
+                    ) : (
+                      <EyeOff className="size-4" aria-hidden />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="inventory-filter-location" className="truncate">
-              {t("inventory.filters.location")}
-            </Label>
-            <Select value={locationFilter} onValueChange={setLocationFilter}>
-              <SelectTrigger id="inventory-filter-location" className="h-9 w-full min-w-0">
-                <SelectValue placeholder={t("inventory.filters.all")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                {locations.map((location) => (
-                  <SelectItem key={location.id} value={location.id}>
-                    {location.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className={cn("size-9 shrink-0", showArchived && "border-primary text-primary")}
-                  onClick={() => setShowArchived((value) => !value)}
-                  aria-pressed={showArchived}
-                  aria-label={
-                    showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")
-                  }
-                >
-                  {showArchived ? (
-                    <Eye className="size-4" aria-hidden />
-                  ) : (
-                    <EyeOff className="size-4" aria-hidden />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
       </div>
 
