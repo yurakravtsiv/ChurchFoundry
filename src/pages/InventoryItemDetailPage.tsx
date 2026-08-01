@@ -183,7 +183,7 @@ export function InventoryItemDetailPage() {
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-4 py-6 sm:px-6 md:grid-cols-3 md:items-start md:py-8">
+      <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-[15px] py-[10px] md:grid-cols-3 md:items-start">
         <div className="min-w-0 rounded-xl border bg-card md:col-span-2">
           <InventoryItemForm
             key={item.updatedAt}

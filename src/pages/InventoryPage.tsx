@@ -444,7 +444,7 @@ export function InventoryPage() {
   const isFilterEmpty = !isStorageEmpty && filteredItems.length === 0
 
   return (
-    <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 bg-background px-4 py-6 sm:px-6 md:py-8">
+    <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 bg-background px-[15px] py-[10px]">
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Button type="button" onClick={openCreate}>
