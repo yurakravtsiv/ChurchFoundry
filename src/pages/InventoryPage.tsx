@@ -364,7 +364,7 @@ export function InventoryPage() {
 
   const openCreate = () => setCreateOpen(true)
 
-  const runExport = (format: "xlsx" | "pdf") => {
+  const runExport = async (format: "xlsx" | "pdf") => {
     const data = prepareExportData(filteredItems, categories, subcategories, locations)
     if (data.length === 0) {
       window.alert(t("inventory.export.empty"))
@@ -374,7 +374,7 @@ export function InventoryPage() {
       exportToXlsx(data)
       return
     }
-    exportToPdf(data)
+    await exportToPdf(data)
   }
 
   const isStorageEmpty = items.length === 0
@@ -392,11 +392,16 @@ export function InventoryPage() {
             <span className="text-sm font-medium tracking-wide text-muted-foreground">
               {t("inventory.export.label")}
             </span>
-            <Button type="button" variant="outline" size="sm" onClick={() => runExport("xlsx")}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void runExport("xlsx")}
+            >
               <FileSpreadsheet className="size-4" />
               {t("inventory.export.xlsx")}
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => runExport("pdf")}>
+            <Button type="button" variant="outline" size="sm" onClick={() => void runExport("pdf")}>
               <FileText className="size-4" />
               {t("inventory.export.pdf")}
             </Button>

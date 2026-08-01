@@ -73,14 +73,23 @@ export function exportToXlsx(data: InventoryExportRow[]): void {
   XLSX.writeFile(workbook, `inventory-export-${exportDateStamp()}.xlsx`)
 }
 
-export function exportToPdf(data: InventoryExportRow[]): void {
+export async function exportToPdf(data: InventoryExportRow[]): Promise<void> {
+  // Font is ~670KB base64 — load only when exporting, not in the main bundle.
+  const { robotoFontBase64 } = await import("@/lib/fonts/robotoFont")
+
   const doc = new jsPDF({ orientation: "landscape" })
+  doc.addFileToVFS("Roboto-Regular.ttf", robotoFontBase64)
+  doc.addFont("Roboto-Regular.ttf", "Roboto", "normal")
+  // autoTable headers default to bold; reuse Regular so Cyrillic stays available.
+  doc.addFont("Roboto-Regular.ttf", "Roboto", "bold")
+  doc.setFont("Roboto")
+
   const headers = Object.keys(data[0] ?? {})
   autoTable(doc, {
     head: [headers],
     body: data.map((row) => Object.values(row)),
-    styles: { fontSize: 7 },
-    headStyles: { fillColor: [30, 30, 30] },
+    styles: { font: "Roboto", fontSize: 7 },
+    headStyles: { font: "Roboto", fontStyle: "bold", fillColor: [30, 30, 30] },
   })
   doc.save(`inventory-export-${exportDateStamp()}.pdf`)
 }

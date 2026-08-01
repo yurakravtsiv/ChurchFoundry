@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/dist", "!**/dev-dist", "!**/node_modules", "!**/pnpm-lock.yaml"]
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/dev-dist",
+      "!**/node_modules",
+      "!**/pnpm-lock.yaml",
+      "!**/src/lib/fonts/robotoFont.ts"
+    ]
   },
   "formatter": {
     "enabled": true,
