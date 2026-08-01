@@ -28,7 +28,51 @@
     "expandSidebar": "Expand"
   },
   "inventory": {
-    "downloadQr": "Download as image"
+    "downloadQr": "Download as image",
+    "searchPlaceholder": "Search…",
+    "create": "Create",
+    "createStub": "The create form will be added in the next step",
+    "exportXlsx": "Export to .xlsx",
+    "showArchived": "Show archived",
+    "hideArchived": "Hide archived",
+    "itemNotFound": "Item not found",
+    "archiveConfirmTitle": "Archive “{{name}}”?",
+    "archiveConfirmDescription": "Archived items can be shown again with the archive toggle.",
+    "empty": {
+      "title": "Inventory is empty",
+      "createFirst": "Create first item",
+      "noResults": "Nothing found"
+    },
+    "filters": {
+      "all": "All",
+      "category": "Category",
+      "subcategory": "Subcategory",
+      "availability": "Availability"
+    },
+    "availability": {
+      "inChurch": "In church",
+      "borrowed": "Borrowed"
+    },
+    "columns": {
+      "photo": "Photo",
+      "name": "Name",
+      "category": "Category",
+      "subcategory": "Subcategory",
+      "quantity": "Quantity",
+      "location": "Location",
+      "availability": "Availability",
+      "availabilityComment": "Availability comment",
+      "supplier": "Supplier",
+      "serialNumber": "Serial number",
+      "warrantyUntil": "Warranty until",
+      "comment": "Comment"
+    },
+    "actions": {
+      "menu": "Actions",
+      "edit": "Edit",
+      "archive": "Archive",
+      "cancel": "Cancel"
+    }
   },
   "refresh": {
     "pull": "Pull to refresh",

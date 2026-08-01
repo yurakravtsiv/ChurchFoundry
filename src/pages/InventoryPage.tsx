@@ -1,19 +1,562 @@
-import { Wrench } from "lucide-react"
+import {
+  type ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  type SortingState,
+  useReactTable,
+} from "@tanstack/react-table"
+import {
+  ArrowUpDown,
+  Eye,
+  EyeOff,
+  MoreHorizontal,
+  Package,
+  Plus,
+  Search,
+  Wrench,
+} from "lucide-react"
+import { useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useNavigate } from "react-router"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  archiveInventoryItem,
+  getCategories,
+  getInventoryItems,
+  getSubcategories,
+} from "@/lib/inventoryStorage"
+import { cn } from "@/lib/utils"
+import type { AvailabilityStatus, InventoryItem } from "@/types/inventory"
+
+function formatWarrantyDate(value: string | null, locale: string) {
+  if (!value) {
+    return "—"
+  }
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return "—"
+  }
+  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "uk-UA", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date)
+}
+
+function loadInventoryState() {
+  return {
+    items: getInventoryItems(),
+    categories: getCategories(),
+    subcategories: getSubcategories(),
+  }
+}
 
 export function InventoryPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
+  const locale = i18n.language.startsWith("en") ? "en" : "uk"
+
+  const [{ items, categories, subcategories }, setInventoryState] = useState(loadInventoryState)
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [search, setSearch] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState("all")
+  const [subcategoryFilter, setSubcategoryFilter] = useState("all")
+  const [availabilityFilter, setAvailabilityFilter] = useState("all")
+  const [showArchived, setShowArchived] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
+  const [archiveTarget, setArchiveTarget] = useState<InventoryItem | null>(null)
+
+  const refreshItems = useCallback(() => {
+    setInventoryState(loadInventoryState())
+  }, [])
+
+  const categoryNameById = useMemo(() => {
+    return new Map(categories.map((category) => [category.id, category.name]))
+  }, [categories])
+
+  const subcategoryNameById = useMemo(() => {
+    return new Map(subcategories.map((subcategory) => [subcategory.id, subcategory.name]))
+  }, [subcategories])
+
+  const filteredSubcategories = useMemo(() => {
+    if (categoryFilter === "all") {
+      return []
+    }
+    return subcategories.filter((subcategory) => subcategory.categoryId === categoryFilter)
+  }, [categoryFilter, subcategories])
+
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLowerCase()
+
+    return items.filter((item) => {
+      if (!showArchived && item.archived) {
+        return false
+      }
+      if (categoryFilter !== "all" && item.categoryId !== categoryFilter) {
+        return false
+      }
+      if (subcategoryFilter !== "all" && item.subcategoryId !== subcategoryFilter) {
+        return false
+      }
+      if (availabilityFilter !== "all" && item.availability !== availabilityFilter) {
+        return false
+      }
+      if (query) {
+        const haystack = [
+          item.name,
+          String(item.quantity),
+          item.availabilityComment,
+          item.comment,
+          item.supplier,
+        ]
+          .join(" ")
+          .toLowerCase()
+        if (!haystack.includes(query)) {
+          return false
+        }
+      }
+      return true
+    })
+  }, [availabilityFilter, categoryFilter, items, search, showArchived, subcategoryFilter])
+
+  const columns = useMemo<ColumnDef<InventoryItem>[]>(
+    () => [
+      {
+        id: "photo",
+        header: t("inventory.columns.photo"),
+        cell: () => (
+          <div className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
+            <Package className="size-5" aria-hidden />
+          </div>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: "name",
+        header: ({ column }) => (
+          <Button
+            type="button"
+            variant="ghost"
+            className="-ml-3 h-8"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            {t("inventory.columns.name")}
+            <ArrowUpDown className="size-3.5" />
+          </Button>
+        ),
+        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+      },
+      {
+        id: "category",
+        header: t("inventory.columns.category"),
+        cell: ({ row }) => categoryNameById.get(row.original.categoryId) ?? "—",
+        enableSorting: false,
+      },
+      {
+        id: "subcategory",
+        header: t("inventory.columns.subcategory"),
+        cell: ({ row }) => subcategoryNameById.get(row.original.subcategoryId) ?? "—",
+        enableSorting: false,
+      },
+      {
+        accessorKey: "quantity",
+        header: ({ column }) => (
+          <Button
+            type="button"
+            variant="ghost"
+            className="-ml-3 h-8"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            {t("inventory.columns.quantity")}
+            <ArrowUpDown className="size-3.5" />
+          </Button>
+        ),
+      },
+      {
+        accessorKey: "location",
+        header: t("inventory.columns.location"),
+        cell: ({ row }) => row.original.location || "—",
+        enableSorting: false,
+      },
+      {
+        accessorKey: "availability",
+        header: t("inventory.columns.availability"),
+        cell: ({ row }) => {
+          const status = row.original.availability as AvailabilityStatus
+          if (status === "borrowed") {
+            return <Badge variant="warning">{t("inventory.availability.borrowed")}</Badge>
+          }
+          return <Badge variant="success">{t("inventory.availability.inChurch")}</Badge>
+        },
+        enableSorting: false,
+      },
+      {
+        accessorKey: "availabilityComment",
+        header: t("inventory.columns.availabilityComment"),
+        cell: ({ row }) => row.original.availabilityComment || "—",
+        enableSorting: false,
+      },
+      {
+        accessorKey: "supplier",
+        header: t("inventory.columns.supplier"),
+        cell: ({ row }) => row.original.supplier || "—",
+        enableSorting: false,
+      },
+      {
+        accessorKey: "serialNumber",
+        header: t("inventory.columns.serialNumber"),
+        cell: ({ row }) => row.original.serialNumber || "—",
+        enableSorting: false,
+      },
+      {
+        accessorKey: "warrantyUntil",
+        header: t("inventory.columns.warrantyUntil"),
+        cell: ({ row }) => formatWarrantyDate(row.original.warrantyUntil, locale),
+        enableSorting: false,
+      },
+      {
+        accessorKey: "comment",
+        header: t("inventory.columns.comment"),
+        cell: ({ row }) => (
+          <span className="line-clamp-2 max-w-[14rem]">{row.original.comment || "—"}</span>
+        ),
+        enableSorting: false,
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => {
+          const item = row.original
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  onClick={(event) => event.stopPropagation()}
+                  aria-label={t("inventory.actions.menu")}
+                >
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
+                <DropdownMenuItem onClick={() => navigate(`/inventory/${item.id}`)}>
+                  {t("inventory.actions.edit")}
+                </DropdownMenuItem>
+                {!item.archived ? (
+                  <DropdownMenuItem onClick={() => setArchiveTarget(item)}>
+                    {t("inventory.actions.archive")}
+                  </DropdownMenuItem>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        },
+        enableSorting: false,
+      },
+    ],
+    [categoryNameById, locale, navigate, subcategoryNameById, t],
+  )
+
+  const table = useReactTable({
+    data: filteredItems,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  })
+
+  const confirmArchive = () => {
+    if (!archiveTarget) {
+      return
+    }
+    archiveInventoryItem(archiveTarget.id)
+    setArchiveTarget(null)
+    refreshItems()
+  }
+
+  const openCreate = () => setCreateOpen(true)
+
+  const isStorageEmpty = items.length === 0
+  const isFilterEmpty = !isStorageEmpty && filteredItems.length === 0
 
   return (
-    <main className="flex min-h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px))] w-full flex-col items-center justify-center bg-background px-4 py-12 text-center">
-      <Wrench
-        className="mb-6 size-24 animate-breathe text-muted-foreground sm:size-28 md:size-32"
-        strokeWidth={1.25}
-        aria-hidden
-      />
-      <p className="text-2xl font-medium tracking-tight text-muted-foreground sm:text-3xl">
-        {t("nav.inDevelopment")}
-      </p>
+    <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 bg-background px-4 py-6 sm:px-6 md:py-8">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button type="button" onClick={openCreate}>
+            <Plus className="size-4" />
+            {t("inventory.create")}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => setExportOpen(true)}>
+            {t("inventory.exportXlsx")}
+          </Button>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="flex w-full flex-col gap-1.5 sm:min-w-[220px] sm:max-w-md sm:flex-1">
+            <Label htmlFor="inventory-search">{t("inventory.searchPlaceholder")}</Label>
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <Input
+                id="inventory-search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={t("inventory.searchPlaceholder")}
+                className="pl-9"
+              />
+            </div>
+          </div>
+
+          <div className="flex w-full flex-col gap-1.5 sm:w-[200px]">
+            <Label htmlFor="inventory-filter-category">{t("inventory.filters.category")}</Label>
+            <Select
+              value={categoryFilter}
+              onValueChange={(value) => {
+                setCategoryFilter(value)
+                setSubcategoryFilter("all")
+              }}
+            >
+              <SelectTrigger id="inventory-filter-category" className="w-full">
+                <SelectValue placeholder={t("inventory.filters.all")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex w-full flex-col gap-1.5 sm:w-[200px]">
+            <Label htmlFor="inventory-filter-subcategory">
+              {t("inventory.filters.subcategory")}
+            </Label>
+            <Select
+              value={subcategoryFilter}
+              onValueChange={setSubcategoryFilter}
+              disabled={categoryFilter === "all"}
+            >
+              <SelectTrigger id="inventory-filter-subcategory" className="w-full">
+                <SelectValue placeholder={t("inventory.filters.all")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                {filteredSubcategories.map((subcategory) => (
+                  <SelectItem key={subcategory.id} value={subcategory.id}>
+                    {subcategory.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex w-full flex-col gap-1.5 sm:w-[200px]">
+            <Label htmlFor="inventory-filter-availability">
+              {t("inventory.filters.availability")}
+            </Label>
+            <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+              <SelectTrigger id="inventory-filter-availability" className="w-full">
+                <SelectValue placeholder={t("inventory.filters.all")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                <SelectItem value="in_church">{t("inventory.availability.inChurch")}</SelectItem>
+                <SelectItem value="borrowed">{t("inventory.availability.borrowed")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className={cn(showArchived && "border-primary text-primary")}
+                  onClick={() => setShowArchived((value) => !value)}
+                  aria-pressed={showArchived}
+                  aria-label={
+                    showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")
+                  }
+                >
+                  {showArchived ? (
+                    <Eye className="size-4" aria-hidden />
+                  ) : (
+                    <EyeOff className="size-4" aria-hidden />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+
+      {isStorageEmpty ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
+          <Package
+            className="size-24 text-muted-foreground sm:size-28"
+            strokeWidth={1.25}
+            aria-hidden
+          />
+          <p className="text-xl font-medium tracking-tight text-muted-foreground sm:text-2xl">
+            {t("inventory.empty.title")}
+          </p>
+          <Button type="button" onClick={openCreate}>
+            <Plus className="size-4" />
+            {t("inventory.empty.createFirst")}
+          </Button>
+        </div>
+      ) : isFilterEmpty ? (
+        <div className="flex flex-1 items-center justify-center py-16 text-center">
+          <p className="text-lg text-muted-foreground">{t("inventory.empty.noResults")}</p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className="whitespace-nowrap">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/inventory/${row.original.id}`)}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      onClick={
+                        cell.column.id === "actions"
+                          ? (event) => event.stopPropagation()
+                          : undefined
+                      }
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("inventory.create")}</DialogTitle>
+            <DialogDescription>{t("inventory.createStub")}</DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{t("inventory.exportXlsx")}</DialogTitle>
+            <DialogDescription>{t("nav.inDevelopment")}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <Wrench
+              className="mb-6 size-24 animate-breathe text-muted-foreground sm:size-28"
+              strokeWidth={1.25}
+              aria-hidden
+            />
+            <p className="text-2xl font-medium tracking-tight text-muted-foreground">
+              {t("nav.inDevelopment")}
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={archiveTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setArchiveTarget(null)
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {t("inventory.archiveConfirmTitle", { name: archiveTarget?.name ?? "" })}
+            </DialogTitle>
+            <DialogDescription>{t("inventory.archiveConfirmDescription")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setArchiveTarget(null)}>
+              {t("inventory.actions.cancel")}
+            </Button>
+            <Button type="button" onClick={confirmArchive}>
+              {t("inventory.actions.archive")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }

@@ -11,6 +11,7 @@ import { ThemeProvider, useTheme } from "@/hooks/useTheme"
 import { syncStandaloneDisplay } from "@/lib/display"
 import { ComingSoonPage } from "@/pages/ComingSoonPage"
 import { HomePage } from "@/pages/HomePage"
+import { InventoryItemPage } from "@/pages/InventoryItemPage"
 import { InventoryPage } from "@/pages/InventoryPage"
 import { LoginPage } from "@/pages/LoginPage"
 
@@ -54,6 +55,7 @@ function AppShell() {
               <Route path="/services" element={<ComingSoonPage />} />
               <Route path="/calendar" element={<ComingSoonPage />} />
               <Route path="/inventory" element={<InventoryPage />} />
+              <Route path="/inventory/:itemId" element={<InventoryItemPage />} />
             </Route>
           </Route>
         </Routes>

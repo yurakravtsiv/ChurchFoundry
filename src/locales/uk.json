@@ -28,7 +28,51 @@
     "expandSidebar": "Розгорнути"
   },
   "inventory": {
-    "downloadQr": "Завантажити як зображення"
+    "downloadQr": "Завантажити як зображення",
+    "searchPlaceholder": "Пошук…",
+    "create": "Створити",
+    "createStub": "Форма створення буде в наступному кроці",
+    "exportXlsx": "Експорт в .xlsx",
+    "showArchived": "Показати архівовані",
+    "hideArchived": "Приховати архівовані",
+    "itemNotFound": "Предмет не знайдено",
+    "archiveConfirmTitle": "Архівувати «{{name}}»?",
+    "archiveConfirmDescription": "Архівовані предмети можна знову показати через перемикач архіву.",
+    "empty": {
+      "title": "Інвентар поки порожній",
+      "createFirst": "Створити перший предмет",
+      "noResults": "Нічого не знайдено"
+    },
+    "filters": {
+      "all": "Усі",
+      "category": "Категорія",
+      "subcategory": "Підкатегорія",
+      "availability": "Наявність"
+    },
+    "availability": {
+      "inChurch": "В церкві",
+      "borrowed": "Позичено"
+    },
+    "columns": {
+      "photo": "Фото",
+      "name": "Назва",
+      "category": "Категорія",
+      "subcategory": "Підкатегорія",
+      "quantity": "Кількість",
+      "location": "Локація",
+      "availability": "Наявність",
+      "availabilityComment": "Коментар наявності",
+      "supplier": "Постачальник",
+      "serialNumber": "Серійник",
+      "warrantyUntil": "Гарантія до",
+      "comment": "Коментар"
+    },
+    "actions": {
+      "menu": "Дії",
+      "edit": "Редагувати",
+      "archive": "Архівувати",
+      "cancel": "Скасувати"
+    }
   },
   "refresh": {
     "pull": "Потягніть, щоб оновити",
