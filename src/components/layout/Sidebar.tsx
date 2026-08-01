@@ -1,5 +1,6 @@
 import { ChevronsLeft, ChevronsRight } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router"
 
@@ -14,6 +15,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { useStandalonePwa } from "@/hooks/useStandalonePwa"
+import { resolveSafeAreaInsetBottom } from "@/lib/display"
 import { navItems } from "@/lib/nav"
 import { cn } from "@/lib/utils"
 
@@ -135,6 +137,7 @@ function SidebarPanel({
 export function Sidebar({ open, onOpenChange }: SidebarProps) {
   const { t } = useTranslation()
   const isStandalone = useStandalonePwa()
+  const [bottomInset, setBottomInset] = useState(0)
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true"
@@ -151,9 +154,39 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
     }
   }, [collapsed])
 
+  useLayoutEffect(() => {
+    if (!open || !isStandalone) {
+      setBottomInset(0)
+      return
+    }
+
+    const sync = () => {
+      setBottomInset(resolveSafeAreaInsetBottom())
+    }
+    sync()
+    const rafId = window.requestAnimationFrame(sync)
+    const timeoutId = window.setTimeout(sync, 50)
+    return () => {
+      window.cancelAnimationFrame(rafId)
+      window.clearTimeout(timeoutId)
+    }
+  }, [open, isStandalone])
+
   const toggleCollapsed = () => {
     setCollapsed((value) => !value)
   }
+
+  const pwaSheetStyle =
+    isStandalone && bottomInset > 0
+      ? ({
+          top: 0,
+          bottom: -bottomInset,
+          height: "auto",
+          maxHeight: "none",
+          paddingBottom: bottomInset,
+          boxSizing: "border-box",
+        } as const)
+      : undefined
 
   return (
     <>
@@ -170,11 +203,11 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
         <SheetContent
           side="left"
           className="drawer-sheet flex h-full flex-col gap-0 bg-background p-0"
+          style={pwaSheetStyle}
         >
           <div
             className={cn(
               "flex h-full min-h-0 flex-1 flex-col bg-background px-4 pb-3 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 pt-[max(1rem,env(safe-area-inset-top,0px))]",
-              // Browser: extra bottom inset for chrome. PWA: sheet CSS pads the safe band.
               !isStandalone && "pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]",
             )}
           >
@@ -188,6 +221,28 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/*
+        Paint the home-indicator band with fixed layers. CSS on the sheet alone is
+        unreliable on iOS (env() often 0; inset rules lose to utilities).
+      */}
+      {open && isStandalone && bottomInset > 0
+        ? createPortal(
+            <>
+              <div
+                aria-hidden
+                className="pointer-events-none fixed inset-x-0 bottom-0 z-50 bg-black/80"
+                style={{ height: bottomInset }}
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none fixed bottom-0 left-0 z-[51] w-3/4 max-w-sm bg-background"
+                style={{ height: bottomInset }}
+              />
+            </>,
+            document.body,
+          )
+        : null}
     </>
   )
 }
