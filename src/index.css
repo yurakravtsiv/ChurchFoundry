@@ -99,13 +99,28 @@ html.theme-switching *::after {
   animation: none !important;
 }
 
-/* Installed PWA: drawer fills the physical screen, including the home-indicator band. */
+/*
+  Installed PWA: iOS lays out position:fixed inside the safe viewport, so
+  inset/bottom:0 stops above the home indicator and body shows through as a
+  white strip. Pull overlay + drawer into that band.
+  --safe-area-bottom is measured in JS (env() alone is often 0 on first paint).
+*/
+html.standalone .sheet-overlay,
 html.standalone .drawer-sheet {
   top: 0;
-  bottom: 0;
+  bottom: calc(-1 * var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)));
   height: auto;
-  min-height: 100lvh;
+  min-height: calc(100% + var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)));
   max-height: none;
+}
+
+html.standalone .drawer-sheet {
+  min-height: calc(100lvh + var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)));
+}
+
+html.standalone .sheet-overlay {
+  right: 0;
+  left: 0;
 }
 
 @layer base {

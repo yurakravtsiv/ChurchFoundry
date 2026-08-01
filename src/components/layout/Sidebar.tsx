@@ -151,10 +151,6 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
     }
   }, [collapsed])
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("standalone", isStandalone)
-  }, [isStandalone])
-
   const toggleCollapsed = () => {
     setCollapsed((value) => !value)
   }
@@ -173,17 +169,12 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="left"
-          className={cn(
-            // Stretch with inset-y-0 (from sheet variants). Avoid h-dvh — on iOS it is
-            // shorter than the overlay and leaves a gap above the home indicator.
-            "drawer-sheet flex h-auto max-h-none min-h-full flex-col gap-0 bg-background p-0",
-            isStandalone && "bottom-0 top-0 min-h-[100lvh]",
-          )}
+          className="drawer-sheet flex h-auto max-h-none min-h-full flex-col gap-0 bg-background p-0"
         >
           <div
             className={cn(
               "flex min-h-0 flex-1 flex-col bg-background px-4 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 pt-[max(1rem,env(safe-area-inset-top,0px))]",
-              // Browser chrome needs the inset; installed PWA should paint edge-to-edge.
+              // Browser chrome needs the inset; installed PWA paints edge-to-edge via CSS.
               isStandalone ? "pb-0" : "pb-[env(safe-area-inset-bottom,0px)]",
             )}
           >

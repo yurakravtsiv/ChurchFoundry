@@ -1,11 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { useEffect } from "react"
 import { BrowserRouter, Route, Routes } from "react-router"
 
 import { AppLayout } from "@/components/layout/AppLayout"
 import { GuestRoute, ProtectedRoute } from "@/components/ProtectedRoute"
 import { UpdateBanner } from "@/components/UpdateBanner"
 import { AuthProvider } from "@/hooks/useAuth"
+import { useStandalonePwa } from "@/hooks/useStandalonePwa"
 import { ThemeProvider, useTheme } from "@/hooks/useTheme"
+import { syncStandaloneDisplay } from "@/lib/display"
 import { ComingSoonPage } from "@/pages/ComingSoonPage"
 import { HomePage } from "@/pages/HomePage"
 import { InventoryPage } from "@/pages/InventoryPage"
@@ -23,6 +26,17 @@ const queryClient = new QueryClient({
 function AppShell() {
   // Keep theme state mounted at the app root (syncs with FOWT inline script).
   useTheme()
+  const isStandalone = useStandalonePwa()
+
+  useEffect(() => {
+    syncStandaloneDisplay(isStandalone)
+    const rafId = window.requestAnimationFrame(() => syncStandaloneDisplay(isStandalone))
+    const timeoutId = window.setTimeout(() => syncStandaloneDisplay(isStandalone), 100)
+    return () => {
+      window.cancelAnimationFrame(rafId)
+      window.clearTimeout(timeoutId)
+    }
+  }, [isStandalone])
 
   return (
     <>
