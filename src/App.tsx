@@ -1,12 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect } from "react"
 import { BrowserRouter, Route, Routes } from "react-router"
 
 import { AppLayout } from "@/components/layout/AppLayout"
 import { GuestRoute, ProtectedRoute } from "@/components/ProtectedRoute"
-import { SplashScreen } from "@/components/SplashScreen"
 import { UpdateBanner } from "@/components/UpdateBanner"
-import { AuthProvider, useAuth } from "@/hooks/useAuth"
+import { AuthProvider } from "@/hooks/useAuth"
 import { useStandalonePwa } from "@/hooks/useStandalonePwa"
 import { ThemeProvider, useTheme } from "@/hooks/useTheme"
 import { syncStandaloneDisplay } from "@/lib/display"
@@ -27,13 +26,7 @@ const queryClient = new QueryClient({
 function AppShell() {
   // Keep theme state mounted at the app root (syncs with FOWT inline script).
   useTheme()
-  const { session, isLoading: isAuthLoading } = useAuth()
   const isStandalone = useStandalonePwa()
-  const [splashActive, setSplashActive] = useState(false)
-  const hadSessionRef = useRef(false)
-  const onSplashFinished = useCallback(() => {
-    setSplashActive(false)
-  }, [])
 
   useEffect(() => {
     syncStandaloneDisplay(isStandalone)
@@ -45,28 +38,8 @@ function AppShell() {
     }
   }, [isStandalone])
 
-  // No session → login immediately (no splash). Splash only after session appears
-  // (fresh login or restored session on cold start).
-  useEffect(() => {
-    if (isAuthLoading) {
-      return
-    }
-
-    if (session && !hadSessionRef.current) {
-      setSplashActive(true)
-      hadSessionRef.current = true
-      return
-    }
-
-    if (!session) {
-      hadSessionRef.current = false
-      setSplashActive(false)
-    }
-  }, [session, isAuthLoading])
-
   return (
     <>
-      <SplashScreen active={splashActive} onFinished={onSplashFinished} />
       <UpdateBanner />
       <BrowserRouter>
         <Routes>

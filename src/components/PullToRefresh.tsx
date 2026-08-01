@@ -7,6 +7,8 @@ const PULL_THRESHOLD_PX = 80
 const MAX_PULL_PX = 120
 const INDICATOR_MAX_PX = 56
 const SETTLE_MS = 200
+/** Spin in place before kicking off the actual reload. */
+const REFRESH_SPIN_DELAY_MS = 1000
 /** Degrees of rotation per pixel of finger travel (~full turn every 180px). */
 const ROTATION_DEG_PER_PX = 360 / 180
 
@@ -135,6 +137,10 @@ export function PullToRefresh({
     }
     beginSettle()
     try {
+      // Show the spinner for a beat before starting the reload work.
+      await new Promise<void>((resolve) => {
+        window.setTimeout(resolve, REFRESH_SPIN_DELAY_MS)
+      })
       await onRefresh()
       // Custom onRefresh that does not reload — hide the indicator.
       refreshingRef.current = false
