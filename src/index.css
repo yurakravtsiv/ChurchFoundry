@@ -99,6 +99,15 @@ html.theme-switching *::after {
   animation: none !important;
 }
 
+/* Installed PWA: drawer fills the physical screen, including the home-indicator band. */
+html.standalone .drawer-sheet {
+  top: 0;
+  bottom: 0;
+  height: auto;
+  min-height: 100lvh;
+  max-height: none;
+}
+
 @layer base {
   * {
     @apply border-border;

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <script>
       ;(() => {
-        var key, stored, theme, root, meta
+        var key, stored, theme, root, meta, standalone
         try {
           key = "churchfoundry-theme"
           stored = localStorage.getItem(key)
@@ -26,6 +26,10 @@
           if (meta) {
             meta.setAttribute("content", theme === "dark" ? "#0A0A0A" : "#FAFAFA")
           }
+          standalone =
+            (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+            (window.navigator && window.navigator.standalone === true)
+          root.classList.toggle("standalone", !!standalone)
         } catch (_e) {
           document.documentElement.classList.add("dark")
           document.documentElement.style.colorScheme = "dark"
