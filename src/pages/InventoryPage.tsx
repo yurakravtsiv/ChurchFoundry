@@ -183,11 +183,26 @@ export function InventoryPage() {
       {
         id: "photo",
         header: t("inventory.columns.photo"),
-        cell: () => (
-          <div className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
-            <Package className="size-5" aria-hidden />
-          </div>
-        ),
+        cell: ({ row }) => {
+          const item = row.original
+          const avatar = item.avatarPhotoId
+            ? item.photos.find((photo) => photo.id === item.avatarPhotoId)
+            : undefined
+          return (
+            <div className="flex size-10 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
+              {avatar ? (
+                <img
+                  src={avatar.dataUrl}
+                  alt=""
+                  className="size-full object-cover"
+                  draggable={false}
+                />
+              ) : (
+                <Package className="size-5" aria-hidden />
+              )}
+            </div>
+          )
+        },
         enableSorting: false,
       },
       {
