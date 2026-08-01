@@ -12,7 +12,7 @@ export function UpdateBanner() {
   return (
     <div
       className={cn(
-        "pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] transition-all duration-300 ease-out",
+        "pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-4 pb-4 transition-all duration-300 ease-out",
         needRefresh ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0",
       )}
       aria-live="polite"

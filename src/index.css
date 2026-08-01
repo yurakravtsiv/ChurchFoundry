@@ -99,27 +99,6 @@ html.theme-switching *::after {
   animation: none !important;
 }
 
-/* Block iOS rubber-band while splash covers the UI (no body position lock). */
-html.splash-open,
-html.splash-open body {
-  overflow: hidden !important;
-  overscroll-behavior: none !important;
-}
-
-.splash-screen {
-  overflow: hidden;
-  overscroll-behavior: none;
-  touch-action: none;
-}
-
-/* Same geometric center as the native iOS launch image. */
-.splash-screen__mark {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  translate: -50% -50%;
-}
-
 @layer base {
   * {
     @apply border-border;

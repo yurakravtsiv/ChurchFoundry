@@ -3,9 +3,8 @@ import { BrowserRouter, Route, Routes } from "react-router"
 
 import { AppLayout } from "@/components/layout/AppLayout"
 import { GuestRoute, ProtectedRoute } from "@/components/ProtectedRoute"
-import { SplashScreen } from "@/components/SplashScreen"
 import { UpdateBanner } from "@/components/UpdateBanner"
-import { AuthProvider, useAuth } from "@/hooks/useAuth"
+import { AuthProvider } from "@/hooks/useAuth"
 import { ThemeProvider, useTheme } from "@/hooks/useTheme"
 import { ComingSoonPage } from "@/pages/ComingSoonPage"
 import { HomePage } from "@/pages/HomePage"
@@ -24,11 +23,9 @@ const queryClient = new QueryClient({
 function AppShell() {
   // Keep theme state mounted at the app root (syncs with FOWT inline script).
   useTheme()
-  const { isLoading: isAuthLoading } = useAuth()
 
   return (
     <>
-      <SplashScreen isLoading={isAuthLoading} />
       <UpdateBanner />
       <BrowserRouter>
         <Routes>

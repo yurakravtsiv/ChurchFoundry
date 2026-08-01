@@ -157,7 +157,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
     <>
       <aside
         className={cn(
-          "hidden shrink-0 border-r border-border bg-background transition-[width] duration-200 md:flex md:flex-col md:py-4 md:pb-[max(1rem,env(safe-area-inset-bottom,0px))]",
+          "hidden shrink-0 border-r border-border bg-background transition-[width] duration-200 md:flex md:flex-col md:py-4",
           collapsed ? "w-16 px-2" : "w-60 px-3",
         )}
       >
@@ -169,7 +169,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
           side="left"
           className="flex w-full max-w-none flex-col bg-background p-0 sm:max-w-none"
         >
-          <div className="flex h-full flex-col bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 pt-[max(1rem,env(safe-area-inset-top,0px))]">
+          <div className="flex h-full flex-col bg-background px-4 pb-4 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 pt-[max(1rem,env(safe-area-inset-top,0px))]">
             <SheetHeader className="text-left">
               <SheetTitle>{t("app.name")}</SheetTitle>
               <SheetDescription className="sr-only">{t("nav.menuDescription")}</SheetDescription>
