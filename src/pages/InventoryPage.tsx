@@ -5,7 +5,7 @@ export function InventoryPage() {
   const { t } = useTranslation()
 
   return (
-    <main className="flex min-h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px))] w-full flex-col items-center justify-center bg-background px-4 py-12 text-center">
+    <main className="flex min-h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px))] w-full flex-col items-center justify-center px-4 py-12 text-center">
       <Boxes
         className="mb-6 size-24 animate-breathe text-muted-foreground sm:size-28 md:size-32"
         strokeWidth={1.25}

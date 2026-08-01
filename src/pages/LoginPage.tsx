@@ -53,7 +53,7 @@ export function LoginPage() {
   })
 
   return (
-    <main className="mx-auto flex min-h-[var(--app-height)] w-full max-w-md flex-col justify-center bg-background px-4 py-8 pt-[max(2rem,env(safe-area-inset-top,0px))]">
+    <main className="mx-auto flex min-h-[var(--app-height)] w-full max-w-md flex-col justify-center px-4 py-8 pt-[max(2rem,env(safe-area-inset-top,0px))]">
       <Card>
         <CardHeader className="space-y-4 text-center">
           <img

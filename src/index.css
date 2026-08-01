@@ -176,4 +176,8 @@ html.standalone .sheet-overlay {
     min-height: var(--app-height);
     background-color: hsl(var(--background));
   }
+
+  main {
+    background-color: transparent;
+  }
 }
