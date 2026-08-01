@@ -21,11 +21,10 @@
           root.classList.remove("light", "dark")
           root.classList.add(theme)
           root.style.colorScheme = theme
-          /* TEMP DIAG: green = uncovered strip / theme-color chrome */
-          root.style.backgroundColor = "#00ff00"
+          root.style.backgroundColor = theme === "dark" ? "#0A0A0A" : "#FAFAFA"
           meta = document.querySelector('meta[name="theme-color"]')
           if (meta) {
-            meta.setAttribute("content", "#00ff00")
+            meta.setAttribute("content", theme === "dark" ? "#0A0A0A" : "#FAFAFA")
           }
           standalone =
             (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
@@ -34,14 +33,14 @@
         } catch (_e) {
           document.documentElement.classList.add("dark")
           document.documentElement.style.colorScheme = "dark"
-          document.documentElement.style.backgroundColor = "#00ff00"
+          document.documentElement.style.backgroundColor = "#0A0A0A"
         }
       })()
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/splash_screens/icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#00ff00" />
+    <meta name="theme-color" content="#0A0A0A" />
     <meta
       name="description"
       content="ChurchFoundry — PWA for church management: members, inventory, rooms, and ministries"
