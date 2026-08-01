@@ -180,7 +180,6 @@ html {
 html.standalone .sheet-overlay,
 html.standalone .drawer-sheet {
   top: 0 !important;
-  bottom: calc(-1 * constant(safe-area-inset-bottom)) !important;
   bottom: calc(-1 * env(safe-area-inset-bottom, 0px)) !important;
   height: auto !important;
   max-height: none !important;
@@ -188,7 +187,6 @@ html.standalone .drawer-sheet {
 }
 
 html.standalone .drawer-sheet {
-  padding-bottom: constant(safe-area-inset-bottom) !important;
   padding-bottom: env(safe-area-inset-bottom, 0px) !important;
   background-color: hsl(var(--background));
 }
@@ -224,8 +222,7 @@ html.standalone .sheet-overlay {
 
   body {
     margin: 0;
-    min-height: 100%;
-    min-height: var(--app-height);
+    min-height: var(--app-height, 100%);
     background-color: hsl(var(--background));
     font-family: "Segoe UI", "Noto Sans", system-ui, -apple-system, sans-serif;
     @apply text-foreground antialiased;
@@ -240,8 +237,7 @@ html.standalone .sheet-overlay {
   }
 
   #root {
-    min-height: 100%;
-    min-height: var(--app-height);
+    min-height: var(--app-height, 100%);
     background-color: hsl(var(--background));
   }
 }

@@ -187,6 +187,8 @@ export function InventoryItemForm({
 
   const initialDataKey = initialData ? `${initialData.id}:${initialData.updatedAt}` : "create"
 
+  // Recreate only when the persisted item revision changes (or create form mounts).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed by initialDataKey
   const defaultValues = useMemo(
     () => ({
       name: initialData?.name ?? "",
@@ -204,8 +206,6 @@ export function InventoryItemForm({
       photos: initialData?.photos ? [...initialData.photos] : [],
       avatarPhotoId: initialData?.avatarPhotoId ?? null,
     }),
-    // Recreate only when the persisted item revision changes (or create form mounts).
-    // biome-ignore lint/correctness/useExhaustiveDependencies: keyed by initialDataKey
     [initialDataKey],
   )
 
