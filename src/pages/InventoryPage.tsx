@@ -446,35 +446,59 @@ export function InventoryPage() {
   return (
     <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 bg-background px-[15px] py-[10px]">
       <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button type="button" onClick={openCreate}>
-            <Plus className="size-4" />
-            {t("inventory.create")}
-          </Button>
-          <div className="ml-4 flex items-center gap-2">
-            <span className="text-sm font-medium tracking-wide text-muted-foreground">
-              {t("inventory.export.label")}
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void runExport("xlsx")}
-            >
-              <FileSpreadsheet className="size-4" />
-              {t("inventory.export.xlsx")}
+        <div className="flex flex-wrap items-center justify-end gap-2 md:justify-between">
+          <div className="relative hidden min-w-0 flex-1 md:block md:max-w-sm">
+            <Search
+              className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              id="inventory-search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t("inventory.searchPlaceholder")}
+              aria-label={t("inventory.searchPlaceholder")}
+              className={cn("h-9 min-w-0 pl-8", search && "pr-8")}
+            />
+            <FilterClearButton
+              visible={Boolean(search)}
+              label={t("inventory.filters.clear")}
+              className="right-2"
+              onClear={() => setSearch("")}
+            />
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button type="button" onClick={openCreate}>
+              <Plus className="size-4" />
+              {t("inventory.create")}
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => void runExport("pdf")}>
-              <FileText className="size-4" />
-              {t("inventory.export.pdf")}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void runExport("xlsx")}
+              >
+                <FileSpreadsheet className="size-4" />
+                {t("inventory.export.xlsx")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void runExport("pdf")}
+              >
+                <FileText className="size-4" />
+                {t("inventory.export.pdf")}
+              </Button>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 md:grid md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end md:gap-2">
+        <div className="flex flex-col gap-2 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end md:gap-2">
           <div className="grid grid-cols-3 items-end gap-2 md:contents">
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="inventory-search" className="truncate">
+            <div className="flex min-w-0 flex-col gap-1.5 md:hidden">
+              <Label htmlFor="inventory-search-mobile" className="truncate">
                 {t("inventory.searchPlaceholder")}
               </Label>
               <div className="relative min-w-0">
@@ -483,7 +507,7 @@ export function InventoryPage() {
                   aria-hidden
                 />
                 <Input
-                  id="inventory-search"
+                  id="inventory-search-mobile"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder={t("inventory.searchPlaceholder")}

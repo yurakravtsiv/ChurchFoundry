@@ -26,10 +26,9 @@
   },
   "inventory": {
     "downloadQr": "Завантажити як зображення",
-    "searchPlaceholder": "Пошук…",
+    "searchPlaceholder": "Пошук",
     "create": "Створити",
     "export": {
-      "label": "ЕКСПОРТ",
       "xlsx": "XLSX",
       "pdf": "PDF",
       "empty": "Немає даних для експорту"

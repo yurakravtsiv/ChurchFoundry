@@ -26,10 +26,9 @@
   },
   "inventory": {
     "downloadQr": "Download as image",
-    "searchPlaceholder": "Search…",
+    "searchPlaceholder": "Search",
     "create": "Create",
     "export": {
-      "label": "EXPORT",
       "xlsx": "XLSX",
       "pdf": "PDF",
       "empty": "No data to export"
