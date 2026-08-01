@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useState } from "react"
 
 import { applyThemeClass, resolveTheme } from "@/lib/theme"
 
@@ -9,6 +9,16 @@ type SplashScreenProps = {
 const MIN_VISIBLE_MS = 3000
 const FADE_MS = 350
 const SPLASH_BG = "#0A0A0A"
+
+function readSafeAreaInsetBottom(): number {
+  const probe = document.createElement("div")
+  probe.style.cssText =
+    "position:fixed;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom,0px)"
+  document.body.appendChild(probe)
+  const inset = Number.parseFloat(getComputedStyle(probe).paddingBottom) || 0
+  probe.remove()
+  return inset
+}
 
 export function SplashScreen({ isLoading }: SplashScreenProps) {
   const [minTimeElapsed, setMinTimeElapsed] = useState(false)
@@ -65,6 +75,53 @@ export function SplashScreen({ isLoading }: SplashScreenProps) {
     meta.setAttribute("content", SPLASH_BG)
     parent.appendChild(meta)
   }, [opaque])
+
+  // Lock document scroll/overscroll while splash is up — iOS rubber-band
+  // otherwise shifts the "centered" logo when the layer is short by the home indicator.
+  useLayoutEffect(() => {
+    if (!mounted) {
+      return
+    }
+
+    const root = document.documentElement
+    const body = document.body
+    const scrollY = window.scrollY
+
+    const syncShift = () => {
+      root.style.setProperty("--splash-shift", `${readSafeAreaInsetBottom()}px`)
+    }
+
+    root.classList.add("splash-open")
+    syncShift()
+    // iOS often reports 0 on the first paint, then updates the inset.
+    const rafId = window.requestAnimationFrame(syncShift)
+    const timeoutId = window.setTimeout(syncShift, 100)
+
+    body.style.position = "fixed"
+    body.style.top = `-${scrollY}px`
+    body.style.left = "0"
+    body.style.right = "0"
+    body.style.width = "100%"
+
+    const preventTouchScroll = (event: TouchEvent) => {
+      event.preventDefault()
+    }
+    document.addEventListener("touchmove", preventTouchScroll, { passive: false })
+
+    return () => {
+      window.cancelAnimationFrame(rafId)
+      window.clearTimeout(timeoutId)
+      root.classList.remove("splash-open")
+      root.style.removeProperty("--splash-shift")
+      body.style.position = ""
+      body.style.top = ""
+      body.style.left = ""
+      body.style.right = ""
+      body.style.width = ""
+      document.removeEventListener("touchmove", preventTouchScroll)
+      window.scrollTo(0, scrollY)
+    }
+  }, [mounted])
 
   if (!mounted) {
     return null

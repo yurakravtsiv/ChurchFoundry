@@ -99,20 +99,36 @@ html.theme-switching *::after {
   animation: none !important;
 }
 
+/* Block iOS rubber-band while splash covers the UI. */
+html.splash-open,
+html.splash-open body {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none;
+}
+
 /*
-  Full-bleed splash: when the fixed containing block is the safe viewport,
-  bottom:0 stops above the home indicator and flex-centering sits too high.
-  Anchor top/sides and extend the bottom edge into the unsafe band.
+  Splash sits in the safe viewport on iOS, so flex-center is high by ~half the
+  home-indicator inset. padding-top shifts optical center down; ::after paints
+  the home-indicator band so the black cover stays full-bleed.
 */
 .splash-screen {
-  top: 0;
-  right: 0;
-  left: 0;
-  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
-  width: auto;
-  height: auto;
-  min-height: 100lvh;
+  inset: 0;
+  box-sizing: border-box;
+  padding-top: var(--splash-shift, env(safe-area-inset-bottom, 0px));
   overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+.splash-screen::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: var(--splash-shift, env(safe-area-inset-bottom, 0px));
+  background: #0a0a0a;
 }
 
 @layer base {
