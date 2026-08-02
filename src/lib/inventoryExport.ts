@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
-import * as XLSX from "xlsx"
+import * as XLSX from "xlsx-js-style"
 
 import type {
   AvailabilityStatus,
@@ -114,6 +114,28 @@ function imageFormatFromDataUrl(dataUrl: string): "PNG" | "JPEG" {
   return "JPEG"
 }
 
+/**
+ * Insert zero-width spaces into long unbroken tokens so jspdf-autotable can
+ * wrap them instead of expanding a column to the full string width.
+ */
+function softBreakLongRuns(value: string | number | null | undefined, maxRunLength = 14): string {
+  const text = value == null ? "" : String(value)
+  if (!text) {
+    return text
+  }
+
+  return text.replace(/\S+/g, (token) => {
+    if (token.length <= maxRunLength) {
+      return token
+    }
+    const chunks: string[] = []
+    for (let index = 0; index < token.length; index += maxRunLength) {
+      chunks.push(token.slice(index, index + maxRunLength))
+    }
+    return chunks.join("\u200b")
+  })
+}
+
 export function prepareExportData(
   items: InventoryItem[],
   categories: Category[],
@@ -153,9 +175,33 @@ function autoFitColumns(data: InventoryExportRow[]): XLSX.ColInfo[] {
   })
 }
 
+function styleXlsxHeaderRow(worksheet: XLSX.WorkSheet): void {
+  const range = XLSX.utils.decode_range(worksheet["!ref"] ?? "A1")
+  for (let column = range.s.c; column <= range.e.c; column += 1) {
+    const address = XLSX.utils.encode_cell({ r: 0, c: column })
+    const cell = worksheet[address]
+    if (!cell) {
+      continue
+    }
+    cell.s = {
+      font: {
+        bold: true,
+        sz: 14,
+        name: "Calibri",
+      },
+      alignment: {
+        vertical: "center",
+        horizontal: "left",
+        wrapText: true,
+      },
+    }
+  }
+}
+
 export function exportToXlsx(data: InventoryExportRow[]): void {
   const worksheet = XLSX.utils.json_to_sheet(data)
   worksheet["!cols"] = autoFitColumns(data)
+  styleXlsxHeaderRow(worksheet)
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, "Інвентар")
   XLSX.writeFile(workbook, `inventory-export-${exportDateStamp()}.xlsx`)
@@ -186,19 +232,21 @@ export async function exportToPdf(
 
   const body = exportItems.map((item) => [
     "",
-    item.name,
-    categories.find((category) => category.id === item.categoryId)?.name ?? "",
-    subcategories.find((subcategory) => subcategory.id === item.subcategoryId)?.name ?? "",
+    softBreakLongRuns(item.name),
+    softBreakLongRuns(categories.find((category) => category.id === item.categoryId)?.name ?? ""),
+    softBreakLongRuns(
+      subcategories.find((subcategory) => subcategory.id === item.subcategoryId)?.name ?? "",
+    ),
     item.quantity,
     conditionLabel(item.condition),
-    locations.find((location) => location.id === item.locationId)?.name ?? "",
+    softBreakLongRuns(locations.find((location) => location.id === item.locationId)?.name ?? ""),
     availabilityLabel(item.availability),
-    item.availabilityComment,
-    item.supplier,
+    softBreakLongRuns(item.availabilityComment),
+    softBreakLongRuns(item.supplier),
     item.price ?? "",
-    item.serialNumber,
+    softBreakLongRuns(item.serialNumber),
     item.warrantyUntil ?? "",
-    item.comment,
+    softBreakLongRuns(item.comment),
   ])
 
   autoTable(doc, {
@@ -207,6 +255,7 @@ export async function exportToPdf(
     styles: {
       font: "Roboto",
       fontSize: 7,
+      overflow: "linebreak",
       minCellHeight: PDF_ROW_MIN_HEIGHT_MM,
       valign: "middle",
       cellPadding: { top: 2.5, right: 1.5, bottom: 2.5, left: 1.5 },
@@ -217,9 +266,12 @@ export async function exportToPdf(
       fillColor: [30, 30, 30],
       minCellHeight: 10,
       valign: "middle",
+      overflow: "linebreak",
     },
     columnStyles: {
       [PDF_PHOTO_COLUMN_INDEX]: { cellWidth: PDF_PHOTO_SIZE_MM + 4, halign: "center" },
+      [PDF_HEADERS.indexOf("Коментар наявності")]: { cellWidth: 28 },
+      [PDF_HEADERS.indexOf("Коментар")]: { cellWidth: 34 },
     },
     didParseCell: (hookData) => {
       if (hookData.section !== "body") {
