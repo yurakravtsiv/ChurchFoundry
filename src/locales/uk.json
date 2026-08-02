@@ -50,6 +50,7 @@
     },
     "showArchived": "Показати архівовані",
     "hideArchived": "Приховати архівовані",
+    "archiveShort": "Архів",
     "itemNotFound": "Предмет не знайдено",
     "unsavedChanges": {
       "title": "Зберегти зміни?",

@@ -50,6 +50,7 @@
     },
     "showArchived": "Show archived",
     "hideArchived": "Hide archived",
+    "archiveShort": "Archive",
     "itemNotFound": "Item not found",
     "unsavedChanges": {
       "title": "Save changes?",

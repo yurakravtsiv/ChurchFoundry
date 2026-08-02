@@ -11,8 +11,6 @@ import {
   Archive,
   ArchiveRestore,
   ArrowUpDown,
-  Eye,
-  EyeOff,
   FileSpreadsheet,
   FileText,
   FilterX,
@@ -52,6 +50,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import {
   Table,
   TableBody,
@@ -826,28 +825,27 @@ export function InventoryPage() {
               <div className="flex shrink-0 items-end gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className={cn(
-                        "size-9 shrink-0",
-                        showArchived && "border-primary text-primary",
-                      )}
-                      onClick={() => setShowArchived((value) => !value)}
-                      aria-pressed={showArchived}
-                      aria-label={
-                        showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")
-                      }
-                    >
-                      {showArchived ? (
-                        <Eye className="size-4" aria-hidden />
-                      ) : (
-                        <EyeOff className="size-4" aria-hidden />
-                      )}
-                    </Button>
+                    <div className="flex h-9 items-center gap-2">
+                      <Archive
+                        className={cn(
+                          "size-4 shrink-0 transition-colors",
+                          showArchived ? "text-foreground" : "text-muted-foreground",
+                        )}
+                        aria-hidden
+                      />
+                      <span className="text-sm text-muted-foreground md:hidden">
+                        {t("inventory.archiveShort")}
+                      </span>
+                      <Switch
+                        checked={showArchived}
+                        onCheckedChange={setShowArchived}
+                        aria-label={
+                          showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")
+                        }
+                      />
+                    </div>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="hidden md:block">
                     {showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")}
                   </TooltipContent>
                 </Tooltip>
