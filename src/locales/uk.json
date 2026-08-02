@@ -43,7 +43,7 @@
     "downloadQr": "Завантажити як зображення",
     "searchPlaceholder": "Пошук",
     "subcategoryDisabledHint": "Спочатку оберіть категорію",
-    "addInventory": "Додати інвентар",
+    "addItem": "Додати предмет",
     "export": {
       "xlsx": "XLSX",
       "pdf": "PDF",

@@ -43,7 +43,7 @@
     "downloadQr": "Download as image",
     "searchPlaceholder": "Search",
     "subcategoryDisabledHint": "Select a category first",
-    "addInventory": "Add inventory",
+    "addItem": "Add item",
     "export": {
       "xlsx": "XLSX",
       "pdf": "PDF",

@@ -602,7 +602,7 @@ export function InventoryPage() {
           <div className="flex flex-wrap items-center justify-end gap-2">
             <Button type="button" onClick={openCreate}>
               <Plus className="size-4" />
-              {t("inventory.addInventory")}
+              {t("inventory.addItem")}
             </Button>
             <div className="flex items-center gap-2">
               <Button
@@ -974,7 +974,7 @@ export function InventoryPage() {
           className="flex max-h-[90vh] max-w-lg flex-col gap-0 overflow-hidden p-0"
         >
           <DialogHeader className="shrink-0 space-y-1.5 border-b bg-background px-6 py-4 pr-12 text-left">
-            <DialogTitle>{t("inventory.addInventory")}</DialogTitle>
+            <DialogTitle>{t("inventory.addItem")}</DialogTitle>
             <DialogDescription>{t("inventory.form.createDescription")}</DialogDescription>
           </DialogHeader>
           <InventoryItemForm
