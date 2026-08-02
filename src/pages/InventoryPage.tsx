@@ -899,7 +899,14 @@ export function InventoryPage() {
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="whitespace-nowrap">
+                    <TableHead
+                      key={header.id}
+                      className={cn(
+                        "whitespace-nowrap",
+                        (header.column.id === "condition" || header.column.id === "availability") &&
+                          "text-center",
+                      )}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
@@ -921,6 +928,10 @@ export function InventoryPage() {
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
+                      className={cn(
+                        (cell.column.id === "condition" || cell.column.id === "availability") &&
+                          "text-center",
+                      )}
                       onClick={
                         cell.column.id === "actions"
                           ? (event) => event.stopPropagation()
