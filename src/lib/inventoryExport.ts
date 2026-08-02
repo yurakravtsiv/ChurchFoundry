@@ -22,7 +22,7 @@ export type InventoryExportRow = {
   "Коментар наявності": string
   Постачальник: string
   Ціна: number | ""
-  Серійник: string
+  "Серійний номер": string
   "Гарантія до": string
   Коментар: string
 }
@@ -67,7 +67,7 @@ const PDF_HEADERS = [
   "Коментар наявності",
   "Постачальник",
   "Ціна",
-  "Серійник",
+  "Серійний номер",
   "Гарантія до",
   "Коментар",
 ] as const
@@ -156,7 +156,7 @@ export function prepareExportData(
       "Коментар наявності": item.availabilityComment,
       Постачальник: item.supplier,
       Ціна: item.price ?? "",
-      Серійник: item.serialNumber,
+      "Серійний номер": item.serialNumber,
       "Гарантія до": item.warrantyUntil ?? "",
       Коментар: item.comment,
     }))

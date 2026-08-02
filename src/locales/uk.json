@@ -133,7 +133,7 @@
       "supplierPlaceholder": "Назва постачальника",
       "price": "Ціна",
       "pricePlaceholder": "0.00",
-      "serialNumber": "Серійник",
+      "serialNumber": "Серійний №",
       "serialNumberPlaceholder": "Серійний номер",
       "warrantyUntil": "Гарантія до",
       "comment": "Коментар",
