@@ -48,12 +48,19 @@ export type InventoryItem = {
   avatarPhotoId: string | null
   qrCodeValue: string // згенерований URL типу `${origin}/inventory/${id}`
   archived: boolean
+  /** Soft-delete. If true, the entity is never shown anywhere in the app. */
   removed: boolean
+  /** ISO date — only set on written-off (split) items. */
+  writeOffDate: string | null
+  /** Write-off reason — only set on written-off (split) items. */
+  writeOffReason: string | null
+  /** Original item id this write-off was split from — only on written-off items. */
+  originalItemId: string | null
   createdAt: string
   updatedAt: string
 }
 
-/** Поля, які задає викликач при створенні (id / number / qr / timestamps генерує storage). */
+/** Поля, які задає викликач при створенні (id / number / qr / timestamps / write-off генерує storage). */
 export type CreateInventoryItemInput = Omit<
   InventoryItem,
   | "id"
@@ -61,6 +68,9 @@ export type CreateInventoryItemInput = Omit<
   | "qrCodeValue"
   | "archived"
   | "removed"
+  | "writeOffDate"
+  | "writeOffReason"
+  | "originalItemId"
   | "createdAt"
   | "updatedAt"
   | "price"

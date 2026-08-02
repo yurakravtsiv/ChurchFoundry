@@ -1,3 +1,4 @@
+import { filterVisible, isVisible } from "@/lib/removedEntity"
 import type {
   Category,
   CreateInventoryItemInput,
@@ -197,10 +198,23 @@ function normalizeInventoryItem(item: InventoryItem): InventoryItem {
   if (!ITEM_CONDITIONS.includes(next.condition)) {
     next = { ...next, condition: "good" }
   }
+  if (typeof next.writeOffDate !== "string" && next.writeOffDate !== null) {
+    next = { ...next, writeOffDate: null }
+  }
+  if (typeof next.writeOffReason !== "string" && next.writeOffReason !== null) {
+    next = { ...next, writeOffReason: null }
+  }
+  if (typeof next.originalItemId !== "string" && next.originalItemId !== null) {
+    next = { ...next, originalItemId: null }
+  }
   return next
 }
 
-export function getInventoryItems(): InventoryItem[] {
+/**
+ * Internal: all inventory rows including soft-deleted (`removed === true`).
+ * For mutations only — never use this from UI code.
+ */
+function getAllInventoryItemsRaw(): InventoryItem[] {
   migrateLegacyLocationFields()
   const items = readJsonArray<InventoryItem>(INVENTORY_ITEMS_KEY)
   let dirty = false
@@ -220,6 +234,11 @@ export function getInventoryItems(): InventoryItem[] {
     writeJson(INVENTORY_ITEMS_KEY, normalized)
   }
   return normalized
+}
+
+/** Visible inventory items only (`removed !== true`). */
+export function getInventoryItems(): InventoryItem[] {
+  return filterVisible(getAllInventoryItemsRaw())
 }
 
 export function saveInventoryItems(items: InventoryItem[]): void {
@@ -262,7 +281,7 @@ export function createInventoryItem(data: CreateInventoryItemInput): InventoryIt
   const id = newId()
   const timestamp = nowIso()
   const origin = typeof window !== "undefined" ? window.location.origin : ""
-  const existingItems = getInventoryItems()
+  const existingItems = getAllInventoryItemsRaw()
   const item: InventoryItem = {
     ...data,
     price: data.price ?? null,
@@ -272,6 +291,9 @@ export function createInventoryItem(data: CreateInventoryItemInput): InventoryIt
     qrCodeValue: `${origin}/inventory/${id}`,
     archived: false,
     removed: false,
+    writeOffDate: null,
+    writeOffReason: null,
+    originalItemId: null,
     createdAt: timestamp,
     updatedAt: timestamp,
   }
@@ -283,9 +305,9 @@ export function updateInventoryItem(
   id: string,
   data: UpdateInventoryItemInput,
 ): InventoryItem | undefined {
-  const items = getInventoryItems()
+  const items = getAllInventoryItemsRaw()
   const index = items.findIndex((item) => item.id === id)
-  if (index === -1) {
+  if (index === -1 || !isVisible(items[index])) {
     return undefined
   }
 
@@ -313,7 +335,121 @@ export function unarchiveInventoryItem(id: string): InventoryItem | undefined {
 }
 
 export function getInventoryItemById(id: string): InventoryItem | undefined {
-  return getInventoryItems().find((item) => item.id === id)
+  const item = getAllInventoryItemsRaw().find((entry) => entry.id === id)
+  if (!item || !isVisible(item)) {
+    return undefined
+  }
+  return item
+}
+
+/**
+ * Splits quantity from an active item into a new written-off item.
+ * If the original quantity becomes 0, the original is soft-deleted (`removed: true`).
+ */
+export function writeOffItem(
+  originalItemId: string,
+  quantityToWriteOff: number,
+  writeOffDate: string,
+  writeOffReason: string,
+): { updatedOriginal: InventoryItem; newWrittenOffItem: InventoryItem } {
+  const items = getAllInventoryItemsRaw()
+  const originalIndex = items.findIndex((item) => item.id === originalItemId)
+  if (originalIndex === -1) {
+    throw new Error(`[inventoryStorage] writeOffItem: item not found (${originalItemId})`)
+  }
+
+  const original = items[originalIndex]
+  if (!Number.isFinite(quantityToWriteOff) || quantityToWriteOff <= 0) {
+    throw new Error("[inventoryStorage] writeOffItem: quantityToWriteOff must be > 0")
+  }
+  if (quantityToWriteOff > original.quantity) {
+    throw new Error(
+      `[inventoryStorage] writeOffItem: quantityToWriteOff (${quantityToWriteOff}) exceeds available quantity (${original.quantity})`,
+    )
+  }
+
+  const timestamp = nowIso()
+  const newQuantity = original.quantity - quantityToWriteOff
+  const updatedOriginal: InventoryItem = {
+    ...original,
+    quantity: newQuantity,
+    removed: newQuantity === 0 ? true : original.removed,
+    updatedAt: timestamp,
+  }
+
+  const newIdValue = newId()
+  const origin = typeof window !== "undefined" ? window.location.origin : ""
+  const newWrittenOffItem: InventoryItem = {
+    ...original,
+    id: newIdValue,
+    quantity: quantityToWriteOff,
+    condition: "written_off",
+    writeOffDate,
+    writeOffReason,
+    originalItemId: original.id,
+    qrCodeValue: `${origin}/inventory/${newIdValue}`,
+    removed: false,
+    archived: false,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  }
+
+  const next = [...items]
+  next[originalIndex] = updatedOriginal
+  next.push(newWrittenOffItem)
+  saveInventoryItems(next)
+
+  return { updatedOriginal, newWrittenOffItem }
+}
+
+/**
+ * Returns a written-off split item back into its original stock.
+ * Soft-deletes the written-off row and restores the original (`removed: false`).
+ */
+export function returnToStock(writtenOffItemId: string): {
+  updatedOriginal: InventoryItem
+  removedWrittenOffItem: InventoryItem
+} {
+  const items = getAllInventoryItemsRaw()
+  const writtenOffIndex = items.findIndex((item) => item.id === writtenOffItemId)
+  if (writtenOffIndex === -1) {
+    throw new Error(`[inventoryStorage] returnToStock: item not found (${writtenOffItemId})`)
+  }
+
+  const writtenOffItem = items[writtenOffIndex]
+  if (writtenOffItem.condition !== "written_off" || !writtenOffItem.originalItemId) {
+    throw new Error(
+      `[inventoryStorage] returnToStock: item is not a written-off split (${writtenOffItemId})`,
+    )
+  }
+
+  const originalIndex = items.findIndex((item) => item.id === writtenOffItem.originalItemId)
+  if (originalIndex === -1) {
+    throw new Error(
+      `[inventoryStorage] returnToStock: original item not found (${writtenOffItem.originalItemId})`,
+    )
+  }
+
+  const timestamp = nowIso()
+  const original = items[originalIndex]
+  const updatedOriginal: InventoryItem = {
+    ...original,
+    quantity: original.quantity + writtenOffItem.quantity,
+    removed: false,
+    updatedAt: timestamp,
+  }
+  const removedWrittenOffItem: InventoryItem = {
+    ...writtenOffItem,
+    removed: true,
+    updatedAt: timestamp,
+  }
+
+  const next = [...items]
+  next[originalIndex] = updatedOriginal
+  next[writtenOffIndex] = removedWrittenOffItem
+  saveInventoryItems(next)
+
+  return { updatedOriginal, removedWrittenOffItem }
 }
 
 /**
