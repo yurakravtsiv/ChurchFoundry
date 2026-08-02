@@ -1,8 +1,6 @@
 {
   "app": {
-    "name": "ChurchFoundry",
-    "tagline": "Church management in one place",
-    "description": "Members, inventory, room schedules, and ministries — handy from your phone."
+    "name": "ChurchFoundry"
   },
   "export": {
     "sheetName": "Inventory",
@@ -27,8 +25,7 @@
     "close": "Close"
   },
   "home": {
-    "language": "Language",
-    "getStarted": "Get started"
+    "language": "Language"
   },
   "theme": {
     "switchToLight": "Switch to light theme",
@@ -39,11 +36,7 @@
     "openMenu": "Open menu",
     "menuDescription": "App sections and settings",
     "dashboard": "Dashboard",
-    "people": "People",
-    "services": "Services",
-    "calendar": "Calendar",
     "inventory": "Inventory",
-    "comingSoon": "Soon",
     "comingSoonMessage": "Coming soon..."
   },
   "inventory": {
@@ -68,8 +61,7 @@
       "backToInventory": "Back to inventory",
       "returnToInventory": "Return to inventory",
       "qrTitle": "Item QR code",
-      "qrHint": "Print and attach it to the item. Scanning opens this page.",
-      "saved": "Saved ✓"
+      "qrHint": "Print and attach it to the item. Scanning opens this page."
     },
     "archiveConfirmTitle": "Archive “{{name}}”?",
     "archiveConfirmDescription": "Archived items can be shown again with the archive toggle.",
@@ -109,10 +101,6 @@
       "condition": "Condition",
       "availability": "Availability",
       "availabilityComment": "Availability comment",
-      "supplier": "Supplier",
-      "price": "Price",
-      "serialNumber": "Serial number",
-      "warrantyUntil": "Warranty until",
       "comment": "Comment"
     },
     "actions": {

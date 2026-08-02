@@ -1,8 +1,6 @@
 {
   "app": {
-    "name": "ChurchFoundry",
-    "tagline": "Менеджмент церкви в одному місці",
-    "description": "Члени, інвентар, розклад кімнат і служіння — зручно з телефону."
+    "name": "ChurchFoundry"
   },
   "export": {
     "sheetName": "Інвентар",
@@ -27,8 +25,7 @@
     "close": "Закрити"
   },
   "home": {
-    "language": "Мова",
-    "getStarted": "Почати"
+    "language": "Мова"
   },
   "theme": {
     "switchToLight": "Увімкнути світлу тему",
@@ -39,11 +36,7 @@
     "openMenu": "Відкрити меню",
     "menuDescription": "Розділи застосунку та налаштування",
     "dashboard": "Дашборд",
-    "people": "Люди",
-    "services": "Служіння",
-    "calendar": "Календар",
     "inventory": "Інвентар",
-    "comingSoon": "Незабаром",
     "comingSoonMessage": "Незабаром..."
   },
   "inventory": {
@@ -68,8 +61,7 @@
       "backToInventory": "Назад до інвентарю",
       "returnToInventory": "Повернутись до інвентарю",
       "qrTitle": "QR-код предмету",
-      "qrHint": "Роздрукуйте і прикріпіть до предмета. При скануванні відкриється ця сторінка.",
-      "saved": "Збережено ✓"
+      "qrHint": "Роздрукуйте і прикріпіть до предмета. При скануванні відкриється ця сторінка."
     },
     "archiveConfirmTitle": "Архівувати «{{name}}»?",
     "archiveConfirmDescription": "Архівовані предмети можна знову показати через перемикач архіву.",
@@ -109,10 +101,6 @@
       "condition": "Стан",
       "availability": "Наявність",
       "availabilityComment": "Коментар наявності",
-      "supplier": "Постачальник",
-      "price": "Ціна",
-      "serialNumber": "Серійник",
-      "warrantyUntil": "Гарантія до",
       "comment": "Коментар"
     },
     "actions": {
