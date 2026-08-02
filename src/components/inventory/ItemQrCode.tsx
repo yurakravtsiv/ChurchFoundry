@@ -3,7 +3,11 @@ import { useRef } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
+import { APP_ICON_DATA_URL } from "@/lib/appIcon"
 import { formatInventoryPublicCode } from "@/lib/inventoryCode"
+
+/** Logo side length as a fraction of the QR size (keep modest for scan reliability). */
+const QR_CENTER_ICON_RATIO = 0.22
 
 type ItemQrCodeProps = {
   value: string
@@ -107,10 +111,35 @@ function fitWrappedText(
   return { fontSize: minFontSize, lines }
 }
 
+/** Rasterize QR SVG at an explicit pixel size so modules stay sharp when exported. */
+async function rasterizeQrSvg(svg: SVGSVGElement, pixelSize: number): Promise<HTMLImageElement> {
+  const clone = svg.cloneNode(true) as SVGSVGElement
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+  clone.setAttribute("width", String(pixelSize))
+  clone.setAttribute("height", String(pixelSize))
+
+  const serializer = new XMLSerializer()
+  const svgString = serializer.serializeToString(clone)
+  const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" })
+  const objectUrl = URL.createObjectURL(blob)
+
+  try {
+    return await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.onerror = () => reject(new Error("Failed to rasterize QR SVG"))
+      img.src = objectUrl
+    })
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
+}
+
 export function ItemQrCode({ value, itemName, inventoryNumberId, size = 200 }: ItemQrCodeProps) {
   const { t } = useTranslation()
   const svgRef = useRef<SVGSVGElement>(null)
   const publicCode = formatInventoryPublicCode(inventoryNumberId)
+  const centerIconSize = Math.max(24, Math.round(size * QR_CENTER_ICON_RATIO))
 
   const downloadAsPng = async () => {
     const svg = svgRef.current
@@ -118,25 +147,17 @@ export function ItemQrCode({ value, itemName, inventoryNumberId, size = 200 }: I
       return
     }
 
-    const serializer = new XMLSerializer()
-    const svgString = serializer.serializeToString(svg)
-    const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" })
-    const objectUrl = URL.createObjectURL(blob)
-
     try {
-      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image()
-        img.onload = () => resolve(img)
-        img.onerror = () => reject(new Error("Failed to rasterize QR SVG"))
-        img.src = objectUrl
-      })
-
-      const padding = 16
-      const textGap = 10
-      const qrSize = size
+      // Export at 3× so text and QR stay crisp on retina / print.
+      const scale = 3
+      const padding = 20 * scale
+      const textGap = 12 * scale
+      const qrSize = Math.round(size * scale)
       const contentWidth = qrSize
       const canvasWidth = contentWidth + padding * 2
-      const fontFamily = "system-ui, -apple-system, Segoe UI, sans-serif"
+      const fontFamily = '"Segoe UI", "Noto Sans", system-ui, -apple-system, sans-serif'
+
+      const image = await rasterizeQrSvg(svg, qrSize)
 
       const measureCanvas = document.createElement("canvas")
       const measureContext = measureCanvas.getContext("2d")
@@ -148,8 +169,8 @@ export function ItemQrCode({ value, itemName, inventoryNumberId, size = 200 }: I
         measureContext,
         itemName,
         contentWidth,
-        16,
-        11,
+        18 * scale,
+        13 * scale,
         "700",
         fontFamily,
         3,
@@ -158,9 +179,9 @@ export function ItemQrCode({ value, itemName, inventoryNumberId, size = 200 }: I
         measureContext,
         publicCode,
         contentWidth,
-        11,
-        9,
-        "400",
+        13 * scale,
+        11 * scale,
+        "500",
         fontFamily,
         3,
       )
@@ -169,7 +190,7 @@ export function ItemQrCode({ value, itemName, inventoryNumberId, size = 200 }: I
       const textBlockHeight =
         textGap +
         nameLayout.lines.length * nameLineHeight +
-        4 +
+        6 * scale +
         codeLayout.lines.length * codeLineHeight +
         padding
 
@@ -184,23 +205,27 @@ export function ItemQrCode({ value, itemName, inventoryNumberId, size = 200 }: I
       context.fillStyle = "#ffffff"
       context.fillRect(0, 0, canvas.width, canvas.height)
 
+      // Keep QR modules pixel-sharp (no bilinear blur when sizes match).
+      context.imageSmoothingEnabled = false
       context.drawImage(image, padding, padding, qrSize, qrSize)
+      context.imageSmoothingEnabled = true
 
       let textY = padding + qrSize + textGap + nameLayout.fontSize
       context.fillStyle = "#111111"
       context.textAlign = "center"
       context.textBaseline = "alphabetic"
+      // Avoid fillText maxWidth — it squashes glyphs and looks blurry.
       context.font = `700 ${nameLayout.fontSize}px ${fontFamily}`
       for (const line of nameLayout.lines) {
-        context.fillText(line, canvasWidth / 2, textY, contentWidth)
+        context.fillText(line, canvasWidth / 2, textY)
         textY += nameLineHeight
       }
 
-      textY += 4
-      context.fillStyle = "#6b7280"
-      context.font = `400 ${codeLayout.fontSize}px ${fontFamily}`
+      textY += 6 * scale
+      context.fillStyle = "#4b5563"
+      context.font = `500 ${codeLayout.fontSize}px ${fontFamily}`
       for (const line of codeLayout.lines) {
-        context.fillText(line, canvasWidth / 2, textY, contentWidth)
+        context.fillText(line, canvasWidth / 2, textY)
         textY += codeLineHeight
       }
 
@@ -211,8 +236,6 @@ export function ItemQrCode({ value, itemName, inventoryNumberId, size = 200 }: I
       link.click()
     } catch (error) {
       console.error("[ItemQrCode] PNG download failed", error)
-    } finally {
-      URL.revokeObjectURL(objectUrl)
     }
   }
 
@@ -223,8 +246,15 @@ export function ItemQrCode({ value, itemName, inventoryNumberId, size = 200 }: I
           ref={svgRef}
           value={value}
           size={size}
+          level="H"
           className="max-w-full"
           style={{ width: "100%", height: "auto" }}
+          imageSettings={{
+            src: APP_ICON_DATA_URL,
+            height: centerIconSize,
+            width: centerIconSize,
+            excavate: true,
+          }}
         />
         <p className="w-full max-w-full break-words text-sm font-semibold leading-snug text-foreground">
           {itemName}
