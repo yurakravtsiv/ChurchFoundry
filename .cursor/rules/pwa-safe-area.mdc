@@ -1,0 +1,19 @@
+---
+description: PWA safe-area - обробка через padding, не окремі fixed елементи
+globs: ["src/components/layout/**/*.tsx"]
+alwaysApply: false
+---
+
+# PWA Safe-area (iOS standalone)
+
+- Safe-area (viewport-fit=cover, env(safe-area-inset-*)) обробляється 
+  ЧЕРЕЗ padding на контейнері, що вже містить контент і фон (наприклад 
+  pb-[env(safe-area-inset-bottom,0px)] на елементі з bg-background), 
+  а НЕ через окремий додатковий position:fixed div, "намальований" 
+  поверх контенту спеціально для заповнення safe-area зони.
+- Якщо потрібно розширити фон під статус-бар/home-indicator - переконайся, 
+  що фон встановлений на батьківському елементі, який вже займає весь 
+  простір (html/body/#root), а не додавай новий шар-заглушку.
+- Перед додаванням будь-якого нового fixed/absolute елемента, пов'язаного 
+  з safe-area - спочатку перевір, чи існуючі елементи (Header, AppLayout) 
+  вже не обробляють цю зону.
