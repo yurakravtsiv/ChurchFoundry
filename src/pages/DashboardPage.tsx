@@ -2,7 +2,7 @@ import { InventoryDashboardSection } from "@/components/dashboard/InventoryDashb
 
 export function DashboardPage() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 md:py-10">
+    <main className="mx-auto w-full max-w-3xl p-4 sm:p-6">
       <InventoryDashboardSection />
     </main>
   )

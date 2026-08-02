@@ -74,7 +74,7 @@ export function Header({ onOpenSidebar }: HeaderProps) {
             <span className="truncate text-base sm:text-lg">{t("app.name")}</span>
           </Link>
 
-          <p className="pointer-events-none absolute inset-x-0 mx-auto max-w-[55%] truncate text-center text-sm font-semibold tracking-tight md:hidden">
+          <p className="pointer-events-none absolute inset-x-0 mx-auto max-w-[55%] truncate text-center text-lg font-semibold tracking-tight md:hidden">
             {t(pageLabelKey)}
           </p>
 

@@ -67,7 +67,7 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
           title={collapsed ? t(labelKey) : undefined}
           className={({ isActive }) =>
             cn(
-              "flex h-10 items-center rounded-md text-sm font-medium transition-[padding,gap,background-color,color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              "flex h-12 items-center rounded-md text-base font-medium transition-[padding,gap,background-color,color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:h-10 md:text-sm",
               collapsed ? "justify-center px-2" : "gap-3 px-3",
               isActive
                 ? "bg-secondary text-secondary-foreground"
@@ -75,7 +75,7 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
             )
           }
         >
-          <Icon className="size-4 shrink-0" />
+          <Icon className="size-5 shrink-0 md:size-4" />
           <AnimatePresence initial={false}>
             {!collapsed ? (
               <motion.span
