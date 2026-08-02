@@ -66,12 +66,18 @@
       "subcategory": "Підкатегорія",
       "availability": "Наявність",
       "location": "Локація",
+      "condition": "Стан",
       "clear": "Скинути",
       "clearAll": "Скинути всі фільтри"
     },
     "availability": {
       "inChurch": "В церкві",
       "borrowed": "Позичено"
+    },
+    "condition": {
+      "good": "Добрий",
+      "needsRepair": "Потребує ремонту",
+      "writtenOff": "Списаний"
     },
     "columns": {
       "photo": "Фото",
@@ -80,6 +86,7 @@
       "subcategory": "Підкатегорія",
       "quantity": "Кількість",
       "location": "Локація",
+      "condition": "Стан",
       "availability": "Наявність",
       "availabilityComment": "Коментар наявності",
       "supplier": "Постачальник",
@@ -123,6 +130,7 @@
       "availability": "Наявність",
       "availabilityComment": "Коментар наявності",
       "availabilityCommentPlaceholder": "Кому позичено / до коли",
+      "condition": "Стан",
       "supplier": "Постачальник",
       "supplierPlaceholder": "Назва постачальника",
       "price": "Ціна",

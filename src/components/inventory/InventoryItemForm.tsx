@@ -146,6 +146,7 @@ export function InventoryItemForm({
           locationId: z.string().min(1, t("inventory.form.validation.locationRequired")),
           availability: z.enum(["in_church", "borrowed"]),
           availabilityComment: z.string().optional().default(""),
+          condition: z.enum(["good", "needs_repair"]),
           supplier: z.string().optional().default(""),
           price: z.preprocess((value) => {
             if (value === "" || value === null || value === undefined) {
@@ -198,6 +199,8 @@ export function InventoryItemForm({
       locationId: initialData?.locationId ?? "",
       availability: initialData?.availability ?? ("in_church" as const),
       availabilityComment: initialData?.availabilityComment ?? "",
+      condition:
+        initialData?.condition === "needs_repair" ? ("needs_repair" as const) : ("good" as const),
       supplier: initialData?.supplier ?? "",
       price: initialData?.price ?? null,
       serialNumber: initialData?.serialNumber ?? "",
@@ -311,6 +314,7 @@ export function InventoryItemForm({
         availability: values.availability,
         availabilityComment:
           values.availability === "borrowed" ? (values.availabilityComment?.trim() ?? "") : "",
+        condition: values.condition,
         supplier: values.supplier?.trim() ?? "",
         price: values.price ?? null,
         serialNumber: values.serialNumber?.trim() ?? "",
@@ -467,6 +471,30 @@ export function InventoryItemForm({
           </div>
 
           <div className="space-y-2">
+            <Label>{t("inventory.form.condition")} *</Label>
+            <Controller
+              control={control}
+              name="condition"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger aria-label={t("inventory.form.condition")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="good">{t("inventory.condition.good")}</SelectItem>
+                    <SelectItem value="needs_repair">
+                      {t("inventory.condition.needsRepair")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.condition ? (
+              <p className="text-sm text-destructive">{errors.condition.message}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
             <Label>{t("inventory.form.location")} *</Label>
             <Controller
               control={control}
@@ -526,14 +554,15 @@ export function InventoryItemForm({
 
           <div
             className={cn(
-              "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+              "grid transition-[grid-template-rows,opacity,margin] duration-200 ease-out",
               availability === "borrowed"
                 ? "grid-rows-[1fr] opacity-100"
-                : "pointer-events-none grid-rows-[0fr] opacity-0",
+                : // Cancel space-y-4 margin so a collapsed comment row does not double the gap.
+                  "pointer-events-none -mt-4 grid-rows-[0fr] opacity-0",
             )}
           >
             <div className="overflow-hidden">
-              <div className="space-y-2 pb-1">
+              <div className="space-y-2">
                 <Label htmlFor="inventory-item-availability-comment">
                   {t("inventory.form.availabilityComment")} *
                 </Label>

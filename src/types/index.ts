@@ -6,6 +6,7 @@ export type {
   CreateInventoryItemInput,
   InventoryItem,
   InventoryPhoto,
+  ItemCondition,
   Subcategory,
   UpdateInventoryItemInput,
 } from "@/types/inventory"

@@ -6,6 +6,7 @@ import type {
   AvailabilityStatus,
   Category,
   InventoryItem,
+  ItemCondition,
   Location,
   Subcategory,
 } from "@/types/inventory"
@@ -15,6 +16,7 @@ export type InventoryExportRow = {
   Категорія: string
   Підкатегорія: string
   Кількість: number
+  Стан: string
   Локація: string
   Наявність: string
   "Коментар наявності": string
@@ -37,12 +39,29 @@ const AVAILABILITY_CELL_STYLES = {
   },
 } as const
 
+/** Matches condition Badge colors used in the inventory table. */
+const CONDITION_CELL_STYLES = {
+  good: {
+    fillColor: [209, 250, 229] as [number, number, number], // emerald-100
+    textColor: [6, 95, 70] as [number, number, number], // emerald-800
+  },
+  needs_repair: {
+    fillColor: [254, 226, 226] as [number, number, number], // red-100
+    textColor: [153, 27, 27] as [number, number, number], // red-800
+  },
+  written_off: {
+    fillColor: [243, 244, 246] as [number, number, number], // gray-100
+    textColor: [55, 65, 81] as [number, number, number], // gray-700
+  },
+} as const
+
 const PDF_HEADERS = [
   "Фото",
   "Назва",
   "Категорія",
   "Підкатегорія",
   "Кількість",
+  "Стан",
   "Локація",
   "Наявність",
   "Коментар наявності",
@@ -53,6 +72,7 @@ const PDF_HEADERS = [
   "Коментар",
 ] as const
 
+const PDF_CONDITION_COLUMN_INDEX = PDF_HEADERS.indexOf("Стан")
 const PDF_AVAILABILITY_COLUMN_INDEX = PDF_HEADERS.indexOf("Наявність")
 const PDF_PHOTO_COLUMN_INDEX = 0
 const PDF_ROW_MIN_HEIGHT_MM = 18
@@ -68,6 +88,16 @@ function exportDateStamp() {
 
 function availabilityLabel(availability: AvailabilityStatus) {
   return availability === "in_church" ? "В церкві" : "Позичено"
+}
+
+function conditionLabel(condition: ItemCondition) {
+  if (condition === "needs_repair") {
+    return "Потребує ремонту"
+  }
+  if (condition === "written_off") {
+    return "Списаний"
+  }
+  return "Добрий"
 }
 
 function getAvatarDataUrl(item: InventoryItem): string | null {
@@ -98,6 +128,7 @@ export function prepareExportData(
       Підкатегорія:
         subcategories.find((subcategory) => subcategory.id === item.subcategoryId)?.name ?? "",
       Кількість: item.quantity,
+      Стан: conditionLabel(item.condition),
       Локація: locations.find((location) => location.id === item.locationId)?.name ?? "",
       Наявність: availabilityLabel(item.availability),
       "Коментар наявності": item.availabilityComment,
@@ -150,6 +181,7 @@ export async function exportToPdf(
   const rowMeta = exportItems.map((item) => ({
     avatarDataUrl: getAvatarDataUrl(item),
     availability: item.availability,
+    condition: item.condition,
   }))
 
   const body = exportItems.map((item) => [
@@ -158,6 +190,7 @@ export async function exportToPdf(
     categories.find((category) => category.id === item.categoryId)?.name ?? "",
     subcategories.find((subcategory) => subcategory.id === item.subcategoryId)?.name ?? "",
     item.quantity,
+    conditionLabel(item.condition),
     locations.find((location) => location.id === item.locationId)?.name ?? "",
     availabilityLabel(item.availability),
     item.availabilityComment,
@@ -189,17 +222,32 @@ export async function exportToPdf(
       [PDF_PHOTO_COLUMN_INDEX]: { cellWidth: PDF_PHOTO_SIZE_MM + 4, halign: "center" },
     },
     didParseCell: (hookData) => {
-      if (hookData.section !== "body" || hookData.column.index !== PDF_AVAILABILITY_COLUMN_INDEX) {
+      if (hookData.section !== "body") {
         return
       }
-      const availability = rowMeta[hookData.row.index]?.availability
-      if (!availability) {
+
+      if (hookData.column.index === PDF_CONDITION_COLUMN_INDEX) {
+        const condition = rowMeta[hookData.row.index]?.condition
+        if (!condition) {
+          return
+        }
+        const style = CONDITION_CELL_STYLES[condition]
+        hookData.cell.styles.fillColor = style.fillColor
+        hookData.cell.styles.textColor = style.textColor
+        hookData.cell.styles.fontStyle = "bold"
         return
       }
-      const style = AVAILABILITY_CELL_STYLES[availability]
-      hookData.cell.styles.fillColor = style.fillColor
-      hookData.cell.styles.textColor = style.textColor
-      hookData.cell.styles.fontStyle = "bold"
+
+      if (hookData.column.index === PDF_AVAILABILITY_COLUMN_INDEX) {
+        const availability = rowMeta[hookData.row.index]?.availability
+        if (!availability) {
+          return
+        }
+        const style = AVAILABILITY_CELL_STYLES[availability]
+        hookData.cell.styles.fillColor = style.fillColor
+        hookData.cell.styles.textColor = style.textColor
+        hookData.cell.styles.fontStyle = "bold"
+      }
     },
     didDrawCell: (hookData) => {
       if (hookData.section !== "body" || hookData.column.index !== PDF_PHOTO_COLUMN_INDEX) {

@@ -19,6 +19,8 @@ export type Location = {
 
 export type AvailabilityStatus = "in_church" | "borrowed"
 
+export type ItemCondition = "good" | "needs_repair" | "written_off"
+
 export type InventoryPhoto = {
   id: string
   dataUrl: string // base64, поки немає реального storage
@@ -34,6 +36,7 @@ export type InventoryItem = {
   availability: AvailabilityStatus // обов'язкове
   /** Обов'язкове тільки якщо availability === "borrowed". */
   availabilityComment: string
+  condition: ItemCondition // обов'язкове, за замовчуванням "good" при створенні
   supplier: string
   price: number | null
   serialNumber: string
@@ -51,9 +54,10 @@ export type InventoryItem = {
 /** Поля, які задає викликач при створенні (id / qr / timestamps генерує storage). */
 export type CreateInventoryItemInput = Omit<
   InventoryItem,
-  "id" | "qrCodeValue" | "archived" | "removed" | "createdAt" | "updatedAt" | "price"
+  "id" | "qrCodeValue" | "archived" | "removed" | "createdAt" | "updatedAt" | "price" | "condition"
 > & {
   price?: number | null
+  condition?: ItemCondition
 }
 
 /** Часткове оновлення; id / createdAt / qrCodeValue не змінюються тут. */

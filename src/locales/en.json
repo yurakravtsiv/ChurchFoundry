@@ -66,12 +66,18 @@
       "subcategory": "Subcategory",
       "availability": "Availability",
       "location": "Location",
+      "condition": "Condition",
       "clear": "Clear",
       "clearAll": "Clear all filters"
     },
     "availability": {
       "inChurch": "In church",
       "borrowed": "Borrowed"
+    },
+    "condition": {
+      "good": "Good",
+      "needsRepair": "Needs repair",
+      "writtenOff": "Written off"
     },
     "columns": {
       "photo": "Photo",
@@ -80,6 +86,7 @@
       "subcategory": "Subcategory",
       "quantity": "Quantity",
       "location": "Location",
+      "condition": "Condition",
       "availability": "Availability",
       "availabilityComment": "Availability comment",
       "supplier": "Supplier",
@@ -123,6 +130,7 @@
       "availability": "Availability",
       "availabilityComment": "Availability comment",
       "availabilityCommentPlaceholder": "Who borrowed it / until when",
+      "condition": "Condition",
       "supplier": "Supplier",
       "supplierPlaceholder": "Supplier name",
       "price": "Price",

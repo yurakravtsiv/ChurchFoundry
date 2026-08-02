@@ -77,6 +77,7 @@ import type {
   AvailabilityStatus,
   Category,
   InventoryItem,
+  ItemCondition,
   Location,
   Subcategory,
 } from "@/types/inventory"
@@ -164,6 +165,7 @@ export function InventoryPage() {
   const [subcategoryFilter, setSubcategoryFilter] = useState("all")
   const [availabilityFilter, setAvailabilityFilter] = useState("all")
   const [locationFilter, setLocationFilter] = useState("all")
+  const [conditionFilter, setConditionFilter] = useState("all")
   const [showArchived, setShowArchived] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [createFormDirty, setCreateFormDirty] = useState(false)
@@ -225,6 +227,9 @@ export function InventoryPage() {
       if (locationFilter !== "all" && item.locationId !== locationFilter) {
         return false
       }
+      if (conditionFilter !== "all" && item.condition !== conditionFilter) {
+        return false
+      }
       if (!itemMatchesSearch(item, search, categories, subcategories, locations)) {
         return false
       }
@@ -234,6 +239,7 @@ export function InventoryPage() {
     availabilityFilter,
     categories,
     categoryFilter,
+    conditionFilter,
     items,
     locationFilter,
     locations,
@@ -310,6 +316,25 @@ export function InventoryPage() {
             <ArrowUpDown className="size-3.5" />
           </Button>
         ),
+      },
+      {
+        accessorKey: "condition",
+        header: t("inventory.columns.condition"),
+        cell: ({ row }) => {
+          const condition = row.original.condition as ItemCondition
+          if (condition === "needs_repair") {
+            return (
+              <Badge className="border-transparent bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                {t("inventory.condition.needsRepair")}
+              </Badge>
+            )
+          }
+          if (condition === "written_off") {
+            return <Badge variant="secondary">{t("inventory.condition.writtenOff")}</Badge>
+          }
+          return <Badge variant="success">{t("inventory.condition.good")}</Badge>
+        },
+        enableSorting: false,
       },
       {
         accessorKey: "locationId",
@@ -416,6 +441,7 @@ export function InventoryPage() {
     subcategoryFilter !== "all" ||
     availabilityFilter !== "all" ||
     locationFilter !== "all" ||
+    conditionFilter !== "all" ||
     showArchived
 
   const clearAllFilters = () => {
@@ -424,6 +450,7 @@ export function InventoryPage() {
     setSubcategoryFilter("all")
     setAvailabilityFilter("all")
     setLocationFilter("all")
+    setConditionFilter("all")
     setShowArchived(false)
   }
 
@@ -495,7 +522,7 @@ export function InventoryPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end md:gap-2">
+        <div className="flex flex-col gap-2 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end md:gap-2">
           <div className="grid grid-cols-3 items-end gap-2 md:contents">
             <div className="flex min-w-0 flex-col gap-1.5 md:hidden">
               <Label htmlFor="inventory-search-mobile" className="truncate">
@@ -602,35 +629,35 @@ export function InventoryPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2 md:contents">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2 md:contents">
             <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="inventory-filter-availability" className="truncate">
-                {t("inventory.filters.availability")}
+              <Label htmlFor="inventory-filter-condition" className="truncate">
+                {t("inventory.filters.condition")}
               </Label>
               <div className="relative min-w-0">
-                <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+                <Select value={conditionFilter} onValueChange={setConditionFilter}>
                   <SelectTrigger
-                    id="inventory-filter-availability"
+                    id="inventory-filter-condition"
                     className={cn(
                       "h-9 w-full min-w-0",
-                      availabilityFilter !== "all" && "pr-8 [&>svg]:hidden",
+                      conditionFilter !== "all" && "pr-8 [&>svg]:hidden",
                     )}
                   >
                     <SelectValue placeholder={t("inventory.filters.all")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                    <SelectItem value="in_church">
-                      {t("inventory.availability.inChurch")}
+                    <SelectItem value="good">{t("inventory.condition.good")}</SelectItem>
+                    <SelectItem value="needs_repair">
+                      {t("inventory.condition.needsRepair")}
                     </SelectItem>
-                    <SelectItem value="borrowed">{t("inventory.availability.borrowed")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FilterClearButton
-                  visible={availabilityFilter !== "all"}
+                  visible={conditionFilter !== "all"}
                   label={t("inventory.filters.clear")}
                   className="right-2"
-                  onClear={() => setAvailabilityFilter("all")}
+                  onClear={() => setConditionFilter("all")}
                 />
               </div>
             </div>
@@ -664,6 +691,38 @@ export function InventoryPage() {
                   label={t("inventory.filters.clear")}
                   className="right-2"
                   onClear={() => setLocationFilter("all")}
+                />
+              </div>
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="inventory-filter-availability" className="truncate">
+                {t("inventory.filters.availability")}
+              </Label>
+              <div className="relative min-w-0">
+                <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+                  <SelectTrigger
+                    id="inventory-filter-availability"
+                    className={cn(
+                      "h-9 w-full min-w-0",
+                      availabilityFilter !== "all" && "pr-8 [&>svg]:hidden",
+                    )}
+                  >
+                    <SelectValue placeholder={t("inventory.filters.all")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                    <SelectItem value="in_church">
+                      {t("inventory.availability.inChurch")}
+                    </SelectItem>
+                    <SelectItem value="borrowed">{t("inventory.availability.borrowed")}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FilterClearButton
+                  visible={availabilityFilter !== "all"}
+                  label={t("inventory.filters.clear")}
+                  className="right-2"
+                  onClear={() => setAvailabilityFilter("all")}
                 />
               </div>
             </div>

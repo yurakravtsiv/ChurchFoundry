@@ -2,10 +2,13 @@ import type {
   Category,
   CreateInventoryItemInput,
   InventoryItem,
+  ItemCondition,
   Location,
   Subcategory,
   UpdateInventoryItemInput,
 } from "@/types/inventory"
+
+const ITEM_CONDITIONS: ItemCondition[] = ["good", "needs_repair", "written_off"]
 
 const CATEGORIES_KEY = "churchfoundry:categories"
 const SUBCATEGORIES_KEY = "churchfoundry:subcategories"
@@ -148,6 +151,9 @@ function normalizeInventoryItem(item: InventoryItem): InventoryItem {
   if (typeof next.removed !== "boolean") {
     next = { ...next, removed: false }
   }
+  if (!ITEM_CONDITIONS.includes(next.condition)) {
+    next = { ...next, condition: "good" }
+  }
   return next
 }
 
@@ -211,6 +217,7 @@ export function createInventoryItem(data: CreateInventoryItemInput): InventoryIt
   const item: InventoryItem = {
     ...data,
     price: data.price ?? null,
+    condition: data.condition ?? "good",
     id,
     qrCodeValue: `${origin}/inventory/${id}`,
     archived: false,
