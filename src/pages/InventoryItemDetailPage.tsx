@@ -37,6 +37,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
+import { QueryErrorState } from "@/components/ui/query-error-state"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -47,13 +49,10 @@ import {
 } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
-  archiveInventoryItem,
-  getActiveWriteOffsForOriginal,
-  getInventoryItemById,
-  unarchiveInventoryItem,
-  updateInventoryItem,
-} from "@/lib/inventoryStorage"
-import type { InventoryItem } from "@/types/inventory"
+  useArchiveInventoryItemMutation,
+  useInventoryItemsQuery,
+  useUpdateInventoryItemMutation,
+} from "@/hooks/queries/useInventoryQueries"
 
 const EDIT_FORM_ID = "inventory-item-edit-form"
 
@@ -62,13 +61,67 @@ function canNavigateBack() {
   return typeof idx === "number" && idx > 0
 }
 
+function InventoryItemDetailSkeleton() {
+  return (
+    <main className="bg-background">
+      <header className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-6">
+        <div className="mx-auto w-full max-w-[1400px] space-y-3">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-8 w-64 sm:h-9 sm:w-80" />
+        </div>
+      </header>
+      <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-[15px] pb-[20px] pt-[10px] md:grid-cols-3 md:items-start">
+        <div className="min-w-0 space-y-4 rounded-xl border bg-card px-6 py-4 md:col-span-2">
+          {[
+            "name",
+            "category",
+            "subcategory",
+            "quantity",
+            "condition",
+            "location",
+            "availability",
+            "comment",
+          ].map((fieldKey) => (
+            <div key={fieldKey} className="space-y-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-9 w-full" />
+            </div>
+          ))}
+        </div>
+        <div className="flex min-w-0 flex-col gap-6 md:col-span-1">
+          <Card className="min-w-0 overflow-hidden">
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-3">
+              <Skeleton className="size-[200px] rounded-md" />
+              <Skeleton className="h-4 w-48" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </main>
+  )
+}
+
 export function InventoryItemDetailPage() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { id } = useParams()
-  const [item, setItem] = useState<InventoryItem | undefined>(() =>
-    id ? getInventoryItemById(id) : undefined,
-  )
+  const { data: items = [], isLoading, isError, refetch } = useInventoryItemsQuery()
+  const updateItemMutation = useUpdateInventoryItemMutation()
+  const archiveItemMutation = useArchiveInventoryItemMutation()
+
+  const item = useMemo(() => items.find((entry) => entry.id === id), [id, items])
+  const relatedWriteOffs = useMemo(() => {
+    if (!item || item.condition === "written_off") {
+      return []
+    }
+    return items.filter(
+      (entry) => entry.originalItemId === item.id && entry.condition === "written_off",
+    )
+  }, [item, items])
+
   const [formDirty, setFormDirty] = useState(false)
   const [formBusy, setFormBusy] = useState(false)
   const [unsavedPromptOpen, setUnsavedPromptOpen] = useState(false)
@@ -76,13 +129,6 @@ export function InventoryItemDetailPage() {
   const [writeOffOpen, setWriteOffOpen] = useState(false)
   const [returnToStockOpen, setReturnToStockOpen] = useState(false)
   const isWrittenOff = item?.condition === "written_off"
-
-  const relatedWriteOffs = useMemo(() => {
-    if (!item || item.condition === "written_off") {
-      return []
-    }
-    return getActiveWriteOffsForOriginal(item.id)
-  }, [item])
 
   const formatWriteOffDate = (value: string | null) => {
     if (!value) {
@@ -105,8 +151,9 @@ export function InventoryItemDetailPage() {
       !allowLeaveRef.current && formDirty && currentLocation.pathname !== nextLocation.pathname,
   )
 
+  // Reset leave/dirty state when navigating between inventory item routes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed by route param id
   useEffect(() => {
-    setItem(id ? getInventoryItemById(id) : undefined)
     setFormDirty(false)
     allowLeaveRef.current = false
   }, [id])
@@ -196,12 +243,18 @@ export function InventoryItemDetailPage() {
     if (!item) {
       return
     }
-    const updated = item.archived ? unarchiveInventoryItem(item.id) : archiveInventoryItem(item.id)
-    if (!updated) {
-      return
-    }
-    setFormDirty(false)
-    navigateBackOrInventory()
+    archiveItemMutation.mutate(
+      { id: item.id, currentlyArchived: item.archived },
+      {
+        onSuccess: (updated) => {
+          if (!updated) {
+            return
+          }
+          setFormDirty(false)
+          navigateBackOrInventory()
+        },
+      },
+    )
   }
 
   const requestArchiveConfirm = async () => {
@@ -227,6 +280,18 @@ export function InventoryItemDetailPage() {
         form.requestSubmit()
       }
     })
+  }
+
+  if (isError) {
+    return (
+      <main className="bg-background">
+        <QueryErrorState onRetry={() => void refetch()} />
+      </main>
+    )
+  }
+
+  if (isLoading) {
+    return <InventoryItemDetailSkeleton />
   }
 
   if (!item) {
@@ -420,25 +485,34 @@ export function InventoryItemDetailPage() {
               if (isWrittenOff) {
                 return
               }
-              const updated = updateInventoryItem(item.id, data)
-              if (!updated) {
-                clearPendingLeave()
-                return
-              }
-              const shouldArchiveAfterSave = pendingArchiveAfterSaveRef.current
-              const pendingLeaveTo = pendingLeaveToRef.current
-              clearPendingLeave()
-              allowLeaveRef.current = true
-              setFormDirty(false)
-              if (shouldArchiveAfterSave) {
-                applyArchiveAndLeave()
-                return
-              }
-              if (pendingLeaveTo) {
-                navigate(pendingLeaveTo)
-                return
-              }
-              navigateBackOrInventory()
+              updateItemMutation.mutate(
+                { id: item.id, data },
+                {
+                  onSuccess: (updated) => {
+                    if (!updated) {
+                      clearPendingLeave()
+                      return
+                    }
+                    const shouldArchiveAfterSave = pendingArchiveAfterSaveRef.current
+                    const pendingLeaveTo = pendingLeaveToRef.current
+                    clearPendingLeave()
+                    allowLeaveRef.current = true
+                    setFormDirty(false)
+                    if (shouldArchiveAfterSave) {
+                      applyArchiveAndLeave()
+                      return
+                    }
+                    if (pendingLeaveTo) {
+                      navigate(pendingLeaveTo)
+                      return
+                    }
+                    navigateBackOrInventory()
+                  },
+                  onError: () => {
+                    clearPendingLeave()
+                  },
+                },
+              )
             }}
           />
         </div>
@@ -569,13 +643,13 @@ export function InventoryItemDetailPage() {
         open={writeOffOpen}
         onOpenChange={setWriteOffOpen}
         onConfirm={() => {
-          const next = id ? getInventoryItemById(id) : undefined
-          if (!next) {
-            navigateBackOrInventory()
-            return
-          }
-          setItem(next)
           setFormDirty(false)
+          void refetch().then((result) => {
+            const refreshed = result.data?.find((entry) => entry.id === id)
+            if (!refreshed) {
+              navigateBackOrInventory()
+            }
+          })
         }}
       />
 

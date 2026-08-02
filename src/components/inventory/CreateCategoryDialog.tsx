@@ -6,8 +6,8 @@ import { Dialog, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
+import { useCreateCategoryMutation } from "@/hooks/queries/useInventoryQueries"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
-import { createCategory } from "@/lib/inventoryStorage"
 import type { Category } from "@/types/inventory"
 
 type CreateCategoryDialogProps = {
@@ -18,6 +18,7 @@ type CreateCategoryDialogProps = {
 
 export function CreateCategoryDialog({ open, onOpenChange, onCreated }: CreateCategoryDialogProps) {
   const { t } = useTranslation()
+  const createCategoryMutation = useCreateCategoryMutation()
   const [name, setName] = useState("")
   const [error, setError] = useState("")
 
@@ -43,9 +44,12 @@ export function CreateCategoryDialog({ open, onOpenChange, onCreated }: CreateCa
       setError(t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.entityName }))
       return
     }
-    const category = createCategory(trimmed)
-    onCreated(category)
-    handleOpenChange(false)
+    createCategoryMutation.mutate(trimmed, {
+      onSuccess: (category) => {
+        onCreated(category)
+        handleOpenChange(false)
+      },
+    })
   }
 
   return (
@@ -81,7 +85,7 @@ export function CreateCategoryDialog({ open, onOpenChange, onCreated }: CreateCa
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
             {t("inventory.actions.cancel")}
           </Button>
-          <Button type="button" onClick={handleCreate}>
+          <Button type="button" onClick={handleCreate} disabled={createCategoryMutation.isPending}>
             {t("inventory.form.createAction")}
           </Button>
         </DialogFooter>

@@ -20,13 +20,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
 import {
-  compressImage,
-  getCategories,
-  getLocations,
-  getSubcategories,
-} from "@/lib/inventoryStorage"
+  useCategoriesQuery,
+  useLocationsQuery,
+  useSubcategoriesQuery,
+} from "@/hooks/queries/useInventoryQueries"
+import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
+import { compressImage } from "@/lib/inventoryStorage"
 import { cn } from "@/lib/utils"
 import type { CreateInventoryItemInput, InventoryItem, InventoryPhoto } from "@/types/inventory"
 
@@ -120,9 +120,24 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
     const isPageLayout = layout === "page"
     const isWrittenOff = initialData?.condition === "written_off"
     const { t } = useTranslation()
-    const [categories, setCategories] = useState(() => getCategories())
-    const [subcategories, setSubcategories] = useState(() => getSubcategories())
-    const [locations, setLocations] = useState(() => getLocations())
+    const {
+      data: categories = [],
+      isLoading: categoriesLoading,
+      isError: categoriesError,
+      refetch: refetchCategories,
+    } = useCategoriesQuery()
+    const {
+      data: subcategories = [],
+      isLoading: subcategoriesLoading,
+      isError: subcategoriesError,
+      refetch: refetchSubcategories,
+    } = useSubcategoriesQuery()
+    const {
+      data: locations = [],
+      isLoading: locationsLoading,
+      isError: locationsError,
+      refetch: refetchLocations,
+    } = useLocationsQuery()
     const [createCategoryOpen, setCreateCategoryOpen] = useState(false)
     const [createSubcategoryOpen, setCreateSubcategoryOpen] = useState(false)
     const [createLocationOpen, setCreateLocationOpen] = useState(false)
@@ -377,7 +392,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
 
     // If selected category no longer exists, clear both selects.
     useEffect(() => {
-      if (pendingCategoryIdRef.current) {
+      if (categoriesLoading || pendingCategoryIdRef.current) {
         return
       }
       if (categoryId && !categories.some((category) => category.id === categoryId)) {
@@ -385,7 +400,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
         setValue("subcategoryId", "", { shouldValidate: false })
         clearErrors(["categoryId", "subcategoryId"])
       }
-    }, [categories, categoryId, clearErrors, setValue])
+    }, [categories, categoriesLoading, categoryId, clearErrors, setValue])
 
     const scrollToFirstError = () => {
       // Wait for error messages to paint before scrolling.
@@ -488,6 +503,24 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
               </div>
             ) : null}
 
+            {categoriesError || subcategoriesError || locationsError ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
+                <p className="text-destructive">{t("common.loadError")}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    void refetchCategories()
+                    void refetchSubcategories()
+                    void refetchLocations()
+                  }}
+                >
+                  {t("common.retry")}
+                </Button>
+              </div>
+            ) : null}
+
             <div className="space-y-2">
               <Label htmlFor="inventory-item-name">{t("inventory.form.name")} *</Label>
               <Input
@@ -515,10 +548,16 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                     onOpenChange={setCategorySelectOpen}
                     value={field.value || undefined}
                     onValueChange={field.onChange}
-                    disabled={readOnly}
+                    disabled={readOnly || categoriesLoading}
                   >
                     <SelectTrigger aria-label={t("inventory.form.category")}>
-                      <SelectValue placeholder={t("inventory.form.categoryPlaceholder")} />
+                      <SelectValue
+                        placeholder={
+                          categoriesLoading
+                            ? t("common.loading")
+                            : t("inventory.form.categoryPlaceholder")
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
@@ -551,10 +590,10 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                 control={control}
                 name="subcategoryId"
                 render={({ field }) => {
-                  const subcategoryDisabled = !categoryId
+                  const subcategoryDisabled = !categoryId || subcategoriesLoading
                   return (
                     <DisabledTooltip
-                      disabled={subcategoryDisabled}
+                      disabled={!categoryId}
                       tip={t("inventory.subcategoryDisabledHint")}
                     >
                       <Select
@@ -566,9 +605,15 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                       >
                         <SelectTrigger
                           aria-label={t("inventory.form.subcategory")}
-                          className={cn(subcategoryDisabled && "pointer-events-none")}
+                          className={cn(!categoryId && "pointer-events-none")}
                         >
-                          <SelectValue placeholder={t("inventory.form.subcategoryPlaceholder")} />
+                          <SelectValue
+                            placeholder={
+                              subcategoriesLoading
+                                ? t("common.loading")
+                                : t("inventory.form.subcategoryPlaceholder")
+                            }
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {filteredSubcategories.map((subcategory) => (
@@ -675,10 +720,16 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                     onOpenChange={setLocationSelectOpen}
                     value={field.value || undefined}
                     onValueChange={field.onChange}
-                    disabled={readOnly}
+                    disabled={readOnly || locationsLoading}
                   >
                     <SelectTrigger aria-label={t("inventory.form.location")}>
-                      <SelectValue placeholder={t("inventory.form.locationPlaceholder")} />
+                      <SelectValue
+                        placeholder={
+                          locationsLoading
+                            ? t("common.loading")
+                            : t("inventory.form.locationPlaceholder")
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {locations.map((location) => (
@@ -889,9 +940,10 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           onOpenChange={setCreateCategoryOpen}
           onCreated={(category) => {
             pendingCategoryIdRef.current = category.id
-            setCategories((prev) =>
-              prev.some((item) => item.id === category.id) ? prev : [...prev, category],
-            )
+            setValue("categoryId", category.id, { shouldDirty: true, shouldValidate: false })
+            setValue("subcategoryId", "", { shouldDirty: true, shouldValidate: false })
+            clearErrors(["categoryId", "subcategoryId"])
+            setCategorySelectOpen(false)
           }}
         />
 
@@ -902,9 +954,8 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           onOpenChange={setCreateSubcategoryOpen}
           onCreated={(subcategory) => {
             pendingSubcategoryIdRef.current = subcategory.id
-            setSubcategories((prev) =>
-              prev.some((item) => item.id === subcategory.id) ? prev : [...prev, subcategory],
-            )
+            setValue("subcategoryId", subcategory.id, { shouldDirty: true, shouldValidate: true })
+            setSubcategorySelectOpen(false)
           }}
         />
 
@@ -913,9 +964,8 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           onOpenChange={setCreateLocationOpen}
           onCreated={(location) => {
             pendingLocationIdRef.current = location.id
-            setLocations((prev) =>
-              prev.some((item) => item.id === location.id) ? prev : [...prev, location],
-            )
+            setValue("locationId", location.id, { shouldDirty: true, shouldValidate: true })
+            setLocationSelectOpen(false)
           }}
         />
       </>

@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
-import { returnToStock } from "@/lib/inventoryStorage"
+import { useReturnToStockMutation } from "@/hooks/queries/useInventoryQueries"
 import type { InventoryItem } from "@/types/inventory"
 
 type ReturnToStockDialogProps = {
@@ -26,14 +26,18 @@ export function ReturnToStockDialog({
   onConfirm,
 }: ReturnToStockDialogProps) {
   const { t } = useTranslation()
+  const returnToStockMutation = useReturnToStockMutation()
 
   const confirm = () => {
     if (!item) {
       return
     }
-    returnToStock(item.id)
-    onOpenChange(false)
-    onConfirm()
+    returnToStockMutation.mutate(item.id, {
+      onSuccess: () => {
+        onOpenChange(false)
+        onConfirm()
+      },
+    })
   }
 
   return (
@@ -49,10 +53,19 @@ export function ReturnToStockDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={returnToStockMutation.isPending}
+          >
             {t("inventory.actions.cancel")}
           </Button>
-          <Button type="button" onClick={confirm} disabled={!item}>
+          <Button
+            type="button"
+            onClick={confirm}
+            disabled={!item || returnToStockMutation.isPending}
+          >
             {t("inventory.actions.returnToStock")}
           </Button>
         </DialogFooter>

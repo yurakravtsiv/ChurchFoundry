@@ -48,6 +48,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
+import { QueryErrorState } from "@/components/ui/query-error-state"
 import {
   Select,
   SelectContent,
@@ -64,30 +65,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { TableSkeleton } from "@/components/ui/table-skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  useArchiveInventoryItemMutation,
+  useCategoriesQuery,
+  useCreateInventoryItemMutation,
+  useInventoryItemsQuery,
+  useLocationsQuery,
+  useSubcategoriesQuery,
+} from "@/hooks/queries/useInventoryQueries"
 import { useTypewriterPlaceholder } from "@/hooks/useTypewriterPlaceholder"
 import { exportToPdf, exportToXlsx, prepareExportData } from "@/lib/inventoryExport"
 import { itemMatchesSearch } from "@/lib/inventorySearch"
-import {
-  archiveInventoryItem,
-  createInventoryItem,
-  getCategories,
-  getInventoryItems,
-  getLocations,
-  getSubcategories,
-  unarchiveInventoryItem,
-} from "@/lib/inventoryStorage"
 import { cn } from "@/lib/utils"
 import type { AvailabilityStatus, InventoryItem, ItemCondition } from "@/types/inventory"
-
-function loadInventoryState() {
-  return {
-    items: getInventoryItems(),
-    categories: getCategories(),
-    subcategories: getSubcategories(),
-    locations: getLocations(),
-  }
-}
 
 function FilterClearButton({
   visible,
@@ -222,8 +214,42 @@ export function InventoryPage() {
   const navigate = useNavigate()
   const { search: locationSearch } = useLocation()
 
-  const [{ items, categories, subcategories, locations }, setInventoryState] =
-    useState(loadInventoryState)
+  const {
+    data: items = [],
+    isLoading: itemsLoading,
+    isError: itemsError,
+    refetch: refetchItems,
+  } = useInventoryItemsQuery()
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+    isError: categoriesError,
+    refetch: refetchCategories,
+  } = useCategoriesQuery()
+  const {
+    data: subcategories = [],
+    isLoading: subcategoriesLoading,
+    isError: subcategoriesError,
+    refetch: refetchSubcategories,
+  } = useSubcategoriesQuery()
+  const {
+    data: locations = [],
+    isLoading: locationsLoading,
+    isError: locationsError,
+    refetch: refetchLocations,
+  } = useLocationsQuery()
+  const createItemMutation = useCreateInventoryItemMutation()
+  const archiveItemMutation = useArchiveInventoryItemMutation()
+
+  const isLoading = itemsLoading || categoriesLoading || subcategoriesLoading || locationsLoading
+  const isError = itemsError || categoriesError || subcategoriesError || locationsError
+  const refetchAll = useCallback(() => {
+    void refetchItems()
+    void refetchCategories()
+    void refetchSubcategories()
+    void refetchLocations()
+  }, [refetchCategories, refetchItems, refetchLocations, refetchSubcategories])
+
   const [sorting, setSorting] = useState<SortingState>([])
   const [search, setSearch] = useState("")
   const searchExampleWords = useMemo(
@@ -284,10 +310,6 @@ export function InventoryPage() {
     setDiscardCreateOpen(false)
     setCreateFormDirty(false)
     setCreateOpen(false)
-  }, [])
-
-  const refreshItems = useCallback(() => {
-    setInventoryState(loadInventoryState())
   }, [])
 
   const categoryNameById = useMemo(() => {
@@ -615,14 +637,46 @@ export function InventoryPage() {
     if (!archiveTarget) {
       return
     }
-    if (archiveTarget.archived) {
-      unarchiveInventoryItem(archiveTarget.id)
-    } else {
-      archiveInventoryItem(archiveTarget.id)
-    }
-    setArchiveTarget(null)
-    refreshItems()
+    archiveItemMutation.mutate(
+      { id: archiveTarget.id, currentlyArchived: archiveTarget.archived },
+      {
+        onSuccess: () => {
+          setArchiveTarget(null)
+        },
+      },
+    )
   }
+
+  const skeletonColumnCount = showWrittenOff ? 13 : 11
+  const skeletonColumnClassNames = showWrittenOff
+    ? [
+        "size-10",
+        "h-4 w-32",
+        "h-4 w-24",
+        "h-4 w-24",
+        "h-4 w-10",
+        "h-4 w-20",
+        "h-4 w-24",
+        "h-4 w-28",
+        "h-4 w-24",
+        "h-4 w-20",
+        "h-4 w-28",
+        "h-4 w-28",
+        "size-8",
+      ]
+    : [
+        "size-10",
+        "h-4 w-32",
+        "h-4 w-24",
+        "h-4 w-24",
+        "h-4 w-10",
+        "h-4 w-20",
+        "h-4 w-24",
+        "h-4 w-20",
+        "h-4 w-28",
+        "h-4 w-28",
+        "size-8",
+      ]
 
   const openCreate = () => setCreateOpen(true)
 
@@ -760,6 +814,7 @@ export function InventoryPage() {
                     setCategoryFilter(value)
                     setSubcategoryFilter("all")
                   }}
+                  disabled={categoriesLoading}
                 >
                   <SelectTrigger
                     id="inventory-filter-category"
@@ -768,7 +823,11 @@ export function InventoryPage() {
                       categoryFilter !== "all" && "pr-8 [&>svg]:hidden",
                     )}
                   >
-                    <SelectValue placeholder={t("inventory.filters.all")} />
+                    <SelectValue
+                      placeholder={
+                        categoriesLoading ? t("common.loading") : t("inventory.filters.all")
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
@@ -803,7 +862,7 @@ export function InventoryPage() {
                   <Select
                     value={subcategoryFilter}
                     onValueChange={setSubcategoryFilter}
-                    disabled={categoryFilter === "all"}
+                    disabled={categoryFilter === "all" || subcategoriesLoading}
                   >
                     <SelectTrigger
                       id="inventory-filter-subcategory"
@@ -813,7 +872,11 @@ export function InventoryPage() {
                         subcategoryFilter !== "all" && "pr-8 [&>svg]:hidden",
                       )}
                     >
-                      <SelectValue placeholder={t("inventory.filters.all")} />
+                      <SelectValue
+                        placeholder={
+                          subcategoriesLoading ? t("common.loading") : t("inventory.filters.all")
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
@@ -873,7 +936,11 @@ export function InventoryPage() {
                 {t("inventory.filters.location")}
               </Label>
               <div className="relative min-w-0">
-                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                <Select
+                  value={locationFilter}
+                  onValueChange={setLocationFilter}
+                  disabled={locationsLoading}
+                >
                   <SelectTrigger
                     id="inventory-filter-location"
                     className={cn(
@@ -881,7 +948,11 @@ export function InventoryPage() {
                       locationFilter !== "all" && "pr-8 [&>svg]:hidden",
                     )}
                   >
-                    <SelectValue placeholder={t("inventory.filters.all")} />
+                    <SelectValue
+                      placeholder={
+                        locationsLoading ? t("common.loading") : t("inventory.filters.all")
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
@@ -1035,7 +1106,39 @@ export function InventoryPage() {
         </div>
       </div>
 
-      {isStorageEmpty ? (
+      {isError ? (
+        <QueryErrorState onRetry={refetchAll} />
+      ) : isLoading ? (
+        <div className="overflow-hidden rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className={cn(
+                        "whitespace-nowrap",
+                        (header.column.id === "condition" || header.column.id === "availability") &&
+                          "text-center",
+                      )}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableSkeleton
+              rows={8}
+              columns={skeletonColumnCount}
+              columnClassNames={skeletonColumnClassNames}
+            />
+          </Table>
+        </div>
+      ) : isStorageEmpty ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
           <Package
             className="size-24 text-muted-foreground sm:size-28"
@@ -1135,10 +1238,12 @@ export function InventoryPage() {
             onDirtyChange={setCreateFormDirty}
             onCancel={requestCloseCreate}
             onSubmit={(data) => {
-              createInventoryItem(data)
-              setCreateFormDirty(false)
-              setCreateOpen(false)
-              refreshItems()
+              createItemMutation.mutate(data, {
+                onSuccess: () => {
+                  setCreateFormDirty(false)
+                  setCreateOpen(false)
+                },
+              })
             }}
           />
         </MotionDialogContent>
@@ -1222,7 +1327,9 @@ export function InventoryPage() {
             setWriteOffTarget(null)
           }
         }}
-        onConfirm={refreshItems}
+        onConfirm={() => {
+          setWriteOffTarget(null)
+        }}
       />
 
       <ReturnToStockDialog
@@ -1233,7 +1340,9 @@ export function InventoryPage() {
             setReturnToStockTarget(null)
           }
         }}
-        onConfirm={refreshItems}
+        onConfirm={() => {
+          setReturnToStockTarget(null)
+        }}
       />
     </main>
   )

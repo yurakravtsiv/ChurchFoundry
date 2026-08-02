@@ -6,8 +6,8 @@ import { Dialog, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
+import { useCreateLocationMutation } from "@/hooks/queries/useInventoryQueries"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
-import { createLocation } from "@/lib/inventoryStorage"
 import type { Location } from "@/types/inventory"
 
 type CreateLocationDialogProps = {
@@ -18,6 +18,7 @@ type CreateLocationDialogProps = {
 
 export function CreateLocationDialog({ open, onOpenChange, onCreated }: CreateLocationDialogProps) {
   const { t } = useTranslation()
+  const createLocationMutation = useCreateLocationMutation()
   const [name, setName] = useState("")
   const [error, setError] = useState("")
 
@@ -43,9 +44,12 @@ export function CreateLocationDialog({ open, onOpenChange, onCreated }: CreateLo
       setError(t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.entityName }))
       return
     }
-    const location = createLocation(trimmed)
-    onCreated(location)
-    handleOpenChange(false)
+    createLocationMutation.mutate(trimmed, {
+      onSuccess: (location) => {
+        onCreated(location)
+        handleOpenChange(false)
+      },
+    })
   }
 
   return (
@@ -81,7 +85,7 @@ export function CreateLocationDialog({ open, onOpenChange, onCreated }: CreateLo
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
             {t("inventory.actions.cancel")}
           </Button>
-          <Button type="button" onClick={handleCreate}>
+          <Button type="button" onClick={handleCreate} disabled={createLocationMutation.isPending}>
             {t("inventory.form.createAction")}
           </Button>
         </DialogFooter>

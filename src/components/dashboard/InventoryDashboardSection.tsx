@@ -5,19 +5,34 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
 
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget"
-import { getInventoryItems } from "@/lib/inventoryStorage"
+import { Card } from "@/components/ui/card"
+import { QueryErrorState } from "@/components/ui/query-error-state"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useInventoryItemsQuery } from "@/hooks/queries/useInventoryQueries"
+
+function DashboardWidgetSkeleton() {
+  return (
+    <Card className="px-5 py-6 shadow-sm">
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-12 w-16 sm:h-14" />
+        <Skeleton className="h-4 w-40" />
+      </div>
+    </Card>
+  )
+}
 
 export function InventoryDashboardSection() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { data: items = [], isLoading, isError, refetch } = useInventoryItemsQuery()
 
   const { needsRepairCount, borrowedCount } = useMemo(() => {
-    const activeItems = getInventoryItems().filter((item) => !item.archived && !item.removed)
+    const activeItems = items.filter((item) => !item.archived && !item.removed)
     return {
       needsRepairCount: activeItems.filter((item) => item.condition === "needs_repair").length,
       borrowedCount: activeItems.filter((item) => item.availability === "borrowed").length,
     }
-  }, [])
+  }, [items])
 
   return (
     <section className="space-y-3" aria-labelledby="dashboard-inventory-heading">
@@ -28,43 +43,55 @@ export function InventoryDashboardSection() {
         </h2>
       </div>
 
-      <motion.div
-        className="grid grid-cols-1 gap-4 md:grid-cols-2"
-        initial="hidden"
-        animate="visible"
-        variants={{
-          visible: { transition: { staggerChildren: 0.08 } },
-        }}
-      >
+      {isError ? (
+        <QueryErrorState
+          onRetry={() => void refetch()}
+          className="flex flex-col items-start gap-3 py-4"
+        />
+      ) : isLoading ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <DashboardWidgetSkeleton />
+          <DashboardWidgetSkeleton />
+        </div>
+      ) : (
         <motion.div
+          className="grid grid-cols-1 gap-4 md:grid-cols-2"
+          initial="hidden"
+          animate="visible"
           variants={{
-            hidden: { opacity: 0, y: 12 },
-            visible: { opacity: 1, y: 0 },
+            visible: { transition: { staggerChildren: 0.08 } },
           }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
         >
-          <DashboardWidget
-            title={t("inventory.condition.needsRepair")}
-            count={needsRepairCount}
-            colorVariant="info"
-            onClick={() => navigate("/inventory?condition=needs_repair")}
-          />
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 12 },
+              visible: { opacity: 1, y: 0 },
+            }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <DashboardWidget
+              title={t("inventory.condition.needsRepair")}
+              count={needsRepairCount}
+              colorVariant="info"
+              onClick={() => navigate("/inventory?condition=needs_repair")}
+            />
+          </motion.div>
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 12 },
+              visible: { opacity: 1, y: 0 },
+            }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <DashboardWidget
+              title={t("inventory.availability.borrowed")}
+              count={borrowedCount}
+              colorVariant="warning"
+              onClick={() => navigate("/inventory?availability=borrowed")}
+            />
+          </motion.div>
         </motion.div>
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 12 },
-            visible: { opacity: 1, y: 0 },
-          }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-        >
-          <DashboardWidget
-            title={t("inventory.availability.borrowed")}
-            count={borrowedCount}
-            colorVariant="warning"
-            onClick={() => navigate("/inventory?availability=borrowed")}
-          />
-        </motion.div>
-      </motion.div>
+      )}
     </section>
   )
 }

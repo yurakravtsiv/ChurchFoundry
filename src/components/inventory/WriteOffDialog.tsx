@@ -16,8 +16,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { Textarea } from "@/components/ui/textarea"
+import { useWriteOffItemMutation } from "@/hooks/queries/useInventoryQueries"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
-import { writeOffItem } from "@/lib/inventoryStorage"
 import type { InventoryItem } from "@/types/inventory"
 
 type WriteOffDialogProps = {
@@ -39,6 +39,7 @@ function todayDateInputValue() {
 
 export function WriteOffDialog({ item, open, onOpenChange, onConfirm }: WriteOffDialogProps) {
   const { t } = useTranslation()
+  const writeOffMutation = useWriteOffItemMutation()
   const maxQuantity = item?.quantity ?? 1
 
   const schema = useMemo(
@@ -108,9 +109,20 @@ export function WriteOffDialog({ item, open, onOpenChange, onConfirm }: WriteOff
     if (!item) {
       return
     }
-    writeOffItem(item.id, values.quantity, values.writeOffDate, values.writeOffReason.trim())
-    onOpenChange(false)
-    onConfirm()
+    writeOffMutation.mutate(
+      {
+        id: item.id,
+        quantity: values.quantity,
+        writeOffDate: values.writeOffDate,
+        writeOffReason: values.writeOffReason.trim(),
+      },
+      {
+        onSuccess: () => {
+          onOpenChange(false)
+          onConfirm()
+        },
+      },
+    )
   })
 
   return (
@@ -169,11 +181,11 @@ export function WriteOffDialog({ item, open, onOpenChange, onConfirm }: WriteOff
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || writeOffMutation.isPending}
             >
               {t("inventory.actions.cancel")}
             </Button>
-            <Button type="submit" disabled={isSubmitting || !item}>
+            <Button type="submit" disabled={isSubmitting || writeOffMutation.isPending || !item}>
               {t("inventory.actions.writeOff")}
             </Button>
           </DialogFooter>

@@ -12,8 +12,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
+import { useCreateSubcategoryMutation } from "@/hooks/queries/useInventoryQueries"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
-import { createSubcategory } from "@/lib/inventoryStorage"
 import type { Subcategory } from "@/types/inventory"
 
 type CreateSubcategoryDialogProps = {
@@ -32,6 +32,7 @@ export function CreateSubcategoryDialog({
   onCreated,
 }: CreateSubcategoryDialogProps) {
   const { t } = useTranslation()
+  const createSubcategoryMutation = useCreateSubcategoryMutation()
   const [name, setName] = useState("")
   const [error, setError] = useState("")
 
@@ -61,9 +62,15 @@ export function CreateSubcategoryDialog({
       setError(t("inventory.form.validation.categoryRequired"))
       return
     }
-    const subcategory = createSubcategory(categoryId, trimmed)
-    onCreated(subcategory)
-    handleOpenChange(false)
+    createSubcategoryMutation.mutate(
+      { categoryId, name: trimmed },
+      {
+        onSuccess: (subcategory) => {
+          onCreated(subcategory)
+          handleOpenChange(false)
+        },
+      },
+    )
   }
 
   return (
@@ -102,7 +109,11 @@ export function CreateSubcategoryDialog({
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
             {t("inventory.actions.cancel")}
           </Button>
-          <Button type="button" onClick={handleCreate}>
+          <Button
+            type="button"
+            onClick={handleCreate}
+            disabled={createSubcategoryMutation.isPending}
+          >
             {t("inventory.form.createAction")}
           </Button>
         </DialogFooter>

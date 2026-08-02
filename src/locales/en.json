@@ -27,6 +27,11 @@
   "a11y": {
     "close": "Close"
   },
+  "common": {
+    "loading": "Loading...",
+    "loadError": "Failed to load data",
+    "retry": "Try again"
+  },
   "home": {
     "language": "Language"
   },
