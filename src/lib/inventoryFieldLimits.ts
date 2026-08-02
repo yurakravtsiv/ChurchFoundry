@@ -5,6 +5,7 @@ export const INVENTORY_FIELD_LIMITS = {
   supplier: 120,
   serialNumber: 80,
   comment: 200,
+  writeOffReason: 200,
   entityName: 80, // category / subcategory / location
   quantityMin: 1,
   quantityMax: 999_999,

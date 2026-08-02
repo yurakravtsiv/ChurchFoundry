@@ -12,6 +12,8 @@
       "subcategory": "Subcategory",
       "quantity": "Quantity",
       "condition": "Condition",
+      "writeOffDate": "Write-off date",
+      "writeOffReason": "Write-off reason",
       "location": "Location",
       "availability": "Availability",
       "availabilityComment": "Availability comment",
@@ -54,6 +56,8 @@
     },
     "showArchived": "Show archived",
     "hideArchived": "Hide archived",
+    "showWrittenOff": "Show only written off",
+    "hideWrittenOff": "Hide written off",
     "itemNotFound": "Item not found",
     "unsavedChanges": {
       "title": "Save changes?",
@@ -62,9 +66,14 @@
       "yes": "Yes"
     },
     "detail": {
-      "backToInventory": "Back to inventory",
+      "backToInventory": "Back",
       "returnToInventory": "Return to inventory",
       "archivedBadge": "Archived",
+      "writtenOffBadge": "Written off",
+      "writeOffBatchesTitle": "Written-off items",
+      "readOnlyWarning": "Written-off items cannot be edited",
+      "writeOffDate": "Write-off date",
+      "writeOffReason": "Write-off reason",
       "qrTitle": "Item QR code",
       "qrHint": "Print and attach it to the item. Scanning opens this page."
     },
@@ -107,14 +116,38 @@
       "condition": "Condition",
       "availability": "Availability",
       "availabilityComment": "Availability comment",
-      "comment": "Comment"
+      "comment": "Comment",
+      "writeOffDate": "Write-off date",
+      "writeOffReason": "Write-off reason"
     },
     "actions": {
       "menu": "Actions",
       "edit": "Edit",
       "archive": "Archive",
       "unarchive": "Unarchive",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "writeOff": "Write off",
+      "returnToStock": "Return to stock",
+      "archiveWrittenOffHint": "Written-off items cannot be archived",
+      "writeOffArchivedHint": "Archived items cannot be written off"
+    },
+    "writeOff": {
+      "title": "Write off “{{name}}”",
+      "description": "Available quantity: {{quantity}}",
+      "quantity": "Quantity to write off",
+      "date": "Write-off date",
+      "reason": "Write-off reason",
+      "validation": {
+        "quantityInvalid": "Enter a whole number",
+        "quantityMin": "Minimum is 1",
+        "quantityMax": "Cannot exceed available quantity ({{quantity}})",
+        "dateRequired": "Date is required",
+        "reasonRequired": "Reason is required"
+      }
+    },
+    "returnToStock": {
+      "title": "Return to stock?",
+      "description": "Return {{quantity}} pcs of “{{name}}” to the original item’s stock?"
     },
     "form": {
       "createDescription": "Fill in the inventory item details",
@@ -154,6 +187,8 @@
       "warrantyUntil": "Warranty until",
       "comment": "Comment",
       "commentPlaceholder": "Additional notes",
+      "writeOffDate": "Write-off date",
+      "writeOffReason": "Write-off reason",
       "photos": "Photos",
       "photosCompressing": "Compressing photos…",
       "setAvatar": "Set as main photo",

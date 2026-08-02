@@ -12,6 +12,8 @@
       "subcategory": "Підкатегорія",
       "quantity": "Кількість",
       "condition": "Стан",
+      "writeOffDate": "Дата списання",
+      "writeOffReason": "Причина списання",
       "location": "Локація",
       "availability": "Наявність",
       "availabilityComment": "Коментар наявності",
@@ -54,6 +56,8 @@
     },
     "showArchived": "Показати архівовані",
     "hideArchived": "Приховати архівовані",
+    "showWrittenOff": "Показати тільки списані",
+    "hideWrittenOff": "Приховати списані",
     "itemNotFound": "Предмет не знайдено",
     "unsavedChanges": {
       "title": "Зберегти зміни?",
@@ -62,9 +66,14 @@
       "yes": "Так"
     },
     "detail": {
-      "backToInventory": "Назад до інвентарю",
+      "backToInventory": "Назад",
       "returnToInventory": "Повернутись до інвентарю",
       "archivedBadge": "Архів",
+      "writtenOffBadge": "Списано",
+      "writeOffBatchesTitle": "Списані предмети",
+      "readOnlyWarning": "Списаний предмет не можна редагувати",
+      "writeOffDate": "Дата списання",
+      "writeOffReason": "Причина списання",
       "qrTitle": "QR-код предмету",
       "qrHint": "Роздрукуйте і прикріпіть до предмета. При скануванні відкриється ця сторінка."
     },
@@ -107,14 +116,38 @@
       "condition": "Стан",
       "availability": "Наявність",
       "availabilityComment": "Коментар наявності",
-      "comment": "Коментар"
+      "comment": "Коментар",
+      "writeOffDate": "Дата списання",
+      "writeOffReason": "Причина списання"
     },
     "actions": {
       "menu": "Дії",
       "edit": "Редагувати",
       "archive": "Архівувати",
       "unarchive": "Розархівувати",
-      "cancel": "Скасувати"
+      "cancel": "Скасувати",
+      "writeOff": "Списати",
+      "returnToStock": "Повернути в наявність",
+      "archiveWrittenOffHint": "Списаний предмет не можна архівувати",
+      "writeOffArchivedHint": "Архівований предмет не можна списати"
+    },
+    "writeOff": {
+      "title": "Списати «{{name}}»",
+      "description": "Наявна кількість: {{quantity}}",
+      "quantity": "Кількість до списання",
+      "date": "Дата списання",
+      "reason": "Причина списання",
+      "validation": {
+        "quantityInvalid": "Вкажіть ціле число",
+        "quantityMin": "Мінімум 1",
+        "quantityMax": "Не може перевищувати наявну кількість ({{quantity}})",
+        "dateRequired": "Вкажіть дату",
+        "reasonRequired": "Вкажіть причину"
+      }
+    },
+    "returnToStock": {
+      "title": "Повернути в наявність?",
+      "description": "Повернути {{quantity}} шт. предмета «{{name}}» в наявність оригінального предмету?"
     },
     "form": {
       "createDescription": "Заповніть дані предмета інвентарю",
@@ -154,6 +187,8 @@
       "warrantyUntil": "Гарантія до",
       "comment": "Коментар",
       "commentPlaceholder": "Додаткові нотатки",
+      "writeOffDate": "Дата списання",
+      "writeOffReason": "Причина списання",
       "photos": "Фото",
       "photosCompressing": "Стиснення фото…",
       "setAvatar": "Зробити головним фото",

@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus, Star, X } from "lucide-react"
+import { Info, Plus, Star, X } from "lucide-react"
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -54,6 +54,8 @@ type InventoryItemFormProps = {
   /** Form element id — use with external submit buttons (`form` attribute). */
   id?: string
   onBusyChange?: (busy: boolean) => void
+  /** Disables all fields (e.g. written-off items). */
+  readOnly?: boolean
 }
 
 function toDateInputValue(value: string | null | undefined) {
@@ -111,10 +113,12 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
       layout = "dialog",
       id,
       onBusyChange,
+      readOnly = false,
     },
     ref,
   ) {
     const isPageLayout = layout === "page"
+    const isWrittenOff = initialData?.condition === "written_off"
     const { t } = useTranslation()
     const [categories, setCategories] = useState(() => getCategories())
     const [subcategories, setSubcategories] = useState(() => getSubcategories())
@@ -181,7 +185,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
               )
               .optional()
               .default(""),
-            condition: z.enum(["good", "needs_repair"]),
+            condition: z.enum(["good", "needs_repair", "written_off"]),
             supplier: z
               .string()
               .max(
@@ -268,7 +272,11 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
         availability: initialData?.availability ?? ("in_church" as const),
         availabilityComment: initialData?.availabilityComment ?? "",
         condition:
-          initialData?.condition === "needs_repair" ? ("needs_repair" as const) : ("good" as const),
+          initialData?.condition === "written_off"
+            ? ("written_off" as const)
+            : initialData?.condition === "needs_repair"
+              ? ("needs_repair" as const)
+              : ("good" as const),
         supplier: initialData?.supplier ?? "",
         price: initialData?.price ?? null,
         serialNumber: initialData?.serialNumber ?? "",
@@ -466,12 +474,20 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           className={cn(isPageLayout ? "block" : "flex min-h-0 flex-1 flex-col")}
           onSubmit={(event) => void submitForm(event)}
         >
-          <div
+          <fieldset
+            disabled={readOnly}
             className={cn(
-              "space-y-4 px-6 py-4",
+              "min-w-0 space-y-4 px-6 py-4 disabled:opacity-90",
               !isPageLayout && "min-h-0 flex-1 overflow-y-auto pb-6",
             )}
           >
+            {readOnly ? (
+              <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+                <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+                <p>{t("inventory.detail.readOnlyWarning")}</p>
+              </div>
+            ) : null}
+
             <div className="space-y-2">
               <Label htmlFor="inventory-item-name">{t("inventory.form.name")} *</Label>
               <Input
@@ -479,6 +495,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                 {...register("name")}
                 maxLength={INVENTORY_FIELD_LIMITS.name}
                 placeholder={t("inventory.form.namePlaceholder")}
+                disabled={readOnly}
               />
               {errors.name ? (
                 <p className="text-sm text-destructive" data-field-error>
@@ -498,6 +515,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                     onOpenChange={setCategorySelectOpen}
                     value={field.value || undefined}
                     onValueChange={field.onChange}
+                    disabled={readOnly}
                   >
                     <SelectTrigger aria-label={t("inventory.form.category")}>
                       <SelectValue placeholder={t("inventory.form.categoryPlaceholder")} />
@@ -510,6 +528,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                       ))}
                       <SelectCreateAction
                         label={t("inventory.form.createCategory")}
+                        disabled={readOnly}
                         onCreate={() => {
                           setCategorySelectOpen(false)
                           setCreateCategoryOpen(true)
@@ -542,7 +561,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                         open={subcategorySelectOpen}
                         onOpenChange={setSubcategorySelectOpen}
                         value={field.value || undefined}
-                        disabled={subcategoryDisabled}
+                        disabled={subcategoryDisabled || readOnly}
                         onValueChange={field.onChange}
                       >
                         <SelectTrigger
@@ -559,7 +578,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                           ))}
                           <SelectCreateAction
                             label={t("inventory.form.createSubcategory")}
-                            disabled={!categoryId}
+                            disabled={!categoryId || readOnly}
                             onCreate={() => {
                               setSubcategorySelectOpen(false)
                               setCreateSubcategoryOpen(true)
@@ -601,7 +620,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                 control={control}
                 name="condition"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} disabled={readOnly}>
                     <SelectTrigger aria-label={t("inventory.form.condition")}>
                       <SelectValue />
                     </SelectTrigger>
@@ -610,6 +629,11 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                       <SelectItem value="needs_repair">
                         {t("inventory.condition.needsRepair")}
                       </SelectItem>
+                      {isWrittenOff ? (
+                        <SelectItem value="written_off">
+                          {t("inventory.condition.writtenOff")}
+                        </SelectItem>
+                      ) : null}
                     </SelectContent>
                   </Select>
                 )}
@@ -620,6 +644,25 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                 </p>
               ) : null}
             </div>
+
+            {isWrittenOff ? (
+              <>
+                <div className="space-y-2">
+                  <Label>{t("inventory.form.writeOffDate")}</Label>
+                  <Input value={toDateInputValue(initialData?.writeOffDate)} readOnly disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("inventory.form.writeOffReason")}</Label>
+                  <Textarea
+                    value={initialData?.writeOffReason ?? ""}
+                    rows={4}
+                    readOnly
+                    disabled
+                    className="min-h-0 resize-none"
+                  />
+                </div>
+              </>
+            ) : null}
 
             <div className="space-y-2">
               <Label>{t("inventory.form.location")} *</Label>
@@ -632,6 +675,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                     onOpenChange={setLocationSelectOpen}
                     value={field.value || undefined}
                     onValueChange={field.onChange}
+                    disabled={readOnly}
                   >
                     <SelectTrigger aria-label={t("inventory.form.location")}>
                       <SelectValue placeholder={t("inventory.form.locationPlaceholder")} />
@@ -644,6 +688,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                       ))}
                       <SelectCreateAction
                         label={t("inventory.form.createLocation")}
+                        disabled={readOnly}
                         onCreate={() => {
                           setLocationSelectOpen(false)
                           setCreateLocationOpen(true)
@@ -666,7 +711,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                 control={control}
                 name="availability"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} disabled={readOnly}>
                     <SelectTrigger aria-label={t("inventory.form.availability")}>
                       <SelectValue />
                     </SelectTrigger>
@@ -763,7 +808,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                 type="file"
                 accept="image/*"
                 multiple
-                disabled={isCompressing}
+                disabled={isCompressing || readOnly}
                 onChange={(event) => {
                   void onPhotosSelected(event.target.files)
                   event.target.value = ""
@@ -829,12 +874,14 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                 <Button type="button" variant="outline" onClick={onCancel}>
                   {t("inventory.actions.cancel")}
                 </Button>
-                <Button type="submit" disabled={isCompressing}>
-                  {submitLabel ?? t("inventory.form.save")}
-                </Button>
+                {readOnly ? null : (
+                  <Button type="submit" disabled={isCompressing}>
+                    {submitLabel ?? t("inventory.form.save")}
+                  </Button>
+                )}
               </div>
             )}
-          </div>
+          </fieldset>
         </form>
 
         <CreateCategoryDialog

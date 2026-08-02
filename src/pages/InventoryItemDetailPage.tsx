@@ -1,5 +1,15 @@
-import { Archive, ArchiveRestore, ArrowLeft, Check, MoreVertical, PackageX, X } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import {
+  Archive,
+  ArchiveRestore,
+  ArrowLeft,
+  Check,
+  MoreVertical,
+  PackageMinus,
+  PackagePlus,
+  PackageX,
+  X,
+} from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useBlocker, useNavigate, useParams } from "react-router"
 
@@ -8,6 +18,8 @@ import {
   type InventoryItemFormHandle,
 } from "@/components/inventory/InventoryItemForm"
 import { ItemQrCode } from "@/components/inventory/ItemQrCode"
+import { ReturnToStockDialog } from "@/components/inventory/ReturnToStockDialog"
+import { WriteOffDialog } from "@/components/inventory/WriteOffDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,7 +38,17 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
   archiveInventoryItem,
+  getActiveWriteOffsForOriginal,
   getInventoryItemById,
   unarchiveInventoryItem,
   updateInventoryItem,
@@ -41,7 +63,7 @@ function canNavigateBack() {
 }
 
 export function InventoryItemDetailPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { id } = useParams()
   const [item, setItem] = useState<InventoryItem | undefined>(() =>
@@ -51,6 +73,27 @@ export function InventoryItemDetailPage() {
   const [formBusy, setFormBusy] = useState(false)
   const [unsavedPromptOpen, setUnsavedPromptOpen] = useState(false)
   const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false)
+  const [writeOffOpen, setWriteOffOpen] = useState(false)
+  const [returnToStockOpen, setReturnToStockOpen] = useState(false)
+  const isWrittenOff = item?.condition === "written_off"
+
+  const relatedWriteOffs = useMemo(() => {
+    if (!item || item.condition === "written_off") {
+      return []
+    }
+    return getActiveWriteOffsForOriginal(item.id)
+  }, [item])
+
+  const formatWriteOffDate = (value: string | null) => {
+    if (!value) {
+      return "—"
+    }
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) {
+      return value.slice(0, 10)
+    }
+    return date.toLocaleDateString(i18n.language)
+  }
   const formRef = useRef<InventoryItemFormHandle>(null)
   const allowLeaveRef = useRef(false)
   const leaveAfterSaveRef = useRef(false)
@@ -234,18 +277,68 @@ export function InventoryItemDetailPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      void requestArchiveConfirm()
-                    }}
-                  >
-                    {item.archived ? <ArchiveRestore /> : <Archive />}
-                    {item.archived
-                      ? t("inventory.actions.unarchive")
-                      : t("inventory.actions.archive")}
-                  </DropdownMenuItem>
+                  {isWrittenOff ? (
+                    <DropdownMenuItem onClick={() => setReturnToStockOpen(true)}>
+                      <PackagePlus />
+                      {t("inventory.actions.returnToStock")}
+                    </DropdownMenuItem>
+                  ) : item.archived ? (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <DropdownMenuItem disabled>
+                              <PackageMinus />
+                              {t("inventory.actions.writeOff")}
+                            </DropdownMenuItem>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {t("inventory.actions.writeOffArchivedHint")}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <DropdownMenuItem onClick={() => setWriteOffOpen(true)}>
+                      <PackageMinus />
+                      {t("inventory.actions.writeOff")}
+                    </DropdownMenuItem>
+                  )}
+                  {isWrittenOff ? (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <DropdownMenuItem disabled>
+                              <Archive />
+                              {t("inventory.actions.archive")}
+                            </DropdownMenuItem>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {t("inventory.actions.archiveWrittenOffHint")}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        void requestArchiveConfirm()
+                      }}
+                    >
+                      {item.archived ? <ArchiveRestore /> : <Archive />}
+                      {item.archived
+                        ? t("inventory.actions.unarchive")
+                        : t("inventory.actions.archive")}
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              {isWrittenOff ? (
+                <Badge variant="secondary" className="shrink-0">
+                  {t("inventory.detail.writtenOffBadge")}
+                </Badge>
+              ) : null}
               {item.archived ? (
                 <Badge variant="secondary" className="shrink-0">
                   {t("inventory.detail.archivedBadge")}
@@ -253,7 +346,7 @@ export function InventoryItemDetailPage() {
               ) : null}
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              {formDirty ? (
+              {isWrittenOff ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -265,27 +358,43 @@ export function InventoryItemDetailPage() {
                   <X className="size-4 sm:hidden" aria-hidden />
                   <span className="hidden sm:inline">{t("inventory.actions.cancel")}</span>
                 </Button>
-              ) : null}
-              <Button
-                type="button"
-                size="icon"
-                className="sm:h-9 sm:w-auto sm:px-4"
-                disabled={formBusy}
-                aria-label={t("inventory.form.save")}
-                onClick={() => {
-                  if (!formDirty) {
-                    navigateBackOrInventory()
-                    return
-                  }
-                  const form = document.getElementById(EDIT_FORM_ID)
-                  if (form instanceof HTMLFormElement) {
-                    form.requestSubmit()
-                  }
-                }}
-              >
-                <Check className="size-4 sm:hidden" aria-hidden />
-                <span className="hidden sm:inline">{t("inventory.form.save")}</span>
-              </Button>
+              ) : (
+                <>
+                  {formDirty ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="sm:h-9 sm:w-auto sm:px-4"
+                      aria-label={t("inventory.actions.cancel")}
+                      onClick={requestLeave}
+                    >
+                      <X className="size-4 sm:hidden" aria-hidden />
+                      <span className="hidden sm:inline">{t("inventory.actions.cancel")}</span>
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    size="icon"
+                    className="sm:h-9 sm:w-auto sm:px-4"
+                    disabled={formBusy}
+                    aria-label={t("inventory.form.save")}
+                    onClick={() => {
+                      if (!formDirty) {
+                        navigateBackOrInventory()
+                        return
+                      }
+                      const form = document.getElementById(EDIT_FORM_ID)
+                      if (form instanceof HTMLFormElement) {
+                        form.requestSubmit()
+                      }
+                    }}
+                  >
+                    <Check className="size-4 sm:hidden" aria-hidden />
+                    <span className="hidden sm:inline">{t("inventory.form.save")}</span>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -300,6 +409,7 @@ export function InventoryItemDetailPage() {
             mode="edit"
             layout="page"
             initialData={item}
+            readOnly={isWrittenOff}
             onBusyChange={setFormBusy}
             onDirtyChange={setFormDirty}
             onCancel={requestLeave}
@@ -307,6 +417,9 @@ export function InventoryItemDetailPage() {
               clearPendingLeave()
             }}
             onSubmit={(data) => {
+              if (isWrittenOff) {
+                return
+              }
               const updated = updateInventoryItem(item.id, data)
               if (!updated) {
                 clearPendingLeave()
@@ -330,22 +443,60 @@ export function InventoryItemDetailPage() {
           />
         </div>
 
-        <Card className="min-w-0 overflow-hidden md:col-span-1">
-          <CardHeader>
-            <CardTitle>{t("inventory.detail.qrTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex min-w-0 flex-col items-center gap-3">
-            <ItemQrCode
-              value={item.qrCodeValue}
-              itemName={item.name}
-              inventoryNumberId={item.inventoryNumberId}
-              size={200}
-            />
-            <CardDescription className="text-center">
-              {t("inventory.detail.qrHint")}
-            </CardDescription>
-          </CardContent>
-        </Card>
+        <div className="flex min-w-0 flex-col gap-6 md:col-span-1">
+          {relatedWriteOffs.length > 0 ? (
+            <Card className="min-w-0 overflow-hidden">
+              <CardHeader className="px-2 py-4">
+                <CardTitle>{t("inventory.detail.writeOffBatchesTitle")}</CardTitle>
+              </CardHeader>
+              <CardContent className="min-w-0 overflow-x-auto p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("inventory.columns.quantity")}</TableHead>
+                      <TableHead>{t("inventory.columns.writeOffDate")}</TableHead>
+                      <TableHead>{t("inventory.columns.writeOffReason")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {relatedWriteOffs.map((batch) => (
+                      <TableRow
+                        key={batch.id}
+                        className="cursor-pointer"
+                        onClick={() => navigate(`/inventory/${batch.id}`)}
+                      >
+                        <TableCell className="tabular-nums">{batch.quantity}</TableCell>
+                        <TableCell className="whitespace-nowrap tabular-nums">
+                          {formatWriteOffDate(batch.writeOffDate)}
+                        </TableCell>
+                        <TableCell className="max-w-[10rem] truncate">
+                          {batch.writeOffReason || "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <Card className="min-w-0 overflow-hidden">
+            <CardHeader>
+              <CardTitle>{t("inventory.detail.qrTitle")}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex min-w-0 flex-col items-center gap-3">
+              <ItemQrCode
+                value={item.qrCodeValue}
+                itemName={item.name}
+                inventoryNumberId={item.inventoryNumberId}
+                size={200}
+              />
+              <CardDescription className="text-center">
+                {t("inventory.detail.qrHint")}
+              </CardDescription>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <Dialog
@@ -412,6 +563,30 @@ export function InventoryItemDetailPage() {
           </DialogFooter>
         </MotionDialogContent>
       </Dialog>
+
+      <WriteOffDialog
+        item={item}
+        open={writeOffOpen}
+        onOpenChange={setWriteOffOpen}
+        onConfirm={() => {
+          const next = id ? getInventoryItemById(id) : undefined
+          if (!next) {
+            navigateBackOrInventory()
+            return
+          }
+          setItem(next)
+          setFormDirty(false)
+        }}
+      />
+
+      <ReturnToStockDialog
+        item={item}
+        open={returnToStockOpen}
+        onOpenChange={setReturnToStockOpen}
+        onConfirm={() => {
+          navigateBackOrInventory()
+        }}
+      />
     </main>
   )
 }

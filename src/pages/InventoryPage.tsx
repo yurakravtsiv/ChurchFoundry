@@ -16,6 +16,8 @@ import {
   FilterX,
   MoreVertical,
   Package,
+  PackageMinus,
+  PackagePlus,
   Pencil,
   Plus,
   Search,
@@ -25,6 +27,8 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
 import { InventoryItemForm } from "@/components/inventory/InventoryItemForm"
+import { ReturnToStockDialog } from "@/components/inventory/ReturnToStockDialog"
+import { WriteOffDialog } from "@/components/inventory/WriteOffDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -238,10 +242,27 @@ export function InventoryPage() {
     initialConditionFilter(new URLSearchParams(locationSearch)),
   )
   const [showArchived, setShowArchived] = useState(false)
+  const [showWrittenOff, setShowWrittenOff] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [createFormDirty, setCreateFormDirty] = useState(false)
   const [discardCreateOpen, setDiscardCreateOpen] = useState(false)
   const [archiveTarget, setArchiveTarget] = useState<InventoryItem | null>(null)
+  const [writeOffTarget, setWriteOffTarget] = useState<InventoryItem | null>(null)
+  const [returnToStockTarget, setReturnToStockTarget] = useState<InventoryItem | null>(null)
+
+  const formatWriteOffDate = useCallback(
+    (value: string | null) => {
+      if (!value) {
+        return "—"
+      }
+      const date = new Date(value)
+      if (Number.isNaN(date.getTime())) {
+        return value.slice(0, 10)
+      }
+      return date.toLocaleDateString(i18n.language)
+    },
+    [i18n.language],
+  )
 
   // Keep filters in sync when arriving via dashboard deep-links or sidebar (same route instance).
   useEffect(() => {
@@ -290,8 +311,17 @@ export function InventoryPage() {
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      if (!showArchived && item.archived) {
-        return false
+      if (showWrittenOff) {
+        if (item.condition !== "written_off") {
+          return false
+        }
+      } else {
+        if (item.condition === "written_off") {
+          return false
+        }
+        if (!showArchived && item.archived) {
+          return false
+        }
       }
       if (categoryFilter !== "all" && item.categoryId !== categoryFilter) {
         return false
@@ -305,7 +335,7 @@ export function InventoryPage() {
       if (locationFilter !== "all" && item.locationId !== locationFilter) {
         return false
       }
-      if (conditionFilter !== "all" && item.condition !== conditionFilter) {
+      if (!showWrittenOff && conditionFilter !== "all" && item.condition !== conditionFilter) {
         return false
       }
       if (!itemMatchesSearch(item, search, categories, subcategories, locations, t)) {
@@ -323,13 +353,14 @@ export function InventoryPage() {
     locations,
     search,
     showArchived,
+    showWrittenOff,
     subcategories,
     subcategoryFilter,
     t,
   ])
 
-  const columns = useMemo<ColumnDef<InventoryItem>[]>(
-    () => [
+  const columns = useMemo<ColumnDef<InventoryItem>[]>(() => {
+    const baseColumns: ColumnDef<InventoryItem>[] = [
       {
         id: "photo",
         header: t("inventory.columns.photo"),
@@ -419,6 +450,32 @@ export function InventoryPage() {
         },
         enableSorting: false,
       },
+    ]
+
+    if (showWrittenOff) {
+      baseColumns.push(
+        {
+          id: "writeOffDate",
+          header: t("inventory.columns.writeOffDate"),
+          cell: ({ row }) => (
+            <span className="whitespace-nowrap tabular-nums">
+              {formatWriteOffDate(row.original.writeOffDate)}
+            </span>
+          ),
+          enableSorting: false,
+        },
+        {
+          id: "writeOffReason",
+          header: t("inventory.columns.writeOffReason"),
+          cell: ({ row }) => (
+            <TruncatedCell value={row.original.writeOffReason ?? ""} className="max-w-[14rem]" />
+          ),
+          enableSorting: false,
+        },
+      )
+    }
+
+    baseColumns.push(
       {
         accessorKey: "locationId",
         header: t("inventory.columns.location"),
@@ -456,6 +513,7 @@ export function InventoryPage() {
         header: "",
         cell: ({ row }) => {
           const item = row.original
+          const isWrittenOff = item.condition === "written_off"
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -475,21 +533,73 @@ export function InventoryPage() {
                   <Pencil />
                   {t("inventory.actions.edit")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setArchiveTarget(item)}>
-                  {item.archived ? <ArchiveRestore /> : <Archive />}
-                  {item.archived
-                    ? t("inventory.actions.unarchive")
-                    : t("inventory.actions.archive")}
-                </DropdownMenuItem>
+                {isWrittenOff ? (
+                  <DropdownMenuItem onClick={() => setReturnToStockTarget(item)}>
+                    <PackagePlus />
+                    {t("inventory.actions.returnToStock")}
+                  </DropdownMenuItem>
+                ) : item.archived ? (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <DropdownMenuItem disabled>
+                            <PackageMinus />
+                            {t("inventory.actions.writeOff")}
+                          </DropdownMenuItem>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>{t("inventory.actions.writeOffArchivedHint")}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <DropdownMenuItem onClick={() => setWriteOffTarget(item)}>
+                    <PackageMinus />
+                    {t("inventory.actions.writeOff")}
+                  </DropdownMenuItem>
+                )}
+                {isWrittenOff ? (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <DropdownMenuItem disabled>
+                            <Archive />
+                            {t("inventory.actions.archive")}
+                          </DropdownMenuItem>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t("inventory.actions.archiveWrittenOffHint")}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <DropdownMenuItem onClick={() => setArchiveTarget(item)}>
+                    {item.archived ? <ArchiveRestore /> : <Archive />}
+                    {item.archived
+                      ? t("inventory.actions.unarchive")
+                      : t("inventory.actions.archive")}
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )
         },
         enableSorting: false,
       },
-    ],
-    [categoryNameById, locationNameById, navigate, subcategoryNameById, t],
-  )
+    )
+
+    return baseColumns
+  }, [
+    categoryNameById,
+    formatWriteOffDate,
+    locationNameById,
+    navigate,
+    showWrittenOff,
+    subcategoryNameById,
+    t,
+  ])
 
   const table = useReactTable({
     data: filteredItems,
@@ -523,7 +633,8 @@ export function InventoryPage() {
     availabilityFilter !== "all" ||
     locationFilter !== "all" ||
     conditionFilter !== "all" ||
-    showArchived
+    showArchived ||
+    showWrittenOff
 
   const clearAllFilters = () => {
     setSearch("")
@@ -533,19 +644,27 @@ export function InventoryPage() {
     setLocationFilter("all")
     setConditionFilter("all")
     setShowArchived(false)
+    setShowWrittenOff(false)
   }
 
   const runExport = async (format: "xlsx" | "pdf") => {
-    const exportItems = filteredItems.filter((item) => !item.removed && !item.archived)
+    const exportOptions = { includeWriteOffColumns: showWrittenOff }
+    const exportItems = showWrittenOff
+      ? filteredItems
+      : filteredItems.filter((item) => !item.removed && !item.archived)
     if (exportItems.length === 0) {
       window.alert(t("inventory.export.empty"))
       return
     }
     if (format === "xlsx") {
-      exportToXlsx(prepareExportData(exportItems, categories, subcategories, locations, t), t)
+      exportToXlsx(
+        prepareExportData(exportItems, categories, subcategories, locations, t, exportOptions),
+        t,
+        exportOptions,
+      )
       return
     }
-    await exportToPdf(exportItems, categories, subcategories, locations, t)
+    await exportToPdf(exportItems, categories, subcategories, locations, t, exportOptions)
   }
 
   const isStorageEmpty = items.length === 0
@@ -718,33 +837,33 @@ export function InventoryPage() {
 
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2 md:contents">
             <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="inventory-filter-condition" className="truncate">
-                {t("inventory.filters.condition")}
+              <Label htmlFor="inventory-filter-availability" className="truncate">
+                {t("inventory.filters.availability")}
               </Label>
               <div className="relative min-w-0">
-                <Select value={conditionFilter} onValueChange={setConditionFilter}>
+                <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
                   <SelectTrigger
-                    id="inventory-filter-condition"
+                    id="inventory-filter-availability"
                     className={cn(
                       "h-9 w-full min-w-0",
-                      conditionFilter !== "all" && "pr-8 [&>svg]:hidden",
+                      availabilityFilter !== "all" && "pr-8 [&>svg]:hidden",
                     )}
                   >
                     <SelectValue placeholder={t("inventory.filters.all")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                    <SelectItem value="good">{t("inventory.condition.good")}</SelectItem>
-                    <SelectItem value="needs_repair">
-                      {t("inventory.condition.needsRepair")}
+                    <SelectItem value="in_church">
+                      {t("inventory.availability.inChurch")}
                     </SelectItem>
+                    <SelectItem value="borrowed">{t("inventory.availability.borrowed")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FilterClearButton
-                  visible={conditionFilter !== "all"}
+                  visible={availabilityFilter !== "all"}
                   label={t("inventory.filters.clear")}
                   className="right-2"
-                  onClear={() => setConditionFilter("all")}
+                  onClear={() => setAvailabilityFilter("all")}
                 />
               </div>
             </div>
@@ -783,39 +902,70 @@ export function InventoryPage() {
             </div>
 
             <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="inventory-filter-availability" className="truncate">
-                {t("inventory.filters.availability")}
+              <Label htmlFor="inventory-filter-condition" className="truncate">
+                {t("inventory.filters.condition")}
               </Label>
               <div className="relative min-w-0">
-                <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+                <Select value={conditionFilter} onValueChange={setConditionFilter}>
                   <SelectTrigger
-                    id="inventory-filter-availability"
+                    id="inventory-filter-condition"
                     className={cn(
                       "h-9 w-full min-w-0",
-                      availabilityFilter !== "all" && "pr-8 [&>svg]:hidden",
+                      conditionFilter !== "all" && "pr-8 [&>svg]:hidden",
                     )}
                   >
                     <SelectValue placeholder={t("inventory.filters.all")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                    <SelectItem value="in_church">
-                      {t("inventory.availability.inChurch")}
+                    <SelectItem value="good">{t("inventory.condition.good")}</SelectItem>
+                    <SelectItem value="needs_repair">
+                      {t("inventory.condition.needsRepair")}
                     </SelectItem>
-                    <SelectItem value="borrowed">{t("inventory.availability.borrowed")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FilterClearButton
-                  visible={availabilityFilter !== "all"}
+                  visible={conditionFilter !== "all"}
                   label={t("inventory.filters.clear")}
                   className="right-2"
-                  onClear={() => setAvailabilityFilter("all")}
+                  onClear={() => setConditionFilter("all")}
                 />
               </div>
             </div>
 
             <TooltipProvider delayDuration={200}>
               <div className="flex shrink-0 items-end gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex h-9 items-center gap-2">
+                      <PackageMinus
+                        className={cn(
+                          "size-4 shrink-0 transition-colors",
+                          showWrittenOff ? "text-foreground" : "text-muted-foreground",
+                        )}
+                        aria-hidden
+                      />
+                      <Switch
+                        checked={showWrittenOff}
+                        onCheckedChange={(checked) => {
+                          setShowWrittenOff(checked)
+                          if (checked) {
+                            setShowArchived(false)
+                          }
+                        }}
+                        aria-label={
+                          showWrittenOff
+                            ? t("inventory.hideWrittenOff")
+                            : t("inventory.showWrittenOff")
+                        }
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="hidden md:block">
+                    {showWrittenOff ? t("inventory.hideWrittenOff") : t("inventory.showWrittenOff")}
+                  </TooltipContent>
+                </Tooltip>
+
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex h-9 items-center gap-2">
@@ -828,7 +978,12 @@ export function InventoryPage() {
                       />
                       <Switch
                         checked={showArchived}
-                        onCheckedChange={setShowArchived}
+                        onCheckedChange={(checked) => {
+                          setShowArchived(checked)
+                          if (checked) {
+                            setShowWrittenOff(false)
+                          }
+                        }}
                         aria-label={
                           showArchived ? t("inventory.hideArchived") : t("inventory.showArchived")
                         }
@@ -1058,6 +1213,28 @@ export function InventoryPage() {
           </DialogFooter>
         </MotionDialogContent>
       </Dialog>
+
+      <WriteOffDialog
+        item={writeOffTarget}
+        open={writeOffTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setWriteOffTarget(null)
+          }
+        }}
+        onConfirm={refreshItems}
+      />
+
+      <ReturnToStockDialog
+        item={returnToStockTarget}
+        open={returnToStockTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReturnToStockTarget(null)
+          }
+        }}
+        onConfirm={refreshItems}
+      />
     </main>
   )
 }

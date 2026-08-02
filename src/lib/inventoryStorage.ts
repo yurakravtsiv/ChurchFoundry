@@ -342,6 +342,13 @@ export function getInventoryItemById(id: string): InventoryItem | undefined {
   return item
 }
 
+/** Active (not soft-deleted) write-off splits linked to an original item. */
+export function getActiveWriteOffsForOriginal(originalItemId: string): InventoryItem[] {
+  return getAllInventoryItemsRaw().filter(
+    (item) => item.originalItemId === originalItemId && item.removed !== true,
+  )
+}
+
 /**
  * Splits quantity from an active item into a new written-off item.
  * If the original quantity becomes 0, the original is soft-deleted (`removed: true`).
@@ -359,6 +366,11 @@ export function writeOffItem(
   }
 
   const original = items[originalIndex]
+  if (original.archived) {
+    throw new Error(
+      `[inventoryStorage] writeOffItem: archived item cannot be written off (${originalItemId})`,
+    )
+  }
   if (!Number.isFinite(quantityToWriteOff) || quantityToWriteOff <= 0) {
     throw new Error("[inventoryStorage] writeOffItem: quantityToWriteOff must be > 0")
   }
