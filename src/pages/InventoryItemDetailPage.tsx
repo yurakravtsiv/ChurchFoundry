@@ -20,8 +20,6 @@ import type { InventoryItem } from "@/types/inventory"
 
 const EDIT_FORM_ID = "inventory-item-edit-form"
 
-type UnsavedPrompt = "save" | "cancel"
-
 export function InventoryItemDetailPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -31,7 +29,7 @@ export function InventoryItemDetailPage() {
   )
   const [formDirty, setFormDirty] = useState(false)
   const [formBusy, setFormBusy] = useState(false)
-  const [unsavedPrompt, setUnsavedPrompt] = useState<UnsavedPrompt | null>(null)
+  const [unsavedPromptOpen, setUnsavedPromptOpen] = useState(false)
   const allowLeaveRef = useRef(false)
   const leaveAfterSaveRef = useRef(false)
   const pendingLeaveToRef = useRef<string | null>(null)
@@ -49,7 +47,7 @@ export function InventoryItemDetailPage() {
 
   useEffect(() => {
     if (blocker.state === "blocked") {
-      setUnsavedPrompt("save")
+      setUnsavedPromptOpen(true)
     }
   }, [blocker.state])
 
@@ -71,15 +69,7 @@ export function InventoryItemDetailPage() {
 
   const requestLeave = () => {
     if (formDirty) {
-      setUnsavedPrompt("save")
-      return
-    }
-    goBackToInventory()
-  }
-
-  const requestCancel = () => {
-    if (formDirty) {
-      setUnsavedPrompt("cancel")
+      setUnsavedPromptOpen(true)
       return
     }
     goBackToInventory()
@@ -88,7 +78,7 @@ export function InventoryItemDetailPage() {
   const stayOnPage = () => {
     leaveAfterSaveRef.current = false
     pendingLeaveToRef.current = null
-    setUnsavedPrompt(null)
+    setUnsavedPromptOpen(false)
     if (blocker.state === "blocked") {
       blocker.reset()
     }
@@ -98,7 +88,7 @@ export function InventoryItemDetailPage() {
     leaveAfterSaveRef.current = false
     pendingLeaveToRef.current = null
     allowLeaveRef.current = true
-    setUnsavedPrompt(null)
+    setUnsavedPromptOpen(false)
     setFormDirty(false)
     if (blocker.state === "blocked") {
       blocker.proceed()
@@ -115,7 +105,7 @@ export function InventoryItemDetailPage() {
       pendingLeaveToRef.current = "/inventory"
     }
     leaveAfterSaveRef.current = true
-    setUnsavedPrompt(null)
+    setUnsavedPromptOpen(false)
     const form = document.getElementById(EDIT_FORM_ID)
     if (form instanceof HTMLFormElement) {
       form.requestSubmit()
@@ -158,7 +148,7 @@ export function InventoryItemDetailPage() {
             </h1>
             <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
               {formDirty ? (
-                <Button type="button" variant="outline" onClick={requestCancel}>
+                <Button type="button" variant="outline" onClick={requestLeave}>
                   {t("inventory.actions.cancel")}
                 </Button>
               ) : null}
@@ -193,7 +183,7 @@ export function InventoryItemDetailPage() {
             initialData={item}
             onBusyChange={setFormBusy}
             onDirtyChange={setFormDirty}
-            onCancel={requestCancel}
+            onCancel={requestLeave}
             onInvalid={() => {
               leaveAfterSaveRef.current = false
               pendingLeaveToRef.current = null
@@ -229,7 +219,7 @@ export function InventoryItemDetailPage() {
       </div>
 
       <Dialog
-        open={unsavedPrompt !== null}
+        open={unsavedPromptOpen}
         onOpenChange={(open) => {
           if (open) {
             return
@@ -237,45 +227,24 @@ export function InventoryItemDetailPage() {
           stayOnPage()
         }}
       >
-        <MotionDialogContent open={unsavedPrompt !== null} className="max-w-sm">
-          {unsavedPrompt === "cancel" ? (
-            <>
-              <DialogHeader>
-                <DialogTitle>{t("inventory.unsavedChanges.cancelTitle")}</DialogTitle>
-                <DialogDescription className="sr-only">
-                  {t("inventory.unsavedChanges.cancelTitle")}
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <Button type="button" variant="outline" onClick={stayOnPage}>
-                  {t("inventory.unsavedChanges.close")}
-                </Button>
-                <Button type="button" variant="destructive" onClick={confirmDiscard}>
-                  {t("inventory.unsavedChanges.cancelConfirm")}
-                </Button>
-              </DialogFooter>
-            </>
-          ) : (
-            <>
-              <DialogHeader>
-                <DialogTitle>{t("inventory.unsavedChanges.title")}</DialogTitle>
-                <DialogDescription className="sr-only">
-                  {t("inventory.unsavedChanges.title")}
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <Button type="button" variant="outline" onClick={stayOnPage}>
-                  {t("inventory.unsavedChanges.close")}
-                </Button>
-                <Button type="button" variant="destructive" onClick={confirmDiscard}>
-                  {t("inventory.unsavedChanges.no")}
-                </Button>
-                <Button type="button" onClick={confirmSaveAndLeave}>
-                  {t("inventory.unsavedChanges.yes")}
-                </Button>
-              </DialogFooter>
-            </>
-          )}
+        <MotionDialogContent open={unsavedPromptOpen} className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("inventory.unsavedChanges.title")}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {t("inventory.unsavedChanges.title")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={stayOnPage}>
+              {t("inventory.unsavedChanges.close")}
+            </Button>
+            <Button type="button" variant="destructive" onClick={confirmDiscard}>
+              {t("inventory.unsavedChanges.no")}
+            </Button>
+            <Button type="button" onClick={confirmSaveAndLeave}>
+              {t("inventory.unsavedChanges.yes")}
+            </Button>
+          </DialogFooter>
         </MotionDialogContent>
       </Dialog>
     </main>

@@ -40,9 +40,7 @@
       "title": "Зберегти зміни?",
       "close": "Закрити",
       "no": "Ні",
-      "yes": "Так",
-      "cancelTitle": "Скасувати зміни?",
-      "cancelConfirm": "Так, скасувати"
+      "yes": "Так"
     },
     "detail": {
       "backToInventory": "Назад до інвентарю",

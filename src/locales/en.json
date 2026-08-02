@@ -40,9 +40,7 @@
       "title": "Save changes?",
       "close": "Close",
       "no": "No",
-      "yes": "Yes",
-      "cancelTitle": "Discard changes?",
-      "cancelConfirm": "Yes, discard"
+      "yes": "Yes"
     },
     "detail": {
       "backToInventory": "Back to inventory",
