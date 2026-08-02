@@ -507,10 +507,10 @@ export function InventoryPage() {
       return
     }
     if (format === "xlsx") {
-      exportToXlsx(prepareExportData(exportItems, categories, subcategories, locations))
+      exportToXlsx(prepareExportData(exportItems, categories, subcategories, locations, t), t)
       return
     }
-    await exportToPdf(exportItems, categories, subcategories, locations)
+    await exportToPdf(exportItems, categories, subcategories, locations, t)
   }
 
   const isStorageEmpty = items.length === 0

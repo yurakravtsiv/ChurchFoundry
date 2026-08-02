@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next"
 import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 import * as XLSX from "xlsx-js-style"
@@ -12,20 +13,37 @@ import type {
 } from "@/types/inventory"
 
 export type InventoryExportRow = {
-  Назва: string
-  Категорія: string
-  Підкатегорія: string
-  Кількість: number
-  Стан: string
-  Локація: string
-  Наявність: string
-  "Коментар наявності": string
-  Постачальник: string
-  Ціна: number | ""
-  "Серійний номер": string
-  "Гарантія до": string
-  Коментар: string
+  name: string
+  category: string
+  subcategory: string
+  quantity: number
+  condition: string
+  location: string
+  availability: string
+  availabilityComment: string
+  supplier: string
+  price: number | ""
+  serialNumber: string
+  warrantyUntil: string
+  comment: string
 }
+
+/** Stable column order for XLSX/PDF body cells. */
+const EXPORT_ROW_KEYS = [
+  "name",
+  "category",
+  "subcategory",
+  "quantity",
+  "condition",
+  "location",
+  "availability",
+  "availabilityComment",
+  "supplier",
+  "price",
+  "serialNumber",
+  "warrantyUntil",
+  "comment",
+] as const satisfies ReadonlyArray<keyof InventoryExportRow>
 
 /** Matches Badge success / warning (light theme) used in the inventory table. */
 const AVAILABILITY_CELL_STYLES = {
@@ -55,28 +73,31 @@ const CONDITION_CELL_STYLES = {
   },
 } as const
 
-const PDF_HEADERS = [
-  "Фото",
-  "Назва",
-  "Категорія",
-  "Підкатегорія",
-  "Кількість",
-  "Стан",
-  "Локація",
-  "Наявність",
-  "Коментар наявності",
-  "Постачальник",
-  "Ціна",
-  "Серійний номер",
-  "Гарантія до",
-  "Коментар",
-] as const
-
-const PDF_CONDITION_COLUMN_INDEX = PDF_HEADERS.indexOf("Стан")
-const PDF_AVAILABILITY_COLUMN_INDEX = PDF_HEADERS.indexOf("Наявність")
 const PDF_PHOTO_COLUMN_INDEX = 0
+const PDF_CONDITION_COLUMN_INDEX = 1 + EXPORT_ROW_KEYS.indexOf("condition")
+const PDF_AVAILABILITY_COLUMN_INDEX = 1 + EXPORT_ROW_KEYS.indexOf("availability")
+const PDF_AVAILABILITY_COMMENT_COLUMN_INDEX = 1 + EXPORT_ROW_KEYS.indexOf("availabilityComment")
+const PDF_COMMENT_COLUMN_INDEX = 1 + EXPORT_ROW_KEYS.indexOf("comment")
 const PDF_ROW_MIN_HEIGHT_MM = 18
 const PDF_PHOTO_SIZE_MM = 12
+
+export function getExportColumnHeaders(t: TFunction): Record<keyof InventoryExportRow, string> {
+  return {
+    name: t("export.columns.name"),
+    category: t("export.columns.category"),
+    subcategory: t("export.columns.subcategory"),
+    quantity: t("export.columns.quantity"),
+    condition: t("export.columns.condition"),
+    location: t("export.columns.location"),
+    availability: t("export.columns.availability"),
+    availabilityComment: t("export.columns.availabilityComment"),
+    supplier: t("export.columns.supplier"),
+    price: t("export.columns.price"),
+    serialNumber: t("export.columns.serialNumber"),
+    warrantyUntil: t("export.columns.warrantyUntil"),
+    comment: t("export.columns.comment"),
+  }
+}
 
 function exportDateStamp() {
   const now = new Date()
@@ -86,18 +107,20 @@ function exportDateStamp() {
   return `${year}-${month}-${day}`
 }
 
-function availabilityLabel(availability: AvailabilityStatus) {
-  return availability === "in_church" ? "В церкві" : "Позичено"
+function availabilityLabel(availability: AvailabilityStatus, t: TFunction) {
+  return availability === "in_church"
+    ? t("inventory.availability.inChurch")
+    : t("inventory.availability.borrowed")
 }
 
-function conditionLabel(condition: ItemCondition) {
+function conditionLabel(condition: ItemCondition, t: TFunction) {
   if (condition === "needs_repair") {
-    return "Потребує ремонту"
+    return t("inventory.condition.needsRepair")
   }
   if (condition === "written_off") {
-    return "Списаний"
+    return t("inventory.condition.writtenOff")
   }
-  return "Добрий"
+  return t("inventory.condition.good")
 }
 
 function getAvatarDataUrl(item: InventoryItem): string | null {
@@ -136,36 +159,51 @@ function softBreakLongRuns(value: string | number | null | undefined, maxRunLeng
   })
 }
 
+function localizeExportRows(
+  data: InventoryExportRow[],
+  t: TFunction,
+): Record<string, string | number>[] {
+  const headers = getExportColumnHeaders(t)
+  return data.map((row) => {
+    const localizedRow: Record<string, string | number> = {}
+    for (const key of EXPORT_ROW_KEYS) {
+      localizedRow[headers[key]] = row[key]
+    }
+    return localizedRow
+  })
+}
+
 export function prepareExportData(
   items: InventoryItem[],
   categories: Category[],
   subcategories: Subcategory[],
   locations: Location[],
+  t: TFunction,
 ): InventoryExportRow[] {
   return items
     .filter((item) => !item.removed && !item.archived)
     .map((item) => ({
-      Назва: item.name,
-      Категорія: categories.find((category) => category.id === item.categoryId)?.name ?? "",
-      Підкатегорія:
+      name: item.name,
+      category: categories.find((category) => category.id === item.categoryId)?.name ?? "",
+      subcategory:
         subcategories.find((subcategory) => subcategory.id === item.subcategoryId)?.name ?? "",
-      Кількість: item.quantity,
-      Стан: conditionLabel(item.condition),
-      Локація: locations.find((location) => location.id === item.locationId)?.name ?? "",
-      Наявність: availabilityLabel(item.availability),
-      "Коментар наявності": item.availabilityComment,
-      Постачальник: item.supplier,
-      Ціна: item.price ?? "",
-      "Серійний номер": item.serialNumber,
-      "Гарантія до": item.warrantyUntil ?? "",
-      Коментар: item.comment,
+      quantity: item.quantity,
+      condition: conditionLabel(item.condition, t),
+      location: locations.find((location) => location.id === item.locationId)?.name ?? "",
+      availability: availabilityLabel(item.availability, t),
+      availabilityComment: item.availabilityComment,
+      supplier: item.supplier,
+      price: item.price ?? "",
+      serialNumber: item.serialNumber,
+      warrantyUntil: item.warrantyUntil ?? "",
+      comment: item.comment,
     }))
 }
 
-function autoFitColumns(data: InventoryExportRow[]): XLSX.ColInfo[] {
-  const keys = Object.keys(data[0] ?? {}) as Array<keyof InventoryExportRow>
+function autoFitColumns(data: Record<string, string | number>[]): XLSX.ColInfo[] {
+  const keys = Object.keys(data[0] ?? {})
   return keys.map((key) => {
-    const headerLength = String(key).length
+    const headerLength = key.length
     const maxCellLength = data.reduce((max, row) => {
       const valueLength = String(row[key] ?? "").length
       return Math.max(max, valueLength)
@@ -198,12 +236,13 @@ function styleXlsxHeaderRow(worksheet: XLSX.WorkSheet): void {
   }
 }
 
-export function exportToXlsx(data: InventoryExportRow[]): void {
-  const worksheet = XLSX.utils.json_to_sheet(data)
-  worksheet["!cols"] = autoFitColumns(data)
+export function exportToXlsx(data: InventoryExportRow[], t: TFunction): void {
+  const localizedData = localizeExportRows(data, t)
+  const worksheet = XLSX.utils.json_to_sheet(localizedData)
+  worksheet["!cols"] = autoFitColumns(localizedData)
   styleXlsxHeaderRow(worksheet)
   const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Інвентар")
+  XLSX.utils.book_append_sheet(workbook, worksheet, t("export.sheetName"))
   XLSX.writeFile(workbook, `inventory-export-${exportDateStamp()}.xlsx`)
 }
 
@@ -212,8 +251,11 @@ export async function exportToPdf(
   categories: Category[],
   subcategories: Subcategory[],
   locations: Location[],
+  t: TFunction,
 ): Promise<void> {
   const exportItems = items.filter((item) => !item.removed && !item.archived)
+  const rows = prepareExportData(exportItems, categories, subcategories, locations, t)
+  const headers = getExportColumnHeaders(t)
   // Font is ~670KB base64 — load only when exporting, not in the main bundle.
   const { robotoFontBase64 } = await import("@/lib/fonts/robotoFont")
 
@@ -230,27 +272,21 @@ export async function exportToPdf(
     condition: item.condition,
   }))
 
-  const body = exportItems.map((item) => [
+  const head = [t("export.columns.photo"), ...EXPORT_ROW_KEYS.map((key) => headers[key])]
+
+  const body = rows.map((row) => [
     "",
-    softBreakLongRuns(item.name),
-    softBreakLongRuns(categories.find((category) => category.id === item.categoryId)?.name ?? ""),
-    softBreakLongRuns(
-      subcategories.find((subcategory) => subcategory.id === item.subcategoryId)?.name ?? "",
-    ),
-    item.quantity,
-    conditionLabel(item.condition),
-    softBreakLongRuns(locations.find((location) => location.id === item.locationId)?.name ?? ""),
-    availabilityLabel(item.availability),
-    softBreakLongRuns(item.availabilityComment),
-    softBreakLongRuns(item.supplier),
-    item.price ?? "",
-    softBreakLongRuns(item.serialNumber),
-    item.warrantyUntil ?? "",
-    softBreakLongRuns(item.comment),
+    ...EXPORT_ROW_KEYS.map((key) => {
+      const value = row[key]
+      if (typeof value === "number") {
+        return value
+      }
+      return softBreakLongRuns(value)
+    }),
   ])
 
   autoTable(doc, {
-    head: [[...PDF_HEADERS]],
+    head: [head],
     body,
     styles: {
       font: "Roboto",
@@ -270,8 +306,8 @@ export async function exportToPdf(
     },
     columnStyles: {
       [PDF_PHOTO_COLUMN_INDEX]: { cellWidth: PDF_PHOTO_SIZE_MM + 4, halign: "center" },
-      [PDF_HEADERS.indexOf("Коментар наявності")]: { cellWidth: 28 },
-      [PDF_HEADERS.indexOf("Коментар")]: { cellWidth: 34 },
+      [PDF_AVAILABILITY_COMMENT_COLUMN_INDEX]: { cellWidth: 28 },
+      [PDF_COMMENT_COLUMN_INDEX]: { cellWidth: 34 },
     },
     didParseCell: (hookData) => {
       if (hookData.section !== "body") {

@@ -4,6 +4,25 @@
     "tagline": "Church management in one place",
     "description": "Members, inventory, room schedules, and ministries — handy from your phone."
   },
+  "export": {
+    "sheetName": "Inventory",
+    "columns": {
+      "photo": "Photo",
+      "name": "Name",
+      "category": "Category",
+      "subcategory": "Subcategory",
+      "quantity": "Quantity",
+      "condition": "Condition",
+      "location": "Location",
+      "availability": "Availability",
+      "availabilityComment": "Availability comment",
+      "supplier": "Supplier",
+      "price": "Price",
+      "serialNumber": "Serial number",
+      "warrantyUntil": "Warranty until",
+      "comment": "Comment"
+    }
+  },
   "home": {
     "language": "Language",
     "getStarted": "Get started"

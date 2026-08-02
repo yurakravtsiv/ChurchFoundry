@@ -4,6 +4,25 @@
     "tagline": "Менеджмент церкви в одному місці",
     "description": "Члени, інвентар, розклад кімнат і служіння — зручно з телефону."
   },
+  "export": {
+    "sheetName": "Інвентар",
+    "columns": {
+      "photo": "Фото",
+      "name": "Назва",
+      "category": "Категорія",
+      "subcategory": "Підкатегорія",
+      "quantity": "Кількість",
+      "condition": "Стан",
+      "location": "Локація",
+      "availability": "Наявність",
+      "availabilityComment": "Коментар наявності",
+      "supplier": "Постачальник",
+      "price": "Ціна",
+      "serialNumber": "Серійний номер",
+      "warrantyUntil": "Гарантія до",
+      "comment": "Коментар"
+    }
+  },
   "home": {
     "language": "Мова",
     "getStarted": "Почати"
