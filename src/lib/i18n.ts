@@ -6,7 +6,16 @@ import uk from "@/locales/uk.json"
 
 const STORAGE_KEY = "churchfoundry-lang"
 
-const savedLanguage = localStorage.getItem(STORAGE_KEY)
+function readStoredLanguage(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY)
+  } catch (error) {
+    console.error("[i18n] Failed to read language from localStorage", error)
+    return null
+  }
+}
+
+const savedLanguage = readStoredLanguage()
 const initialLanguage = savedLanguage === "en" || savedLanguage === "uk" ? savedLanguage : "uk"
 
 function applyResources() {
@@ -32,7 +41,11 @@ if (i18n.isInitialized) {
 }
 
 i18n.on("languageChanged", (lng) => {
-  localStorage.setItem(STORAGE_KEY, lng)
+  try {
+    localStorage.setItem(STORAGE_KEY, lng)
+  } catch (error) {
+    console.error("[i18n] Failed to persist language to localStorage", error)
+  }
   document.documentElement.lang = lng
 })
 

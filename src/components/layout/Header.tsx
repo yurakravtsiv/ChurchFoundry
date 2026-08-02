@@ -44,7 +44,6 @@ export function Header({ onOpenSidebar }: HeaderProps) {
     }, REFRESH_SPIN_MS)
   }
 
-  // Diagnostic: backdrop-blur temporarily removed to test bottom-strip bug
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background">
       {/* Safe-area padding on the inner wrapper so header bg continues under the notch */}

@@ -23,6 +23,9 @@
       "comment": "Comment"
     }
   },
+  "a11y": {
+    "close": "Close"
+  },
   "home": {
     "language": "Language",
     "getStarted": "Get started"

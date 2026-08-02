@@ -23,6 +23,9 @@
       "comment": "Коментар"
     }
   },
+  "a11y": {
+    "close": "Закрити"
+  },
   "home": {
     "language": "Мова",
     "getStarted": "Почати"

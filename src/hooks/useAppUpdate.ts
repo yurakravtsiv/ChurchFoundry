@@ -8,22 +8,14 @@ export function useAppUpdate() {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
-    onRegisteredSW(swUrl, registration) {
-      console.log("[pwa] onRegisteredSW", { swUrl, scope: registration?.scope })
+    onRegisteredSW(_swUrl, registration) {
       if (!registration) {
         return
       }
 
       window.setInterval(() => {
-        console.log("[pwa] periodic registration.update()")
         void registration.update()
       }, UPDATE_CHECK_INTERVAL_MS)
-    },
-    onNeedRefresh() {
-      console.log("[pwa] onNeedRefresh — update available")
-    },
-    onOfflineReady() {
-      console.log("[pwa] onOfflineReady")
     },
     onRegisterError(error) {
       console.error("[pwa] onRegisterError", error)
@@ -37,18 +29,15 @@ export function useAppUpdate() {
   const updateApp = async () => {
     // Hide the banner immediately; reload continues in the background.
     setNeedRefresh(false)
-    console.log("[pwa] updateApp: before updateServiceWorker(true)")
 
     // Schedule immediately so a hung activation (e.g. other tabs holding the old SW)
     // still reloads this tab after ~1.5s.
     const fallbackId = window.setTimeout(() => {
-      console.log("[pwa] updateApp: fallback reload after timeout")
       window.location.reload()
     }, RELOAD_FALLBACK_MS)
 
     try {
       await updateServiceWorker(true)
-      console.log("[pwa] updateApp: after updateServiceWorker(true)")
     } catch (error) {
       console.error("[pwa] updateServiceWorker failed, reloading now", error)
       window.clearTimeout(fallbackId)

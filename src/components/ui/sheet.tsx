@@ -3,6 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
 import { AnimatePresence, motion } from "motion/react"
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "@/lib/utils"
 
@@ -50,6 +51,9 @@ const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
 >(({ side = "right", className, children, open, ...props }, ref) => {
+  const { t } = useTranslation()
+  const closeLabel = t("a11y.close")
+
   if (side === "left") {
     return (
       <AnimatePresence>
@@ -79,7 +83,7 @@ const SheetContent = React.forwardRef<
               >
                 <SheetPrimitive.Close className="absolute right-[max(1rem,env(safe-area-inset-right,0px))] top-[max(1rem,env(safe-area-inset-top,0px))] rounded-md p-2 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-secondary">
                   <X className="h-4 w-4" />
-                  <span className="sr-only">Close</span>
+                  <span className="sr-only">{closeLabel}</span>
                 </SheetPrimitive.Close>
                 {children}
               </motion.div>
@@ -100,7 +104,7 @@ const SheetContent = React.forwardRef<
       >
         <SheetPrimitive.Close className="absolute right-[max(1rem,env(safe-area-inset-right,0px))] top-[max(1rem,env(safe-area-inset-top,0px))] rounded-md p-2 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-secondary">
           <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">{closeLabel}</span>
         </SheetPrimitive.Close>
         {children}
       </SheetPrimitive.Content>
