@@ -1,3 +1,7 @@
 #!/usr/bin/env sh
 pnpm exec lint-staged
 pnpm exec vitest run
+# Root tsconfig uses project references with "files": [], so plain
+# `tsc --noEmit` is a no-op. `tsc -b` typechecks app + node projects.
+pnpm exec tsc -b
+pnpm build

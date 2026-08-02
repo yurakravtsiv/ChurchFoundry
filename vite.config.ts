@@ -66,6 +66,8 @@ export default defineConfig({
         clientsClaim: true,
         skipWaiting: false,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        // Main bundle exceeds the 2 MiB default after xlsx/jspdf deps.
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
       devOptions: {
         enabled: true,
