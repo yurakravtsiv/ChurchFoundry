@@ -5,8 +5,7 @@ import { Controller, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
-import { CreateCategoryDialog } from "@/components/inventory/CreateCategoryDialog"
-import { CreateLocationDialog } from "@/components/inventory/CreateLocationDialog"
+import { CreateReferenceEntityDialog } from "@/components/inventory/CreateReferenceEntityDialog"
 import { CreateSubcategoryDialog } from "@/components/inventory/CreateSubcategoryDialog"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,13 +26,21 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import {
   useCategoriesQuery,
+  useCreateCategoryMutation,
+  useCreateLocationMutation,
   useLocationsQuery,
   useSubcategoriesQuery,
 } from "@/hooks/queries/useInventoryQueries"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
 import { compressImage } from "@/lib/inventoryStorage"
 import { cn } from "@/lib/utils"
-import type { CreateInventoryItemInput, InventoryItem, InventoryPhoto } from "@/types/inventory"
+import type {
+  Category,
+  CreateInventoryItemInput,
+  InventoryItem,
+  InventoryPhoto,
+  Location,
+} from "@/types/inventory"
 
 export type InventoryItemFormValues = CreateInventoryItemInput
 
@@ -961,7 +968,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           </div>
         </form>
 
-        <CreateCategoryDialog
+        <CreateReferenceEntityDialog<Category>
           open={createCategoryOpen}
           onOpenChange={setCreateCategoryOpen}
           onCreated={(category) => {
@@ -971,6 +978,12 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
             clearErrors(["categoryId", "subcategoryId"])
             setCategorySelectOpen(false)
           }}
+          titleKey="inventory.form.createCategoryTitle"
+          labelKey="inventory.form.categoryName"
+          placeholderKey="inventory.form.categoryNamePlaceholder"
+          validationRequiredKey="inventory.form.validation.categoryNameRequired"
+          inputIdPrefix="create-category-name"
+          createMutationHook={useCreateCategoryMutation}
         />
 
         <CreateSubcategoryDialog
@@ -985,7 +998,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           }}
         />
 
-        <CreateLocationDialog
+        <CreateReferenceEntityDialog<Location>
           open={createLocationOpen}
           onOpenChange={setCreateLocationOpen}
           onCreated={(location) => {
@@ -993,6 +1006,12 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
             setValue("locationId", location.id, { shouldDirty: true, shouldValidate: true })
             setLocationSelectOpen(false)
           }}
+          titleKey="inventory.form.createLocationTitle"
+          labelKey="inventory.form.locationName"
+          placeholderKey="inventory.form.locationNamePlaceholder"
+          validationRequiredKey="inventory.form.validation.locationNameRequired"
+          inputIdPrefix="create-location-name"
+          createMutationHook={useCreateLocationMutation}
         />
       </>
     )

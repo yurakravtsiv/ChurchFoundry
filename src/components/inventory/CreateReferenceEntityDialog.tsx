@@ -6,21 +6,40 @@ import { Dialog, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
-import { useCreateCategoryMutation } from "@/hooks/queries/useInventoryQueries"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
-import type { Category } from "@/types/inventory"
 
-type CreateCategoryDialogProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onCreated: (category: Category) => void
+type CreateReferenceEntityMutation<T> = {
+  mutate: (name: string, options?: { onSuccess?: (entity: T) => void }) => void
+  isPending: boolean
 }
 
-export function CreateCategoryDialog({ open, onOpenChange, onCreated }: CreateCategoryDialogProps) {
+export type CreateReferenceEntityDialogProps<T> = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onCreated: (entity: T) => void
+  titleKey: string
+  labelKey: string
+  placeholderKey: string
+  validationRequiredKey: string
+  inputIdPrefix: string
+  createMutationHook: () => CreateReferenceEntityMutation<T>
+}
+
+export function CreateReferenceEntityDialog<T>({
+  open,
+  onOpenChange,
+  onCreated,
+  titleKey,
+  labelKey,
+  placeholderKey,
+  validationRequiredKey,
+  inputIdPrefix,
+  createMutationHook,
+}: CreateReferenceEntityDialogProps<T>) {
   const { t } = useTranslation()
-  const createCategoryMutation = useCreateCategoryMutation()
   const [name, setName] = useState("")
   const [error, setError] = useState("")
+  const mutation = createMutationHook()
 
   const reset = () => {
     setName("")
@@ -37,16 +56,16 @@ export function CreateCategoryDialog({ open, onOpenChange, onCreated }: CreateCa
   const handleCreate = () => {
     const trimmed = name.trim()
     if (!trimmed) {
-      setError(t("inventory.form.validation.categoryNameRequired"))
+      setError(t(validationRequiredKey))
       return
     }
     if (trimmed.length > INVENTORY_FIELD_LIMITS.entityName) {
       setError(t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.entityName }))
       return
     }
-    createCategoryMutation.mutate(trimmed, {
-      onSuccess: (category) => {
-        onCreated(category)
+    mutation.mutate(trimmed, {
+      onSuccess: (entity) => {
+        onCreated(entity)
         handleOpenChange(false)
       },
     })
@@ -56,12 +75,12 @@ export function CreateCategoryDialog({ open, onOpenChange, onCreated }: CreateCa
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <MotionDialogContent open={open} className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{t("inventory.form.createCategoryTitle")}</DialogTitle>
+          <DialogTitle>{t(titleKey)}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-2">
-          <Label htmlFor="create-category-name">{t("inventory.form.categoryName")}</Label>
+        <div className="my-4 space-y-2">
+          <Label htmlFor={inputIdPrefix}>{t(labelKey)}</Label>
           <Input
-            id="create-category-name"
+            id={inputIdPrefix}
             value={name}
             maxLength={INVENTORY_FIELD_LIMITS.entityName}
             onChange={(event) => {
@@ -70,7 +89,7 @@ export function CreateCategoryDialog({ open, onOpenChange, onCreated }: CreateCa
                 setError("")
               }
             }}
-            placeholder={t("inventory.form.categoryNamePlaceholder")}
+            placeholder={t(placeholderKey)}
             autoFocus
             onKeyDown={(event) => {
               if (event.key === "Enter") {
@@ -85,7 +104,7 @@ export function CreateCategoryDialog({ open, onOpenChange, onCreated }: CreateCa
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
             {t("inventory.actions.cancel")}
           </Button>
-          <Button type="button" onClick={handleCreate} disabled={createCategoryMutation.isPending}>
+          <Button type="button" onClick={handleCreate} disabled={mutation.isPending}>
             {t("inventory.form.createAction")}
           </Button>
         </DialogFooter>

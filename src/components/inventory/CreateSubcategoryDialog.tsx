@@ -82,7 +82,7 @@ export function CreateSubcategoryDialog({
             {t("inventory.form.createSubcategoryFor", { category: categoryName })}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2">
+        <div className="my-4 space-y-2">
           <Label htmlFor="create-subcategory-name">{t("inventory.form.subcategoryName")}</Label>
           <Input
             id="create-subcategory-name"
