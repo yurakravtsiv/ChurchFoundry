@@ -8,15 +8,7 @@
         try {
           key = "churchfoundry-theme"
           stored = localStorage.getItem(key)
-          theme =
-            stored === "light" || stored === "dark"
-              ? stored
-              : window.matchMedia &&
-                  typeof window.matchMedia("(prefers-color-scheme: dark)").matches === "boolean"
-                ? window.matchMedia("(prefers-color-scheme: dark)").matches
-                  ? "dark"
-                  : "light"
-                : "dark"
+          theme = stored === "light" || stored === "dark" ? stored : "light"
           root = document.documentElement
           root.classList.remove("light", "dark")
           root.classList.add(theme)
@@ -31,9 +23,9 @@
             window.navigator?.standalone === true
           root.classList.toggle("standalone", !!standalone)
         } catch (_e) {
-          document.documentElement.classList.add("dark")
-          document.documentElement.style.colorScheme = "dark"
-          document.documentElement.style.backgroundColor = "#0A0A0A"
+          document.documentElement.classList.add("light")
+          document.documentElement.style.colorScheme = "light"
+          document.documentElement.style.backgroundColor = "#FAFAFA"
         }
       })()
     </script>

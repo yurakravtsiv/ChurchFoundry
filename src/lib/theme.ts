@@ -15,24 +15,9 @@ export function getStoredTheme(): Theme | null {
   }
 }
 
-export function getSystemTheme(): Theme | null {
-  try {
-    if (typeof window.matchMedia !== "function") {
-      return null
-    }
-    const media = window.matchMedia("(prefers-color-scheme: dark)")
-    if (typeof media.matches !== "boolean") {
-      return null
-    }
-    return media.matches ? "dark" : "light"
-  } catch {
-    return null
-  }
-}
-
-/** Priority: localStorage → prefers-color-scheme → dark */
+/** Priority: localStorage → light (default for new users). */
 export function resolveTheme(): Theme {
-  return getStoredTheme() ?? getSystemTheme() ?? "dark"
+  return getStoredTheme() ?? "light"
 }
 
 export function themeColorHex(theme: Theme) {

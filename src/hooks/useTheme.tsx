@@ -8,13 +8,7 @@ import {
   useState,
 } from "react"
 
-import {
-  applyThemeClass,
-  getStoredTheme,
-  resolveTheme,
-  THEME_STORAGE_KEY,
-  type Theme,
-} from "@/lib/theme"
+import { applyThemeClass, resolveTheme, THEME_STORAGE_KEY, type Theme } from "@/lib/theme"
 
 type ThemeContextValue = {
   theme: Theme
@@ -29,27 +23,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     applyThemeClass(theme)
   }, [theme])
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") {
-      return
-    }
-
-    const media = window.matchMedia("(prefers-color-scheme: dark)")
-
-    const onSystemThemeChange = (event: MediaQueryListEvent) => {
-      // Only follow the system when the user has no manual preference.
-      if (getStoredTheme() !== null) {
-        return
-      }
-      setThemeState(event.matches ? "dark" : "light")
-    }
-
-    media.addEventListener("change", onSystemThemeChange)
-    return () => {
-      media.removeEventListener("change", onSystemThemeChange)
-    }
-  }, [])
 
   const setTheme = useCallback((next: Theme) => {
     try {
