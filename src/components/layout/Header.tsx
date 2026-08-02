@@ -25,7 +25,7 @@ function useCurrentPageLabelKey() {
     item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`),
   )
 
-  return match?.labelKey ?? "nav.home"
+  return match?.labelKey ?? "nav.dashboard"
 }
 
 export function Header({ onOpenSidebar }: HeaderProps) {

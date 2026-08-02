@@ -10,7 +10,7 @@ import { useStandalonePwa } from "@/hooks/useStandalonePwa"
 import { ThemeProvider, useTheme } from "@/hooks/useTheme"
 import { syncStandaloneDisplay } from "@/lib/display"
 import { ComingSoonPage } from "@/pages/ComingSoonPage"
-import { HomePage } from "@/pages/HomePage"
+import { DashboardPage } from "@/pages/DashboardPage"
 import { InventoryItemDetailPage } from "@/pages/InventoryItemDetailPage"
 import { InventoryPage } from "@/pages/InventoryPage"
 import { LoginPage } from "@/pages/LoginPage"
@@ -33,7 +33,7 @@ const router = createBrowserRouter(
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<DashboardPage />} />
           <Route path="/people" element={<ComingSoonPage />} />
           <Route path="/services" element={<ComingSoonPage />} />
           <Route path="/calendar" element={<ComingSoonPage />} />

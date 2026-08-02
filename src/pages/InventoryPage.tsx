@@ -23,9 +23,9 @@ import {
   Search,
   X,
 } from "lucide-react"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router"
+import { useLocation, useNavigate } from "react-router"
 
 import { InventoryItemForm } from "@/components/inventory/InventoryItemForm"
 import { Badge } from "@/components/ui/badge"
@@ -153,9 +153,20 @@ function FilterClearButton({
   )
 }
 
+function initialConditionFilter(searchParams: URLSearchParams) {
+  const value = searchParams.get("condition")
+  return value === "needs_repair" || value === "good" ? value : "all"
+}
+
+function initialAvailabilityFilter(searchParams: URLSearchParams) {
+  const value = searchParams.get("availability")
+  return value === "borrowed" || value === "in_church" ? value : "all"
+}
+
 export function InventoryPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { search: locationSearch } = useLocation()
 
   const [{ items, categories, subcategories, locations }, setInventoryState] =
     useState(loadInventoryState)
@@ -163,14 +174,25 @@ export function InventoryPage() {
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [subcategoryFilter, setSubcategoryFilter] = useState("all")
-  const [availabilityFilter, setAvailabilityFilter] = useState("all")
+  const [availabilityFilter, setAvailabilityFilter] = useState(() =>
+    initialAvailabilityFilter(new URLSearchParams(locationSearch)),
+  )
   const [locationFilter, setLocationFilter] = useState("all")
-  const [conditionFilter, setConditionFilter] = useState("all")
+  const [conditionFilter, setConditionFilter] = useState(() =>
+    initialConditionFilter(new URLSearchParams(locationSearch)),
+  )
   const [showArchived, setShowArchived] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [createFormDirty, setCreateFormDirty] = useState(false)
   const [discardCreateOpen, setDiscardCreateOpen] = useState(false)
   const [archiveTarget, setArchiveTarget] = useState<InventoryItem | null>(null)
+
+  // Keep filters in sync when arriving via dashboard deep-links or sidebar (same route instance).
+  useEffect(() => {
+    const params = new URLSearchParams(locationSearch)
+    setConditionFilter(initialConditionFilter(params))
+    setAvailabilityFilter(initialAvailabilityFilter(params))
+  }, [locationSearch])
 
   const requestCloseCreate = useCallback(() => {
     if (createFormDirty) {
