@@ -42,6 +42,7 @@
   "inventory": {
     "downloadQr": "Завантажити як зображення",
     "searchPlaceholder": "Пошук",
+    "subcategoryDisabledHint": "Спочатку оберіть категорію",
     "addInventory": "Додати інвентар",
     "export": {
       "xlsx": "XLSX",
@@ -50,7 +51,6 @@
     },
     "showArchived": "Показати архівовані",
     "hideArchived": "Приховати архівовані",
-    "archiveShort": "Архів",
     "itemNotFound": "Предмет не знайдено",
     "unsavedChanges": {
       "title": "Зберегти зміни?",

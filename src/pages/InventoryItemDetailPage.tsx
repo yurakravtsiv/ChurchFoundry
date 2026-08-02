@@ -217,11 +217,11 @@ export function InventoryItemDetailPage() {
           />
         </div>
 
-        <Card className="md:col-span-1">
+        <Card className="min-w-0 overflow-hidden md:col-span-1">
           <CardHeader>
             <CardTitle>{t("inventory.detail.qrTitle")}</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col items-center gap-3">
+          <CardContent className="flex min-w-0 flex-col items-center gap-3">
             <ItemQrCode value={item.qrCodeValue} itemName={item.name} itemId={item.id} size={200} />
             <CardDescription className="text-center">
               {t("inventory.detail.qrHint")}

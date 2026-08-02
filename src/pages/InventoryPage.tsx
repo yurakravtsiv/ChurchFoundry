@@ -34,6 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { DisabledTooltip } from "@/components/ui/disabled-tooltip"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -690,29 +691,35 @@ export function InventoryPage() {
                 {t("inventory.filters.subcategory")}
               </Label>
               <div className="relative min-w-0">
-                <Select
-                  value={subcategoryFilter}
-                  onValueChange={setSubcategoryFilter}
+                <DisabledTooltip
                   disabled={categoryFilter === "all"}
+                  tip={t("inventory.subcategoryDisabledHint")}
                 >
-                  <SelectTrigger
-                    id="inventory-filter-subcategory"
-                    className={cn(
-                      "h-9 w-full min-w-0",
-                      subcategoryFilter !== "all" && "pr-8 [&>svg]:hidden",
-                    )}
+                  <Select
+                    value={subcategoryFilter}
+                    onValueChange={setSubcategoryFilter}
+                    disabled={categoryFilter === "all"}
                   >
-                    <SelectValue placeholder={t("inventory.filters.all")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                    {filteredSubcategories.map((subcategory) => (
-                      <SelectItem key={subcategory.id} value={subcategory.id}>
-                        {subcategory.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectTrigger
+                      id="inventory-filter-subcategory"
+                      className={cn(
+                        "h-9 w-full min-w-0",
+                        categoryFilter === "all" && "pointer-events-none",
+                        subcategoryFilter !== "all" && "pr-8 [&>svg]:hidden",
+                      )}
+                    >
+                      <SelectValue placeholder={t("inventory.filters.all")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                      {filteredSubcategories.map((subcategory) => (
+                        <SelectItem key={subcategory.id} value={subcategory.id}>
+                          {subcategory.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </DisabledTooltip>
                 <FilterClearButton
                   visible={subcategoryFilter !== "all"}
                   label={t("inventory.filters.clear")}
@@ -833,9 +840,6 @@ export function InventoryPage() {
                         )}
                         aria-hidden
                       />
-                      <span className="text-sm text-muted-foreground md:hidden">
-                        {t("inventory.archiveShort")}
-                      </span>
                       <Switch
                         checked={showArchived}
                         onCheckedChange={setShowArchived}

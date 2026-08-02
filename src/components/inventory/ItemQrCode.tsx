@@ -181,17 +181,29 @@ export function ItemQrCode({ value, itemName, itemId, size = 200 }: ItemQrCodePr
   }
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="flex flex-col items-center gap-2 rounded-md bg-white p-3 text-center">
-        <QRCodeSVG ref={svgRef} value={value} size={size} />
-        <p className="max-w-[200px] text-sm font-semibold leading-snug text-foreground">
+    <div className="flex w-full min-w-0 max-w-full flex-col items-center gap-3">
+      <div className="mx-auto flex w-full min-w-0 max-w-[min(100%,13.875rem)] flex-col items-center gap-2 rounded-md bg-white p-3 text-center">
+        <QRCodeSVG
+          ref={svgRef}
+          value={value}
+          size={size}
+          className="max-w-full"
+          style={{ width: "100%", height: "auto" }}
+        />
+        <p className="w-full max-w-full break-words text-sm font-semibold leading-snug text-foreground">
           {itemName}
         </p>
-        <p className="max-w-[200px] text-xs text-muted-foreground" title={itemId}>
+        <p className="w-full max-w-full truncate text-xs text-muted-foreground" title={itemId}>
           {shortId(itemId)}
         </p>
       </div>
-      <Button type="button" variant="outline" size="sm" onClick={() => void downloadAsPng()}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-auto max-w-full whitespace-normal px-3 py-2 text-center"
+        onClick={() => void downloadAsPng()}
+      >
         {t("inventory.downloadQr")}
       </Button>
     </div>

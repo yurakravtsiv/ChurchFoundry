@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Star, X } from "lucide-react"
-import { AnimatePresence, motion } from "motion/react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -10,6 +9,7 @@ import { CreateCategoryDialog } from "@/components/inventory/CreateCategoryDialo
 import { CreateLocationDialog } from "@/components/inventory/CreateLocationDialog"
 import { CreateSubcategoryDialog } from "@/components/inventory/CreateSubcategoryDialog"
 import { Button } from "@/components/ui/button"
+import { DisabledTooltip } from "@/components/ui/disabled-tooltip"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -446,7 +446,10 @@ export function InventoryItemForm({
         onSubmit={(event) => void submitForm(event)}
       >
         <div
-          className={cn("space-y-4 px-6 py-4", !isPageLayout && "min-h-0 flex-1 overflow-y-auto")}
+          className={cn(
+            "space-y-4 px-6 py-4",
+            !isPageLayout && "min-h-0 flex-1 overflow-y-auto pb-6",
+          )}
         >
           <div className="space-y-2">
             <Label htmlFor="inventory-item-name">{t("inventory.form.name")} *</Label>
@@ -507,34 +510,45 @@ export function InventoryItemForm({
             <Controller
               control={control}
               name="subcategoryId"
-              render={({ field }) => (
-                <Select
-                  open={subcategorySelectOpen}
-                  onOpenChange={setSubcategorySelectOpen}
-                  value={field.value || undefined}
-                  disabled={!categoryId}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger aria-label={t("inventory.form.subcategory")}>
-                    <SelectValue placeholder={t("inventory.form.subcategoryPlaceholder")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredSubcategories.map((subcategory) => (
-                      <SelectItem key={subcategory.id} value={subcategory.id}>
-                        {subcategory.name}
-                      </SelectItem>
-                    ))}
-                    <SelectCreateAction
-                      label={t("inventory.form.createSubcategory")}
-                      disabled={!categoryId}
-                      onCreate={() => {
-                        setSubcategorySelectOpen(false)
-                        setCreateSubcategoryOpen(true)
-                      }}
-                    />
-                  </SelectContent>
-                </Select>
-              )}
+              render={({ field }) => {
+                const subcategoryDisabled = !categoryId
+                return (
+                  <DisabledTooltip
+                    disabled={subcategoryDisabled}
+                    tip={t("inventory.subcategoryDisabledHint")}
+                  >
+                    <Select
+                      open={subcategorySelectOpen}
+                      onOpenChange={setSubcategorySelectOpen}
+                      value={field.value || undefined}
+                      disabled={subcategoryDisabled}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger
+                        aria-label={t("inventory.form.subcategory")}
+                        className={cn(subcategoryDisabled && "pointer-events-none")}
+                      >
+                        <SelectValue placeholder={t("inventory.form.subcategoryPlaceholder")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredSubcategories.map((subcategory) => (
+                          <SelectItem key={subcategory.id} value={subcategory.id}>
+                            {subcategory.name}
+                          </SelectItem>
+                        ))}
+                        <SelectCreateAction
+                          label={t("inventory.form.createSubcategory")}
+                          disabled={!categoryId}
+                          onCreate={() => {
+                            setSubcategorySelectOpen(false)
+                            setCreateSubcategoryOpen(true)
+                          }}
+                        />
+                      </SelectContent>
+                    </Select>
+                  </DisabledTooltip>
+                )
+              }}
             />
             {errors.subcategoryId ? (
               <p className="text-sm text-destructive" data-field-error>
@@ -644,36 +658,25 @@ export function InventoryItemForm({
                 </Select>
               )}
             />
-          </div>
-
-          <AnimatePresence initial={false}>
             {availability === "borrowed" ? (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
-                className="overflow-hidden"
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="inventory-item-availability-comment">
-                    {t("inventory.form.availabilityComment")} *
-                  </Label>
-                  <Input
-                    id="inventory-item-availability-comment"
-                    {...register("availabilityComment")}
-                    maxLength={INVENTORY_FIELD_LIMITS.availabilityComment}
-                    placeholder={t("inventory.form.availabilityCommentPlaceholder")}
-                  />
-                  {errors.availabilityComment ? (
-                    <p className="text-sm text-destructive" data-field-error>
-                      {errors.availabilityComment.message}
-                    </p>
-                  ) : null}
-                </div>
-              </motion.div>
+              <>
+                <Label htmlFor="inventory-item-availability-comment">
+                  {t("inventory.form.availabilityComment")} *
+                </Label>
+                <Input
+                  id="inventory-item-availability-comment"
+                  {...register("availabilityComment")}
+                  maxLength={INVENTORY_FIELD_LIMITS.availabilityComment}
+                  placeholder={t("inventory.form.availabilityCommentPlaceholder")}
+                />
+                {errors.availabilityComment ? (
+                  <p className="text-sm text-destructive" data-field-error>
+                    {errors.availabilityComment.message}
+                  </p>
+                ) : null}
+              </>
             ) : null}
-          </AnimatePresence>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="inventory-item-supplier">{t("inventory.form.supplier")}</Label>
@@ -795,18 +798,18 @@ export function InventoryItemForm({
               </div>
             ) : null}
           </div>
-        </div>
 
-        {isPageLayout ? null : (
-          <div className="flex shrink-0 flex-col-reverse gap-2 border-t bg-background px-6 py-4 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              {t("inventory.actions.cancel")}
-            </Button>
-            <Button type="submit" disabled={isCompressing}>
-              {submitLabel ?? t("inventory.form.save")}
-            </Button>
-          </div>
-        )}
+          {isPageLayout ? null : (
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                {t("inventory.actions.cancel")}
+              </Button>
+              <Button type="submit" disabled={isCompressing}>
+                {submitLabel ?? t("inventory.form.save")}
+              </Button>
+            </div>
+          )}
+        </div>
       </form>
 
       <CreateCategoryDialog

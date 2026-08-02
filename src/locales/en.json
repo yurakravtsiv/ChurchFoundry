@@ -42,6 +42,7 @@
   "inventory": {
     "downloadQr": "Download as image",
     "searchPlaceholder": "Search",
+    "subcategoryDisabledHint": "Select a category first",
     "addInventory": "Add inventory",
     "export": {
       "xlsx": "XLSX",
@@ -50,7 +51,6 @@
     },
     "showArchived": "Show archived",
     "hideArchived": "Hide archived",
-    "archiveShort": "Archive",
     "itemNotFound": "Item not found",
     "unsavedChanges": {
       "title": "Save changes?",
