@@ -81,7 +81,8 @@
       "location": "Location",
       "condition": "Condition",
       "clear": "Clear",
-      "clearAll": "Clear all filters"
+      "clearAll": "Clear all filters",
+      "clearAllDisabledHint": "No active filters"
     },
     "availability": {
       "inChurch": "In church",

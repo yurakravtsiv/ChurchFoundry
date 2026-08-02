@@ -854,22 +854,40 @@ export function InventoryPage() {
                   </TooltipContent>
                 </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
+                {hasActiveFilters ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="size-9 shrink-0"
+                        onClick={clearAllFilters}
+                        aria-label={t("inventory.filters.clearAll")}
+                      >
+                        <FilterX className="size-4" aria-hidden />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t("inventory.filters.clearAll")}</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <DisabledTooltip
+                    disabled
+                    tip={t("inventory.filters.clearAllDisabledHint")}
+                    className="inline-flex w-auto shrink-0"
+                  >
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="size-9 shrink-0"
-                      disabled={!hasActiveFilters}
-                      onClick={clearAllFilters}
-                      aria-label={t("inventory.filters.clearAll")}
+                      className="pointer-events-none size-9 shrink-0"
+                      disabled
+                      aria-label={t("inventory.filters.clearAllDisabledHint")}
                     >
                       <FilterX className="size-4" aria-hidden />
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("inventory.filters.clearAll")}</TooltipContent>
-                </Tooltip>
+                  </DisabledTooltip>
+                )}
               </div>
             </TooltipProvider>
           </div>

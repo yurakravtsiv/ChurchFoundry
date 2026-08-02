@@ -81,7 +81,8 @@
       "location": "Локація",
       "condition": "Стан",
       "clear": "Скинути",
-      "clearAll": "Скинути всі фільтри"
+      "clearAll": "Скинути всі фільтри",
+      "clearAllDisabledHint": "Немає активних фільтрів"
     },
     "availability": {
       "inChurch": "В церкві",
