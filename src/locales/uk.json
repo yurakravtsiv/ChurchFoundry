@@ -27,7 +27,7 @@
   "inventory": {
     "downloadQr": "Завантажити як зображення",
     "searchPlaceholder": "Пошук",
-    "create": "Створити",
+    "addInventory": "Додати інвентар",
     "export": {
       "xlsx": "XLSX",
       "pdf": "PDF",

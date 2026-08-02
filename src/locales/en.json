@@ -27,7 +27,7 @@
   "inventory": {
     "downloadQr": "Download as image",
     "searchPlaceholder": "Search",
-    "create": "Create",
+    "addInventory": "Add inventory",
     "export": {
       "xlsx": "XLSX",
       "pdf": "PDF",

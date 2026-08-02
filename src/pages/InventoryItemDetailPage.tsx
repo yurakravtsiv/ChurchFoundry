@@ -1,4 +1,4 @@
-import { ArrowLeft, PackageX } from "lucide-react"
+import { ArrowLeft, Check, PackageX, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useBlocker, useNavigate, useParams } from "react-router"
@@ -142,19 +142,30 @@ export function InventoryItemDetailPage() {
             <ArrowLeft className="size-4" aria-hidden />
             {t("inventory.detail.backToInventory")}
           </button>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <h1 className="min-w-0 text-2xl font-semibold tracking-tight sm:text-3xl">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="min-w-0 truncate text-xl font-semibold tracking-tight sm:text-3xl">
               {item.name}
             </h1>
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               {formDirty ? (
-                <Button type="button" variant="outline" onClick={requestLeave}>
-                  {t("inventory.actions.cancel")}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="sm:h-9 sm:w-auto sm:px-4"
+                  aria-label={t("inventory.actions.cancel")}
+                  onClick={requestLeave}
+                >
+                  <X className="size-4 sm:hidden" aria-hidden />
+                  <span className="hidden sm:inline">{t("inventory.actions.cancel")}</span>
                 </Button>
               ) : null}
               <Button
                 type="button"
+                size="icon"
+                className="sm:h-9 sm:w-auto sm:px-4"
                 disabled={formBusy}
+                aria-label={t("inventory.form.save")}
                 onClick={() => {
                   if (!formDirty) {
                     goBackToInventory()
@@ -166,14 +177,15 @@ export function InventoryItemDetailPage() {
                   }
                 }}
               >
-                {t("inventory.form.save")}
+                <Check className="size-4 sm:hidden" aria-hidden />
+                <span className="hidden sm:inline">{t("inventory.form.save")}</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-[15px] py-[10px] md:grid-cols-3 md:items-start">
+      <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-[15px] pb-[20px] pt-[10px] md:grid-cols-3 md:items-start">
         <div className="min-w-0 rounded-xl border bg-card md:col-span-2">
           <InventoryItemForm
             key={item.updatedAt}
