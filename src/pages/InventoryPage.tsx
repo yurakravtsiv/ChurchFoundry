@@ -579,7 +579,11 @@ export function InventoryPage() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => void runExport("xlsx")}
+                      onClick={(event) => {
+                        // Blur so the tooltip does not stick open after click (Radix keeps it on focus).
+                        event.currentTarget.blur()
+                        void runExport("xlsx")
+                      }}
                     >
                       <FileSpreadsheet className="size-4" />
                       {t("inventory.export.xlsx")}
@@ -593,7 +597,10 @@ export function InventoryPage() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => void runExport("pdf")}
+                      onClick={(event) => {
+                        event.currentTarget.blur()
+                        void runExport("pdf")
+                      }}
                     >
                       <FileText className="size-4" />
                       {t("inventory.export.pdf")}
