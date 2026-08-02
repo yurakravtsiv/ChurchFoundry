@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from "motion/react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router"
@@ -75,17 +76,19 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
           }
         >
           <Icon className="size-4 shrink-0" />
-          <span
-            className={cn(
-              "truncate whitespace-nowrap transition-[opacity,max-width] duration-200 ease-out",
-              collapsed
-                ? "pointer-events-none max-w-0 overflow-hidden opacity-0"
-                : "max-w-[12rem] opacity-100",
-            )}
-            aria-hidden={collapsed || undefined}
-          >
-            {t(labelKey)}
-          </span>
+          <AnimatePresence initial={false}>
+            {!collapsed ? (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="truncate whitespace-nowrap"
+              >
+                {t(labelKey)}
+              </motion.span>
+            ) : null}
+          </AnimatePresence>
         </NavLink>
       ))}
     </nav>
@@ -122,11 +125,12 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
     <>
       {/* Fixed rail width so main content does not jump when the panel expands on hover. */}
       <div className="relative hidden w-16 shrink-0 md:block">
-        <aside
+        <motion.aside
+          animate={{ width: collapsed ? 64 : 240 }}
+          transition={{ duration: 0.25, ease: "easeInOut" }}
           className={cn(
             "absolute inset-y-0 left-0 z-20 flex flex-col overflow-hidden border-r border-border bg-background py-4",
-            "transition-[width,padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-            collapsed ? "w-16 px-2" : "w-60 px-3 shadow-md",
+            collapsed ? "px-2" : "px-3 shadow-md",
           )}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
@@ -138,11 +142,15 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
           }}
         >
           <SidebarPanel collapsed={collapsed} />
-        </aside>
+        </motion.aside>
       </div>
 
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="left" className="flex h-full flex-col gap-0 bg-background p-0">
+        <SheetContent
+          side="left"
+          open={open}
+          className="flex h-full flex-col gap-0 bg-background p-0"
+        >
           <div
             className={cn(
               "flex h-full min-h-0 flex-1 flex-col bg-background px-4 pb-3 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 pt-[max(1rem,env(safe-area-inset-top,0px))]",

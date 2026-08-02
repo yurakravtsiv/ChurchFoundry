@@ -2,15 +2,10 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { createLocation } from "@/lib/inventoryStorage"
 import type { Location } from "@/types/inventory"
 
@@ -50,7 +45,7 @@ export function CreateLocationDialog({ open, onOpenChange, onCreated }: CreateLo
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-sm">
+      <MotionDialogContent open={open} className="max-w-sm">
         <DialogHeader>
           <DialogTitle>{t("inventory.form.createLocationTitle")}</DialogTitle>
         </DialogHeader>
@@ -84,7 +79,7 @@ export function CreateLocationDialog({ open, onOpenChange, onCreated }: CreateLo
             {t("inventory.form.createAction")}
           </Button>
         </DialogFooter>
-      </DialogContent>
+      </MotionDialogContent>
     </Dialog>
   )
 }

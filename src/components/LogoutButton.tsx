@@ -5,12 +5,12 @@ import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { useAuth } from "@/hooks/useAuth"
 import { cn } from "@/lib/utils"
 
@@ -56,7 +56,7 @@ export function LogoutButton({ className, onSignedOut, onPress }: LogoutButtonPr
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm">
+        <MotionDialogContent open={open} className="max-w-sm">
           <DialogHeader>
             <DialogTitle>{t("auth.logoutConfirmTitle")}</DialogTitle>
             <DialogDescription>{t("auth.logoutConfirmDescription")}</DialogDescription>
@@ -74,7 +74,7 @@ export function LogoutButton({ className, onSignedOut, onPress }: LogoutButtonPr
               {isSigningOut ? t("auth.loggingOut") : t("auth.logoutConfirm")}
             </Button>
           </DialogFooter>
-        </DialogContent>
+        </MotionDialogContent>
       </Dialog>
     </>
   )

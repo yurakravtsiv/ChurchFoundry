@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { getInventoryItemById, updateInventoryItem } from "@/lib/inventoryStorage"
 import type { InventoryItem } from "@/types/inventory"
 
@@ -237,7 +237,7 @@ export function InventoryItemDetailPage() {
           stayOnPage()
         }}
       >
-        <DialogContent className="max-w-sm">
+        <MotionDialogContent open={unsavedPrompt !== null} className="max-w-sm">
           {unsavedPrompt === "cancel" ? (
             <>
               <DialogHeader>
@@ -276,7 +276,7 @@ export function InventoryItemDetailPage() {
               </DialogFooter>
             </>
           )}
-        </DialogContent>
+        </MotionDialogContent>
       </Dialog>
     </main>
   )

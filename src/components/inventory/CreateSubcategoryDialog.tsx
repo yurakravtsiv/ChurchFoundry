@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { createSubcategory } from "@/lib/inventoryStorage"
 import type { Subcategory } from "@/types/inventory"
 
@@ -63,7 +63,7 @@ export function CreateSubcategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-sm">
+      <MotionDialogContent open={open} className="max-w-sm">
         <DialogHeader>
           <DialogTitle>{t("inventory.form.createSubcategoryTitle")}</DialogTitle>
           <DialogDescription>
@@ -100,7 +100,7 @@ export function CreateSubcategoryDialog({
             {t("inventory.form.createAction")}
           </Button>
         </DialogFooter>
-      </DialogContent>
+      </MotionDialogContent>
     </Dialog>
   )
 }

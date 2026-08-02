@@ -1,6 +1,7 @@
 import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
+import { AnimatePresence, motion } from "motion/react"
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -40,23 +41,72 @@ const sheetVariants = cva("fixed z-50 gap-4 bg-background p-6 shadow-lg", {
 
 interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
+    VariantProps<typeof sheetVariants> {
+  /** Required for left-side Motion enter/exit (mobile drawer). */
+  open?: boolean
+}
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
-    <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
-      <SheetPrimitive.Close className="absolute right-[max(1rem,env(safe-area-inset-right,0px))] top-[max(1rem,env(safe-area-inset-top,0px))] rounded-md p-2 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-secondary">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </SheetPrimitive.Close>
-      {children}
-    </SheetPrimitive.Content>
-  </SheetPortal>
-))
+>(({ side = "right", className, children, open, ...props }, ref) => {
+  if (side === "left") {
+    return (
+      <AnimatePresence>
+        {open ? (
+          <SheetPortal forceMount key="motion-sheet">
+            <SheetPrimitive.Overlay forceMount asChild>
+              <motion.div
+                className="sheet-overlay fixed inset-0 z-50 bg-black/80"
+                data-motion="true"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              />
+            </SheetPrimitive.Overlay>
+            <SheetPrimitive.Content forceMount asChild ref={ref} {...props}>
+              <motion.div
+                className={cn(
+                  "drawer-sheet fixed inset-y-0 left-0 z-50 flex h-full w-3/4 flex-col gap-4 border-r bg-background p-6 shadow-lg sm:max-w-sm",
+                  className,
+                )}
+                data-motion="true"
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", duration: 0.3, bounce: 0.1 }}
+              >
+                <SheetPrimitive.Close className="absolute right-[max(1rem,env(safe-area-inset-right,0px))] top-[max(1rem,env(safe-area-inset-top,0px))] rounded-md p-2 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-secondary">
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </SheetPrimitive.Close>
+                {children}
+              </motion.div>
+            </SheetPrimitive.Content>
+          </SheetPortal>
+        ) : null}
+      </AnimatePresence>
+    )
+  }
+
+  return (
+    <SheetPortal>
+      <SheetOverlay />
+      <SheetPrimitive.Content
+        ref={ref}
+        className={cn(sheetVariants({ side }), className)}
+        {...props}
+      >
+        <SheetPrimitive.Close className="absolute right-[max(1rem,env(safe-area-inset-right,0px))] top-[max(1rem,env(safe-area-inset-top,0px))] rounded-md p-2 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-secondary">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </SheetPrimitive.Close>
+        {children}
+      </SheetPrimitive.Content>
+    </SheetPortal>
+  )
+})
 SheetContent.displayName = SheetPrimitive.Content.displayName
 
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (

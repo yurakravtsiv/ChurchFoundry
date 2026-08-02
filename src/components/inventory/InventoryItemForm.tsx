@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Star, X } from "lucide-react"
+import { AnimatePresence, motion } from "motion/react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -552,31 +553,31 @@ export function InventoryItemForm({
             />
           </div>
 
-          <div
-            className={cn(
-              "grid transition-[grid-template-rows,opacity,margin] duration-200 ease-out",
-              availability === "borrowed"
-                ? "grid-rows-[1fr] opacity-100"
-                : // Cancel space-y-4 margin so a collapsed comment row does not double the gap.
-                  "pointer-events-none -mt-4 grid-rows-[0fr] opacity-0",
-            )}
-          >
-            <div className="overflow-hidden">
-              <div className="space-y-2">
-                <Label htmlFor="inventory-item-availability-comment">
-                  {t("inventory.form.availabilityComment")} *
-                </Label>
-                <Input
-                  id="inventory-item-availability-comment"
-                  {...register("availabilityComment")}
-                  placeholder={t("inventory.form.availabilityCommentPlaceholder")}
-                />
-                {errors.availabilityComment ? (
-                  <p className="text-sm text-destructive">{errors.availabilityComment.message}</p>
-                ) : null}
-              </div>
-            </div>
-          </div>
+          <AnimatePresence initial={false}>
+            {availability === "borrowed" ? (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="inventory-item-availability-comment">
+                    {t("inventory.form.availabilityComment")} *
+                  </Label>
+                  <Input
+                    id="inventory-item-availability-comment"
+                    {...register("availabilityComment")}
+                    placeholder={t("inventory.form.availabilityCommentPlaceholder")}
+                  />
+                  {errors.availabilityComment ? (
+                    <p className="text-sm text-destructive">{errors.availabilityComment.message}</p>
+                  ) : null}
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
 
           <div className="space-y-2">
             <Label htmlFor="inventory-item-supplier">{t("inventory.form.supplier")}</Label>

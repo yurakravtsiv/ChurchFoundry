@@ -32,7 +32,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -46,6 +45,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import {
   Select,
   SelectContent,
@@ -876,7 +876,10 @@ export function InventoryPage() {
           requestCloseCreate()
         }}
       >
-        <DialogContent className="flex max-h-[90vh] max-w-lg flex-col gap-0 overflow-hidden p-0">
+        <MotionDialogContent
+          open={createOpen}
+          className="flex max-h-[90vh] max-w-lg flex-col gap-0 overflow-hidden p-0"
+        >
           <DialogHeader className="shrink-0 space-y-1.5 border-b bg-background px-6 py-4 pr-12 text-left">
             <DialogTitle>{t("inventory.create")}</DialogTitle>
             <DialogDescription>{t("inventory.form.createDescription")}</DialogDescription>
@@ -893,11 +896,12 @@ export function InventoryPage() {
               refreshItems()
             }}
           />
-        </DialogContent>
+        </MotionDialogContent>
       </Dialog>
 
       <Dialog open={discardCreateOpen} onOpenChange={setDiscardCreateOpen}>
-        <DialogContent
+        <MotionDialogContent
+          open={discardCreateOpen}
           className="z-[70] max-w-sm"
           onPointerDownOutside={(event) => event.preventDefault()}
           onInteractOutside={(event) => event.preventDefault()}
@@ -923,7 +927,7 @@ export function InventoryPage() {
               {t("inventory.unsavedChanges.yes")}
             </Button>
           </DialogFooter>
-        </DialogContent>
+        </MotionDialogContent>
       </Dialog>
 
       <Dialog
@@ -934,7 +938,7 @@ export function InventoryPage() {
           }
         }}
       >
-        <DialogContent>
+        <MotionDialogContent open={archiveTarget !== null}>
           <DialogHeader>
             <DialogTitle>
               {t(
@@ -962,7 +966,7 @@ export function InventoryPage() {
                 : t("inventory.actions.archive")}
             </Button>
           </DialogFooter>
-        </DialogContent>
+        </MotionDialogContent>
       </Dialog>
     </main>
   )

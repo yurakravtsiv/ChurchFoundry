@@ -1,4 +1,5 @@
 import { Boxes } from "lucide-react"
+import { motion } from "motion/react"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
@@ -27,20 +28,43 @@ export function InventoryDashboardSection() {
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-        <DashboardWidget
-          title={t("inventory.condition.needsRepair")}
-          count={needsRepairCount}
-          colorVariant="info"
-          onClick={() => navigate("/inventory?condition=needs_repair")}
-        />
-        <DashboardWidget
-          title={t("inventory.availability.borrowed")}
-          count={borrowedCount}
-          colorVariant="warning"
-          onClick={() => navigate("/inventory?availability=borrowed")}
-        />
-      </div>
+      <motion.div
+        className="grid grid-cols-1 gap-4 md:grid-cols-2"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          visible: { transition: { staggerChildren: 0.08 } },
+        }}
+      >
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 12 },
+            visible: { opacity: 1, y: 0 },
+          }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          <DashboardWidget
+            title={t("inventory.condition.needsRepair")}
+            count={needsRepairCount}
+            colorVariant="info"
+            onClick={() => navigate("/inventory?condition=needs_repair")}
+          />
+        </motion.div>
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 12 },
+            visible: { opacity: 1, y: 0 },
+          }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          <DashboardWidget
+            title={t("inventory.availability.borrowed")}
+            count={borrowedCount}
+            colorVariant="warning"
+            onClick={() => navigate("/inventory?availability=borrowed")}
+          />
+        </motion.div>
+      </motion.div>
     </section>
   )
 }
