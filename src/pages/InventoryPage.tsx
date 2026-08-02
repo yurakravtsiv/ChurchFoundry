@@ -604,26 +604,38 @@ export function InventoryPage() {
               <Plus className="size-4" />
               {t("inventory.addItem")}
             </Button>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void runExport("xlsx")}
-              >
-                <FileSpreadsheet className="size-4" />
-                {t("inventory.export.xlsx")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void runExport("pdf")}
-              >
-                <FileText className="size-4" />
-                {t("inventory.export.pdf")}
-              </Button>
-            </div>
+            <TooltipProvider delayDuration={200}>
+              <div className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void runExport("xlsx")}
+                    >
+                      <FileSpreadsheet className="size-4" />
+                      {t("inventory.export.xlsx")}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("inventory.export.xlsxTooltip")}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void runExport("pdf")}
+                    >
+                      <FileText className="size-4" />
+                      {t("inventory.export.pdf")}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("inventory.export.pdfTooltip")}</TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
           </div>
         </div>
 
