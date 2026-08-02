@@ -26,7 +26,6 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
-
 import { InventoryItemForm } from "@/components/inventory/InventoryItemForm"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -62,6 +61,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useTypewriterPlaceholder } from "@/hooks/useTypewriterPlaceholder"
 import { exportToPdf, exportToXlsx, prepareExportData } from "@/lib/inventoryExport"
 import {
   archiveInventoryItem,
@@ -153,6 +153,68 @@ function FilterClearButton({
   )
 }
 
+const SEARCH_EXAMPLE_WORDS = {
+  uk: ["мікрофон", "проектор", "звукова система", "склад", "потребує ремонту"],
+  en: ["microphone", "projector", "sound system", "storage", "needs repair"],
+} as const
+
+function InventorySearchInput({
+  id,
+  value,
+  onChange,
+  onClear,
+  clearLabel,
+  ariaLabel,
+  typewriterText,
+}: {
+  id: string
+  value: string
+  onChange: (value: string) => void
+  onClear: () => void
+  clearLabel: string
+  ariaLabel: string
+  typewriterText: string
+}) {
+  const showTypewriter = value.length === 0
+
+  return (
+    <div className="relative min-w-0">
+      <Search
+        className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+        aria-hidden
+      />
+      <Input
+        id={id}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder=""
+        aria-label={ariaLabel}
+        className={cn("h-9 min-w-0 pl-8", value && "pr-8")}
+      />
+      {showTypewriter ? (
+        <span
+          className="pointer-events-none absolute inset-y-0 left-8 right-3 flex items-center truncate text-sm text-muted-foreground"
+          aria-hidden
+        >
+          <span className="truncate">{typewriterText}</span>
+          <span
+            className="ml-px inline-block w-[1ch] shrink-0 animate-[caret-blink_1s_step-end_infinite]"
+            aria-hidden
+          >
+            |
+          </span>
+        </span>
+      ) : null}
+      <FilterClearButton
+        visible={Boolean(value)}
+        label={clearLabel}
+        className="right-2"
+        onClear={onClear}
+      />
+    </div>
+  )
+}
+
 function TruncatedCell({
   value,
   className,
@@ -186,7 +248,7 @@ function initialAvailabilityFilter(searchParams: URLSearchParams) {
 }
 
 export function InventoryPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { search: locationSearch } = useLocation()
 
@@ -194,6 +256,12 @@ export function InventoryPage() {
     useState(loadInventoryState)
   const [sorting, setSorting] = useState<SortingState>([])
   const [search, setSearch] = useState("")
+  const searchExampleWords = useMemo(
+    () =>
+      i18n.language.startsWith("en") ? [...SEARCH_EXAMPLE_WORDS.en] : [...SEARCH_EXAMPLE_WORDS.uk],
+    [i18n.language],
+  )
+  const searchTypewriterText = useTypewriterPlaceholder(searchExampleWords)
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [subcategoryFilter, setSubcategoryFilter] = useState("all")
   const [availabilityFilter, setAvailabilityFilter] = useState(() =>
@@ -520,24 +588,15 @@ export function InventoryPage() {
     <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 bg-background px-[15px] py-[10px]">
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-end gap-2 md:justify-between">
-          <div className="relative hidden min-w-0 flex-1 md:block md:max-w-sm">
-            <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden
-            />
-            <Input
+          <div className="hidden min-w-0 flex-1 md:block md:max-w-sm">
+            <InventorySearchInput
               id="inventory-search"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t("inventory.searchPlaceholder")}
-              aria-label={t("inventory.searchPlaceholder")}
-              className={cn("h-9 min-w-0 pl-8", search && "pr-8")}
-            />
-            <FilterClearButton
-              visible={Boolean(search)}
-              label={t("inventory.filters.clear")}
-              className="right-2"
+              onChange={setSearch}
               onClear={() => setSearch("")}
+              clearLabel={t("inventory.filters.clear")}
+              ariaLabel={t("inventory.searchPlaceholder")}
+              typewriterText={searchTypewriterText}
             />
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -574,25 +633,15 @@ export function InventoryPage() {
               <Label htmlFor="inventory-search-mobile" className="truncate">
                 {t("inventory.searchPlaceholder")}
               </Label>
-              <div className="relative min-w-0">
-                <Search
-                  className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden
-                />
-                <Input
-                  id="inventory-search-mobile"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder={t("inventory.searchPlaceholder")}
-                  className={cn("h-9 min-w-0 pl-8", search && "pr-8")}
-                />
-                <FilterClearButton
-                  visible={Boolean(search)}
-                  label={t("inventory.filters.clear")}
-                  className="right-2"
-                  onClear={() => setSearch("")}
-                />
-              </div>
+              <InventorySearchInput
+                id="inventory-search-mobile"
+                value={search}
+                onChange={setSearch}
+                onClear={() => setSearch("")}
+                clearLabel={t("inventory.filters.clear")}
+                ariaLabel={t("inventory.searchPlaceholder")}
+                typewriterText={searchTypewriterText}
+              />
             </div>
 
             <div className="flex min-w-0 flex-col gap-1.5">
