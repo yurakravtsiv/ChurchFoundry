@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
 import {
   compressImage,
   getCategories,
@@ -124,12 +125,20 @@ export function InventoryItemForm({
   const pendingCategoryIdRef = useRef<string | null>(null)
   const pendingSubcategoryIdRef = useRef<string | null>(null)
   const pendingLocationIdRef = useRef<string | null>(null)
+  const formRef = useRef<HTMLFormElement | null>(null)
 
   const schema = useMemo(
     () =>
       z
         .object({
-          name: z.string().trim().min(1, t("inventory.form.validation.nameRequired")),
+          name: z
+            .string()
+            .trim()
+            .min(1, t("inventory.form.validation.nameRequired"))
+            .max(
+              INVENTORY_FIELD_LIMITS.name,
+              t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.name }),
+            ),
           categoryId: z.string().min(1, t("inventory.form.validation.categoryRequired")),
           subcategoryId: z.string().min(1, t("inventory.form.validation.subcategoryRequired")),
           quantity: z.preprocess(
@@ -142,26 +151,75 @@ export function InventoryItemForm({
             },
             z
               .number({ error: t("inventory.form.validation.quantityRequired") })
-              .min(1, t("inventory.form.validation.quantityMin")),
+              .int(t("inventory.form.validation.quantityInteger"))
+              .min(INVENTORY_FIELD_LIMITS.quantityMin, t("inventory.form.validation.quantityMin"))
+              .max(
+                INVENTORY_FIELD_LIMITS.quantityMax,
+                t("inventory.form.validation.quantityMax", {
+                  max: INVENTORY_FIELD_LIMITS.quantityMax,
+                }),
+              ),
           ),
           locationId: z.string().min(1, t("inventory.form.validation.locationRequired")),
           availability: z.enum(["in_church", "borrowed"]),
-          availabilityComment: z.string().optional().default(""),
+          availabilityComment: z
+            .string()
+            .max(
+              INVENTORY_FIELD_LIMITS.availabilityComment,
+              t("inventory.form.validation.stringMax", {
+                max: INVENTORY_FIELD_LIMITS.availabilityComment,
+              }),
+            )
+            .optional()
+            .default(""),
           condition: z.enum(["good", "needs_repair"]),
-          supplier: z.string().optional().default(""),
-          price: z.preprocess((value) => {
-            if (value === "" || value === null || value === undefined) {
-              return null
-            }
-            if (typeof value === "number" && Number.isNaN(value)) {
-              return null
-            }
-            const parsed = typeof value === "number" ? value : Number(value)
-            return Number.isFinite(parsed) ? parsed : null
-          }, z.number().min(0, t("inventory.form.validation.priceMin")).nullable()),
-          serialNumber: z.string().optional().default(""),
+          supplier: z
+            .string()
+            .max(
+              INVENTORY_FIELD_LIMITS.supplier,
+              t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.supplier }),
+            )
+            .optional()
+            .default(""),
+          price: z.preprocess(
+            (value) => {
+              if (value === "" || value === null || value === undefined) {
+                return null
+              }
+              if (typeof value === "number" && Number.isNaN(value)) {
+                return null
+              }
+              const parsed = typeof value === "number" ? value : Number(value)
+              return Number.isFinite(parsed) ? parsed : null
+            },
+            z
+              .number()
+              .min(INVENTORY_FIELD_LIMITS.priceMin, t("inventory.form.validation.priceMin"))
+              .max(
+                INVENTORY_FIELD_LIMITS.priceMax,
+                t("inventory.form.validation.priceMax", { max: INVENTORY_FIELD_LIMITS.priceMax }),
+              )
+              .nullable(),
+          ),
+          serialNumber: z
+            .string()
+            .max(
+              INVENTORY_FIELD_LIMITS.serialNumber,
+              t("inventory.form.validation.stringMax", {
+                max: INVENTORY_FIELD_LIMITS.serialNumber,
+              }),
+            )
+            .optional()
+            .default(""),
           warrantyUntil: z.string().nullable().optional(),
-          comment: z.string().optional().default(""),
+          comment: z
+            .string()
+            .max(
+              INVENTORY_FIELD_LIMITS.comment,
+              t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.comment }),
+            )
+            .optional()
+            .default(""),
           photos: z
             .array(
               z.object({
@@ -220,10 +278,13 @@ export function InventoryItemForm({
     watch,
     setValue,
     reset,
+    clearErrors,
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues,
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   })
 
   // Keep defaults in sync and clear false dirty state after mount/effects.
@@ -256,8 +317,10 @@ export function InventoryItemForm({
       return
     }
     previousCategoryIdRef.current = categoryId
-    setValue("subcategoryId", "", { shouldDirty: true, shouldValidate: true })
-  }, [categoryId, setValue])
+    // Do not validate here — empty subcategory errors only after Save.
+    setValue("subcategoryId", "", { shouldDirty: true, shouldValidate: false })
+    clearErrors("subcategoryId")
+  }, [categoryId, clearErrors, setValue])
 
   // Select newly created category once it is in the options list.
   useEffect(() => {
@@ -266,10 +329,11 @@ export function InventoryItemForm({
       return
     }
     pendingCategoryIdRef.current = null
-    setValue("categoryId", pendingId, { shouldDirty: true, shouldValidate: true })
-    setValue("subcategoryId", "", { shouldDirty: true })
+    setValue("categoryId", pendingId, { shouldDirty: true, shouldValidate: false })
+    setValue("subcategoryId", "", { shouldDirty: true, shouldValidate: false })
+    clearErrors(["categoryId", "subcategoryId"])
     setCategorySelectOpen(false)
-  }, [categories, setValue])
+  }, [categories, clearErrors, setValue])
 
   // Select newly created subcategory once it is in the options list.
   useEffect(() => {
@@ -299,10 +363,21 @@ export function InventoryItemForm({
       return
     }
     if (categoryId && !categories.some((category) => category.id === categoryId)) {
-      setValue("categoryId", "")
-      setValue("subcategoryId", "")
+      setValue("categoryId", "", { shouldValidate: false })
+      setValue("subcategoryId", "", { shouldValidate: false })
+      clearErrors(["categoryId", "subcategoryId"])
     }
-  }, [categories, categoryId, setValue])
+  }, [categories, categoryId, clearErrors, setValue])
+
+  const scrollToFirstError = () => {
+    // Wait for error messages to paint before scrolling.
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const target = formRef.current?.querySelector<HTMLElement>("[data-field-error]")
+        target?.scrollIntoView({ behavior: "smooth", block: "center" })
+      })
+    })
+  }
 
   const submitForm = handleSubmit(
     (values: FormValues) => {
@@ -328,6 +403,7 @@ export function InventoryItemForm({
     },
     () => {
       onInvalid?.()
+      scrollToFirstError()
     },
   )
 
@@ -364,6 +440,7 @@ export function InventoryItemForm({
   return (
     <>
       <form
+        ref={formRef}
         id={id}
         className={cn(isPageLayout ? "block" : "flex min-h-0 flex-1 flex-col")}
         onSubmit={(event) => void submitForm(event)}
@@ -376,9 +453,14 @@ export function InventoryItemForm({
             <Input
               id="inventory-item-name"
               {...register("name")}
+              maxLength={INVENTORY_FIELD_LIMITS.name}
               placeholder={t("inventory.form.namePlaceholder")}
             />
-            {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
+            {errors.name ? (
+              <p className="text-sm text-destructive" data-field-error>
+                {errors.name.message}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -414,7 +496,9 @@ export function InventoryItemForm({
               )}
             />
             {errors.categoryId ? (
-              <p className="text-sm text-destructive">{errors.categoryId.message}</p>
+              <p className="text-sm text-destructive" data-field-error>
+                {errors.categoryId.message}
+              </p>
             ) : null}
           </div>
 
@@ -453,7 +537,9 @@ export function InventoryItemForm({
               )}
             />
             {errors.subcategoryId ? (
-              <p className="text-sm text-destructive">{errors.subcategoryId.message}</p>
+              <p className="text-sm text-destructive" data-field-error>
+                {errors.subcategoryId.message}
+              </p>
             ) : null}
           </div>
 
@@ -462,12 +548,15 @@ export function InventoryItemForm({
             <Input
               id="inventory-item-quantity"
               type="number"
-              min={1}
+              min={INVENTORY_FIELD_LIMITS.quantityMin}
+              max={INVENTORY_FIELD_LIMITS.quantityMax}
               step={1}
               {...register("quantity", { valueAsNumber: true })}
             />
             {errors.quantity ? (
-              <p className="text-sm text-destructive">{errors.quantity.message}</p>
+              <p className="text-sm text-destructive" data-field-error>
+                {errors.quantity.message}
+              </p>
             ) : null}
           </div>
 
@@ -491,7 +580,9 @@ export function InventoryItemForm({
               )}
             />
             {errors.condition ? (
-              <p className="text-sm text-destructive">{errors.condition.message}</p>
+              <p className="text-sm text-destructive" data-field-error>
+                {errors.condition.message}
+              </p>
             ) : null}
           </div>
 
@@ -528,7 +619,9 @@ export function InventoryItemForm({
               )}
             />
             {errors.locationId ? (
-              <p className="text-sm text-destructive">{errors.locationId.message}</p>
+              <p className="text-sm text-destructive" data-field-error>
+                {errors.locationId.message}
+              </p>
             ) : null}
           </div>
 
@@ -569,10 +662,13 @@ export function InventoryItemForm({
                   <Input
                     id="inventory-item-availability-comment"
                     {...register("availabilityComment")}
+                    maxLength={INVENTORY_FIELD_LIMITS.availabilityComment}
                     placeholder={t("inventory.form.availabilityCommentPlaceholder")}
                   />
                   {errors.availabilityComment ? (
-                    <p className="text-sm text-destructive">{errors.availabilityComment.message}</p>
+                    <p className="text-sm text-destructive" data-field-error>
+                      {errors.availabilityComment.message}
+                    </p>
                   ) : null}
                 </div>
               </motion.div>
@@ -584,6 +680,7 @@ export function InventoryItemForm({
             <Input
               id="inventory-item-supplier"
               {...register("supplier")}
+              maxLength={INVENTORY_FIELD_LIMITS.supplier}
               placeholder={t("inventory.form.supplierPlaceholder")}
             />
           </div>
@@ -594,12 +691,15 @@ export function InventoryItemForm({
               id="inventory-item-price"
               type="number"
               step="0.01"
-              min={0}
+              min={INVENTORY_FIELD_LIMITS.priceMin}
+              max={INVENTORY_FIELD_LIMITS.priceMax}
               {...register("price")}
               placeholder={t("inventory.form.pricePlaceholder")}
             />
             {errors.price ? (
-              <p className="text-sm text-destructive">{errors.price.message}</p>
+              <p className="text-sm text-destructive" data-field-error>
+                {errors.price.message}
+              </p>
             ) : null}
           </div>
 
@@ -608,6 +708,7 @@ export function InventoryItemForm({
             <Input
               id="inventory-item-serial"
               {...register("serialNumber")}
+              maxLength={INVENTORY_FIELD_LIMITS.serialNumber}
               placeholder={t("inventory.form.serialNumberPlaceholder")}
             />
           </div>
@@ -622,7 +723,10 @@ export function InventoryItemForm({
             <Textarea
               id="inventory-item-comment"
               {...register("comment")}
+              rows={4}
+              maxLength={INVENTORY_FIELD_LIMITS.comment}
               placeholder={t("inventory.form.commentPlaceholder")}
+              className="min-h-0 resize-none"
             />
           </div>
 

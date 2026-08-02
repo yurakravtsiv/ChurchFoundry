@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
+import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
 import { createSubcategory } from "@/lib/inventoryStorage"
 import type { Subcategory } from "@/types/inventory"
 
@@ -52,6 +53,10 @@ export function CreateSubcategoryDialog({
       setError(t("inventory.form.validation.subcategoryNameRequired"))
       return
     }
+    if (trimmed.length > INVENTORY_FIELD_LIMITS.entityName) {
+      setError(t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.entityName }))
+      return
+    }
     if (!categoryId) {
       setError(t("inventory.form.validation.categoryRequired"))
       return
@@ -75,6 +80,7 @@ export function CreateSubcategoryDialog({
           <Input
             id="create-subcategory-name"
             value={name}
+            maxLength={INVENTORY_FIELD_LIMITS.entityName}
             onChange={(event) => {
               setName(event.target.value)
               if (error) {

@@ -153,6 +153,28 @@ function FilterClearButton({
   )
 }
 
+function TruncatedCell({
+  value,
+  className,
+  empty = "—",
+}: {
+  value: string | null | undefined
+  className?: string
+  empty?: string
+}) {
+  const text = value?.trim() ? value.trim() : empty
+  const hasValue = Boolean(value?.trim())
+
+  return (
+    <span
+      className={cn("block max-w-[10rem] truncate", className)}
+      title={hasValue ? text : undefined}
+    >
+      {text}
+    </span>
+  )
+}
+
 function initialConditionFilter(searchParams: URLSearchParams) {
   const value = searchParams.get("condition")
   return value === "needs_repair" || value === "good" ? value : "all"
@@ -311,18 +333,22 @@ export function InventoryPage() {
             <ArrowUpDown className="size-3.5" />
           </Button>
         ),
-        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+        cell: ({ row }) => (
+          <TruncatedCell value={row.original.name} className="max-w-[14rem] font-medium" />
+        ),
       },
       {
         id: "category",
         header: t("inventory.columns.category"),
-        cell: ({ row }) => categoryNameById.get(row.original.categoryId) ?? "—",
+        cell: ({ row }) => <TruncatedCell value={categoryNameById.get(row.original.categoryId)} />,
         enableSorting: false,
       },
       {
         id: "subcategory",
         header: t("inventory.columns.subcategory"),
-        cell: ({ row }) => subcategoryNameById.get(row.original.subcategoryId) ?? "—",
+        cell: ({ row }) => (
+          <TruncatedCell value={subcategoryNameById.get(row.original.subcategoryId)} />
+        ),
         enableSorting: false,
       },
       {
@@ -361,7 +387,7 @@ export function InventoryPage() {
       {
         accessorKey: "locationId",
         header: t("inventory.columns.location"),
-        cell: ({ row }) => locationNameById.get(row.original.locationId) || "—",
+        cell: ({ row }) => <TruncatedCell value={locationNameById.get(row.original.locationId)} />,
         enableSorting: false,
       },
       {
@@ -379,17 +405,15 @@ export function InventoryPage() {
       {
         accessorKey: "availabilityComment",
         header: t("inventory.columns.availabilityComment"),
-        cell: ({ row }) => row.original.availabilityComment || "—",
+        cell: ({ row }) => (
+          <TruncatedCell value={row.original.availabilityComment} className="max-w-[12rem]" />
+        ),
         enableSorting: false,
       },
       {
         accessorKey: "comment",
         header: t("inventory.columns.comment"),
-        cell: ({ row }) => (
-          <span className="line-clamp-2 min-w-[12rem] max-w-[28rem]">
-            {row.original.comment || "—"}
-          </span>
-        ),
+        cell: ({ row }) => <TruncatedCell value={row.original.comment} className="max-w-[14rem]" />,
         enableSorting: false,
       },
       {

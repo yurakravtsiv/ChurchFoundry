@@ -6,6 +6,7 @@ import { Dialog, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
+import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
 import { createCategory } from "@/lib/inventoryStorage"
 import type { Category } from "@/types/inventory"
 
@@ -38,6 +39,10 @@ export function CreateCategoryDialog({ open, onOpenChange, onCreated }: CreateCa
       setError(t("inventory.form.validation.categoryNameRequired"))
       return
     }
+    if (trimmed.length > INVENTORY_FIELD_LIMITS.entityName) {
+      setError(t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.entityName }))
+      return
+    }
     const category = createCategory(trimmed)
     onCreated(category)
     handleOpenChange(false)
@@ -54,6 +59,7 @@ export function CreateCategoryDialog({ open, onOpenChange, onCreated }: CreateCa
           <Input
             id="create-category-name"
             value={name}
+            maxLength={INVENTORY_FIELD_LIMITS.entityName}
             onChange={(event) => {
               setName(event.target.value)
               if (error) {
