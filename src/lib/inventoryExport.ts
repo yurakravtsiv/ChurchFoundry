@@ -3,14 +3,8 @@ import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 import * as XLSX from "xlsx-js-style"
 
-import type {
-  AvailabilityStatus,
-  Category,
-  InventoryItem,
-  ItemCondition,
-  Location,
-  Subcategory,
-} from "@/types/inventory"
+import { availabilityLabel, conditionLabel } from "@/lib/inventoryLabels"
+import type { Category, InventoryItem, Location, Subcategory } from "@/types/inventory"
 
 export type InventoryExportRow = {
   name: string
@@ -108,22 +102,6 @@ function exportDateStamp() {
   const minutes = String(now.getMinutes()).padStart(2, "0")
   const seconds = String(now.getSeconds()).padStart(2, "0")
   return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`
-}
-
-function availabilityLabel(availability: AvailabilityStatus, t: TFunction) {
-  return availability === "in_church"
-    ? t("inventory.availability.inChurch")
-    : t("inventory.availability.borrowed")
-}
-
-function conditionLabel(condition: ItemCondition, t: TFunction) {
-  if (condition === "needs_repair") {
-    return t("inventory.condition.needsRepair")
-  }
-  if (condition === "written_off") {
-    return t("inventory.condition.writtenOff")
-  }
-  return t("inventory.condition.good")
 }
 
 function getAvatarDataUrl(item: InventoryItem): string | null {

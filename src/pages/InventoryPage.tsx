@@ -63,6 +63,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useTypewriterPlaceholder } from "@/hooks/useTypewriterPlaceholder"
 import { exportToPdf, exportToXlsx, prepareExportData } from "@/lib/inventoryExport"
+import { itemMatchesSearch } from "@/lib/inventorySearch"
 import {
   archiveInventoryItem,
   createInventoryItem,
@@ -73,42 +74,7 @@ import {
   unarchiveInventoryItem,
 } from "@/lib/inventoryStorage"
 import { cn } from "@/lib/utils"
-import type {
-  AvailabilityStatus,
-  Category,
-  InventoryItem,
-  ItemCondition,
-  Location,
-  Subcategory,
-} from "@/types/inventory"
-
-function itemMatchesSearch(
-  item: InventoryItem,
-  query: string,
-  categories: Category[],
-  subcategories: Subcategory[],
-  locations: Location[],
-): boolean {
-  const normalizedQuery = query.toLowerCase().trim()
-  if (!normalizedQuery) {
-    return true
-  }
-
-  const searchableValues = [
-    item.name,
-    String(item.quantity),
-    item.price != null ? String(item.price) : "",
-    item.availabilityComment,
-    item.supplier,
-    item.serialNumber,
-    item.comment,
-    categories.find((category) => category.id === item.categoryId)?.name ?? "",
-    subcategories.find((subcategory) => subcategory.id === item.subcategoryId)?.name ?? "",
-    locations.find((location) => location.id === item.locationId)?.name ?? "",
-  ]
-
-  return searchableValues.some((value) => value.toLowerCase().includes(normalizedQuery))
-}
+import type { AvailabilityStatus, InventoryItem, ItemCondition } from "@/types/inventory"
 
 function loadInventoryState() {
   return {
@@ -342,7 +308,7 @@ export function InventoryPage() {
       if (conditionFilter !== "all" && item.condition !== conditionFilter) {
         return false
       }
-      if (!itemMatchesSearch(item, search, categories, subcategories, locations)) {
+      if (!itemMatchesSearch(item, search, categories, subcategories, locations, t)) {
         return false
       }
       return true
@@ -359,6 +325,7 @@ export function InventoryPage() {
     showArchived,
     subcategories,
     subcategoryFilter,
+    t,
   ])
 
   const columns = useMemo<ColumnDef<InventoryItem>[]>(
