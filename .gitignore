@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 .pnpm-home
+.pnpm-store
 dist
 dist-ssr
 dev-dist
