@@ -47,6 +47,15 @@
     "inventory": "Inventory",
     "comingSoonMessage": "Coming soon..."
   },
+  "generateData": {
+    "menuLabel": "Generate data",
+    "title": "Generate test data?",
+    "description": "{{count}} new test inventory items will be created with varied categories, subcategories, locations, and conditions.",
+    "cancel": "Cancel",
+    "confirm": "Generate",
+    "generating": "Generating...",
+    "success": "Created {{count}} items"
+  },
   "inventory": {
     "downloadQr": "Download as image",
     "searchPlaceholder": "Search",

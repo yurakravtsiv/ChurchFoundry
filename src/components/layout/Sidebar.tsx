@@ -1,8 +1,10 @@
+import { Wand2 } from "lucide-react"
 import { AnimatePresence, motion } from "motion/react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router"
 
+import { GenerateDataDialog } from "@/components/dev/GenerateDataDialog"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { LogoutButton } from "@/components/LogoutButton"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -95,19 +97,68 @@ function SidebarNav({ onNavigate, collapsed }: { onNavigate?: () => void; collap
   )
 }
 
-function SidebarPanel({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
+function GenerateDataNavButton({
+  collapsed,
+  onClick,
+}: {
+  collapsed?: boolean
+  onClick: () => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={collapsed ? t("generateData.menuLabel") : undefined}
+      className={cn(
+        "flex h-12 w-full items-center rounded-md text-base font-medium transition-[padding,gap,background-color,color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:h-10 md:text-sm",
+        collapsed ? "justify-center px-2" : "gap-3 px-3",
+        "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+      )}
+    >
+      <Wand2 className="size-5 shrink-0 md:size-4" />
+      <AnimatePresence initial={false}>
+        {!collapsed ? (
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="truncate whitespace-nowrap"
+          >
+            {t("generateData.menuLabel")}
+          </motion.span>
+        ) : null}
+      </AnimatePresence>
+    </button>
+  )
+}
+
+function SidebarPanel({
+  onNavigate,
+  collapsed,
+  onGenerateClick,
+}: {
+  onNavigate?: () => void
+  collapsed?: boolean
+  onGenerateClick: () => void
+}) {
   return (
     <div className="flex h-full flex-col gap-6">
       <SidebarNav onNavigate={onNavigate} collapsed={collapsed} />
       <div className="mt-auto space-y-3">
-        <SidebarVersion collapsed={collapsed} />
-        <div className="border-t border-border pt-3 md:hidden">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <LanguageSwitcher showLabel={false} onLanguageChange={onNavigate} />
-              <ThemeToggle onToggle={onNavigate} />
+        <GenerateDataNavButton collapsed={collapsed} onClick={onGenerateClick} />
+        <div className="space-y-3 border-t border-border pt-3">
+          <SidebarVersion collapsed={collapsed} />
+          <div className="border-t border-border pt-3 md:hidden">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <LanguageSwitcher showLabel={false} onLanguageChange={onNavigate} />
+                <ThemeToggle onToggle={onNavigate} />
+              </div>
+              <LogoutButton onPress={onNavigate} onSignedOut={onNavigate} />
             </div>
-            <LogoutButton onPress={onNavigate} onSignedOut={onNavigate} />
           </div>
         </div>
       </div>
@@ -119,6 +170,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
   const { t } = useTranslation()
   const isStandalone = useStandalonePwa()
   const [hovered, setHovered] = useState(false)
+  const [generateOpen, setGenerateOpen] = useState(false)
   const collapsed = !hovered
 
   return (
@@ -141,7 +193,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
             }
           }}
         >
-          <SidebarPanel collapsed={collapsed} />
+          <SidebarPanel collapsed={collapsed} onGenerateClick={() => setGenerateOpen(true)} />
         </motion.aside>
       </div>
 
@@ -163,11 +215,19 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
               <SheetDescription className="sr-only">{t("nav.menuDescription")}</SheetDescription>
             </SheetHeader>
             <div className="mt-4 flex min-h-0 flex-1 flex-col">
-              <SidebarPanel onNavigate={() => onOpenChange(false)} />
+              <SidebarPanel
+                onNavigate={() => onOpenChange(false)}
+                onGenerateClick={() => {
+                  setGenerateOpen(true)
+                  onOpenChange(false)
+                }}
+              />
             </div>
           </div>
         </SheetContent>
       </Sheet>
+
+      <GenerateDataDialog open={generateOpen} onOpenChange={setGenerateOpen} />
     </>
   )
 }

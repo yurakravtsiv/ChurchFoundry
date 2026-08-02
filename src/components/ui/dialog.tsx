@@ -59,7 +59,11 @@ DialogHeader.displayName = "DialogHeader"
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
+    className={cn(
+      // flex-col-reverse: last child is the visual top button on mobile — give it space from content.
+      "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end [&>:last-child]:mt-4 sm:[&>:last-child]:mt-0",
+      className,
+    )}
     {...props}
   />
 )

@@ -946,7 +946,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                 ) : null}
               </div>
               {isPageLayout ? null : (
-                <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end [&>:last-child]:mt-4 sm:[&>:last-child]:mt-0">
                   <Button type="button" variant="outline" onClick={onCancel}>
                     {t("inventory.actions.cancel")}
                   </Button>

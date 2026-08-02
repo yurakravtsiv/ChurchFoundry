@@ -1282,7 +1282,7 @@ export function InventoryPage() {
               {t("inventory.unsavedChanges.title")}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDiscardCreateOpen(false)}>
               {t("inventory.unsavedChanges.close")}
             </Button>

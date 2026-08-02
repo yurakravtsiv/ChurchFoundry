@@ -589,7 +589,7 @@ export function InventoryItemDetailPage() {
               {t("inventory.unsavedChanges.title")}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={stayOnPage}>
               {t("inventory.unsavedChanges.close")}
             </Button>
