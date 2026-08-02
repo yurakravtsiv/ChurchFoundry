@@ -23,6 +23,7 @@ import {
   Search,
   X,
 } from "lucide-react"
+import { motion } from "motion/react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
@@ -80,6 +81,16 @@ import { exportToPdf, exportToXlsx, prepareExportData } from "@/lib/inventoryExp
 import { itemMatchesSearch } from "@/lib/inventorySearch"
 import { cn } from "@/lib/utils"
 import type { AvailabilityStatus, InventoryItem, ItemCondition } from "@/types/inventory"
+
+const rowMenuListVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.03 } },
+}
+
+const rowMenuItemVariants = {
+  hidden: { opacity: 0, x: -4 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.1 } },
+}
 
 function FilterClearButton({
   visible,
@@ -551,59 +562,69 @@ export function InventoryPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
-                <DropdownMenuItem onClick={() => navigate(`/inventory/${item.id}`)}>
-                  <Pencil />
-                  {t("inventory.actions.edit")}
-                </DropdownMenuItem>
-                {isWrittenOff ? (
-                  <DropdownMenuItem onClick={() => setReturnToStockTarget(item)}>
-                    <PackagePlus />
-                    {t("inventory.actions.returnToStock")}
-                  </DropdownMenuItem>
-                ) : item.archived ? (
-                  <TooltipProvider delayDuration={200}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <DropdownMenuItem disabled>
-                            <PackageMinus />
-                            {t("inventory.actions.writeOff")}
-                          </DropdownMenuItem>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>{t("inventory.actions.writeOffArchivedHint")}</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : (
-                  <DropdownMenuItem onClick={() => setWriteOffTarget(item)}>
-                    <PackageMinus />
-                    {t("inventory.actions.writeOff")}
-                  </DropdownMenuItem>
-                )}
-                {isWrittenOff ? (
-                  <TooltipProvider delayDuration={200}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <DropdownMenuItem disabled>
-                            <Archive />
-                            {t("inventory.actions.archive")}
-                          </DropdownMenuItem>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {t("inventory.actions.archiveWrittenOffHint")}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : (
-                  <DropdownMenuItem onClick={() => setArchiveTarget(item)}>
-                    {item.archived ? <ArchiveRestore /> : <Archive />}
-                    {item.archived
-                      ? t("inventory.actions.unarchive")
-                      : t("inventory.actions.archive")}
-                  </DropdownMenuItem>
-                )}
+                <motion.div initial="hidden" animate="visible" variants={rowMenuListVariants}>
+                  <motion.div variants={rowMenuItemVariants}>
+                    <DropdownMenuItem onClick={() => navigate(`/inventory/${item.id}`)}>
+                      <Pencil />
+                      {t("inventory.actions.edit")}
+                    </DropdownMenuItem>
+                  </motion.div>
+                  <motion.div variants={rowMenuItemVariants}>
+                    {isWrittenOff ? (
+                      <DropdownMenuItem onClick={() => setReturnToStockTarget(item)}>
+                        <PackagePlus />
+                        {t("inventory.actions.returnToStock")}
+                      </DropdownMenuItem>
+                    ) : item.archived ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <PackageMinus />
+                                {t("inventory.actions.writeOff")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.writeOffArchivedHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <DropdownMenuItem onClick={() => setWriteOffTarget(item)}>
+                        <PackageMinus />
+                        {t("inventory.actions.writeOff")}
+                      </DropdownMenuItem>
+                    )}
+                  </motion.div>
+                  <motion.div variants={rowMenuItemVariants}>
+                    {isWrittenOff ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Archive />
+                                {t("inventory.actions.archive")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.archiveWrittenOffHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <DropdownMenuItem onClick={() => setArchiveTarget(item)}>
+                        {item.archived ? <ArchiveRestore /> : <Archive />}
+                        {item.archived
+                          ? t("inventory.actions.unarchive")
+                          : t("inventory.actions.archive")}
+                      </DropdownMenuItem>
+                    )}
+                  </motion.div>
+                </motion.div>
               </DropdownMenuContent>
             </DropdownMenu>
           )
