@@ -141,6 +141,7 @@
       "description": "Наявна кількість: {{quantity}}",
       "quantity": "Кількість до списання",
       "date": "Дата списання",
+      "datePlaceholder": "Оберіть дату",
       "reason": "Причина списання",
       "validation": {
         "quantityInvalid": "Вкажіть ціле число",
@@ -190,6 +191,7 @@
       "serialNumber": "Серійний №",
       "serialNumberPlaceholder": "Серійний номер",
       "warrantyUntil": "Гарантія до",
+      "warrantyPlaceholder": "Оберіть дату",
       "comment": "Коментар",
       "commentPlaceholder": "Додаткові нотатки",
       "writeOffDate": "Дата списання",

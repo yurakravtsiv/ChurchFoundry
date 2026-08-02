@@ -9,6 +9,11 @@ import { CreateCategoryDialog } from "@/components/inventory/CreateCategoryDialo
 import { CreateLocationDialog } from "@/components/inventory/CreateLocationDialog"
 import { CreateSubcategoryDialog } from "@/components/inventory/CreateSubcategoryDialog"
 import { Button } from "@/components/ui/button"
+import {
+  DatePicker,
+  toDateInputValue as formatDateForStorage,
+  parseDateInputValue,
+} from "@/components/ui/date-picker"
 import { DisabledTooltip } from "@/components/ui/disabled-tooltip"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -845,7 +850,20 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
 
               <div className="space-y-2">
                 <Label htmlFor="inventory-item-warranty">{t("inventory.form.warrantyUntil")}</Label>
-                <Input id="inventory-item-warranty" type="date" {...register("warrantyUntil")} />
+                <Controller
+                  control={control}
+                  name="warrantyUntil"
+                  render={({ field }) => (
+                    <DatePicker
+                      id="inventory-item-warranty"
+                      aria-label={t("inventory.form.warrantyUntil")}
+                      value={parseDateInputValue(field.value)}
+                      onChange={(date) => field.onChange(date ? formatDateForStorage(date) : null)}
+                      disabled={readOnly}
+                      placeholder={t("inventory.form.warrantyPlaceholder")}
+                    />
+                  )}
+                />
               </div>
 
               <div className="space-y-2">

@@ -141,6 +141,7 @@
       "description": "Available quantity: {{quantity}}",
       "quantity": "Quantity to write off",
       "date": "Write-off date",
+      "datePlaceholder": "Select date",
       "reason": "Write-off reason",
       "validation": {
         "quantityInvalid": "Enter a whole number",
@@ -190,6 +191,7 @@
       "serialNumber": "Serial number",
       "serialNumberPlaceholder": "Serial number",
       "warrantyUntil": "Warranty until",
+      "warrantyPlaceholder": "Select date",
       "comment": "Comment",
       "commentPlaceholder": "Additional notes",
       "writeOffDate": "Write-off date",

@@ -1,10 +1,15 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useEffect, useMemo } from "react"
-import { type Resolver, useForm } from "react-hook-form"
+import { Controller, type Resolver, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
+import {
+  DatePicker,
+  toDateInputValue as formatDateForStorage,
+  parseDateInputValue,
+} from "@/components/ui/date-picker"
 import {
   Dialog,
   DialogDescription,
@@ -34,7 +39,7 @@ type WriteOffFormValues = {
 }
 
 function todayDateInputValue() {
-  return new Date().toISOString().slice(0, 10)
+  return formatDateForStorage(new Date())
 }
 
 export function WriteOffDialog({ item, open, onOpenChange, onConfirm }: WriteOffDialogProps) {
@@ -79,6 +84,7 @@ export function WriteOffDialog({ item, open, onOpenChange, onConfirm }: WriteOff
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -153,7 +159,20 @@ export function WriteOffDialog({ item, open, onOpenChange, onConfirm }: WriteOff
 
           <div className="space-y-2">
             <Label htmlFor="write-off-date">{t("inventory.writeOff.date")} *</Label>
-            <Input id="write-off-date" type="date" {...register("writeOffDate")} />
+            <Controller
+              control={control}
+              name="writeOffDate"
+              render={({ field }) => (
+                <DatePicker
+                  id="write-off-date"
+                  aria-label={t("inventory.writeOff.date")}
+                  value={parseDateInputValue(field.value)}
+                  onChange={(date) => field.onChange(date ? formatDateForStorage(date) : "")}
+                  toDate={new Date()}
+                  placeholder={t("inventory.writeOff.datePlaceholder")}
+                />
+              )}
+            />
             {errors.writeOffDate ? (
               <p className="text-sm text-destructive">{errors.writeOffDate.message}</p>
             ) : null}
