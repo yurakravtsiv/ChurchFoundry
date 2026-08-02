@@ -486,453 +486,461 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
         <form
           ref={formRef}
           id={id}
-          className={cn(isPageLayout ? "block" : "flex min-h-0 flex-1 flex-col")}
+          className={cn(
+            isPageLayout
+              ? "block"
+              : "flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden",
+          )}
           onSubmit={(event) => void submitForm(event)}
         >
-          <fieldset
-            disabled={readOnly}
+          {/* Scroll on a div — fieldset as flex/overflow container is unreliable in browsers. */}
+          <div
             className={cn(
-              "min-w-0 space-y-4 px-6 py-4 disabled:opacity-90",
-              !isPageLayout && "min-h-0 flex-1 overflow-y-auto pb-6",
+              "min-w-0 px-6 py-4",
+              isPageLayout ? "space-y-4" : "min-h-0 flex-1 overflow-y-auto overscroll-contain",
             )}
           >
-            {readOnly ? (
-              <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
-                <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-                <p>{t("inventory.detail.readOnlyWarning")}</p>
-              </div>
-            ) : null}
-
-            {categoriesError || subcategoriesError || locationsError ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
-                <p className="text-destructive">{t("common.loadError")}</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    void refetchCategories()
-                    void refetchSubcategories()
-                    void refetchLocations()
-                  }}
-                >
-                  {t("common.retry")}
-                </Button>
-              </div>
-            ) : null}
-
-            <div className="space-y-2">
-              <Label htmlFor="inventory-item-name">{t("inventory.form.name")} *</Label>
-              <Input
-                id="inventory-item-name"
-                {...register("name")}
-                maxLength={INVENTORY_FIELD_LIMITS.name}
-                placeholder={t("inventory.form.namePlaceholder")}
-                disabled={readOnly}
-              />
-              {errors.name ? (
-                <p className="text-sm text-destructive" data-field-error>
-                  {errors.name.message}
-                </p>
+            <fieldset
+              disabled={readOnly}
+              className="min-w-0 space-y-4 border-0 p-0 disabled:opacity-90"
+            >
+              {readOnly ? (
+                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+                  <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  <p>{t("inventory.detail.readOnlyWarning")}</p>
+                </div>
               ) : null}
-            </div>
 
-            <div className="space-y-2">
-              <Label>{t("inventory.form.category")} *</Label>
-              <Controller
-                control={control}
-                name="categoryId"
-                render={({ field }) => (
-                  <Select
-                    open={categorySelectOpen}
-                    onOpenChange={setCategorySelectOpen}
-                    value={field.value || undefined}
-                    onValueChange={field.onChange}
-                    disabled={readOnly || categoriesLoading}
+              {categoriesError || subcategoriesError || locationsError ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
+                  <p className="text-destructive">{t("common.loadError")}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      void refetchCategories()
+                      void refetchSubcategories()
+                      void refetchLocations()
+                    }}
                   >
-                    <SelectTrigger aria-label={t("inventory.form.category")}>
-                      <SelectValue
-                        placeholder={
-                          categoriesLoading
-                            ? t("common.loading")
-                            : t("inventory.form.categoryPlaceholder")
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                      <SelectCreateAction
-                        label={t("inventory.form.createCategory")}
-                        disabled={readOnly}
-                        onCreate={() => {
-                          setCategorySelectOpen(false)
-                          setCreateCategoryOpen(true)
-                        }}
-                      />
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.categoryId ? (
-                <p className="text-sm text-destructive" data-field-error>
-                  {errors.categoryId.message}
-                </p>
+                    {t("common.retry")}
+                  </Button>
+                </div>
               ) : null}
-            </div>
 
-            <div className="space-y-2">
-              <Label>{t("inventory.form.subcategory")} *</Label>
-              <Controller
-                control={control}
-                name="subcategoryId"
-                render={({ field }) => {
-                  const subcategoryDisabled = !categoryId || subcategoriesLoading
-                  return (
-                    <DisabledTooltip
-                      disabled={!categoryId}
-                      tip={t("inventory.subcategoryDisabledHint")}
+              <div className="space-y-2">
+                <Label htmlFor="inventory-item-name">{t("inventory.form.name")} *</Label>
+                <Input
+                  id="inventory-item-name"
+                  {...register("name")}
+                  maxLength={INVENTORY_FIELD_LIMITS.name}
+                  placeholder={t("inventory.form.namePlaceholder")}
+                  disabled={readOnly}
+                />
+                {errors.name ? (
+                  <p className="text-sm text-destructive" data-field-error>
+                    {errors.name.message}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("inventory.form.category")} *</Label>
+                <Controller
+                  control={control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <Select
+                      open={categorySelectOpen}
+                      onOpenChange={setCategorySelectOpen}
+                      value={field.value || undefined}
+                      onValueChange={field.onChange}
+                      disabled={readOnly || categoriesLoading}
                     >
-                      <Select
-                        open={subcategorySelectOpen}
-                        onOpenChange={setSubcategorySelectOpen}
-                        value={field.value || undefined}
-                        disabled={subcategoryDisabled || readOnly}
-                        onValueChange={field.onChange}
+                      <SelectTrigger aria-label={t("inventory.form.category")}>
+                        <SelectValue
+                          placeholder={
+                            categoriesLoading
+                              ? t("common.loading")
+                              : t("inventory.form.categoryPlaceholder")
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                        <SelectCreateAction
+                          label={t("inventory.form.createCategory")}
+                          disabled={readOnly}
+                          onCreate={() => {
+                            setCategorySelectOpen(false)
+                            setCreateCategoryOpen(true)
+                          }}
+                        />
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.categoryId ? (
+                  <p className="text-sm text-destructive" data-field-error>
+                    {errors.categoryId.message}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("inventory.form.subcategory")} *</Label>
+                <Controller
+                  control={control}
+                  name="subcategoryId"
+                  render={({ field }) => {
+                    const subcategoryDisabled = !categoryId || subcategoriesLoading
+                    return (
+                      <DisabledTooltip
+                        disabled={!categoryId}
+                        tip={t("inventory.subcategoryDisabledHint")}
                       >
-                        <SelectTrigger
-                          aria-label={t("inventory.form.subcategory")}
-                          className={cn(!categoryId && "pointer-events-none")}
+                        <Select
+                          open={subcategorySelectOpen}
+                          onOpenChange={setSubcategorySelectOpen}
+                          value={field.value || undefined}
+                          disabled={subcategoryDisabled || readOnly}
+                          onValueChange={field.onChange}
                         >
-                          <SelectValue
-                            placeholder={
-                              subcategoriesLoading
-                                ? t("common.loading")
-                                : t("inventory.form.subcategoryPlaceholder")
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {filteredSubcategories.map((subcategory) => (
-                            <SelectItem key={subcategory.id} value={subcategory.id}>
-                              {subcategory.name}
-                            </SelectItem>
-                          ))}
-                          <SelectCreateAction
-                            label={t("inventory.form.createSubcategory")}
-                            disabled={!categoryId || readOnly}
-                            onCreate={() => {
-                              setSubcategorySelectOpen(false)
-                              setCreateSubcategoryOpen(true)
-                            }}
-                          />
-                        </SelectContent>
-                      </Select>
-                    </DisabledTooltip>
-                  )
-                }}
-              />
-              {errors.subcategoryId ? (
-                <p className="text-sm text-destructive" data-field-error>
-                  {errors.subcategoryId.message}
-                </p>
-              ) : null}
-            </div>
+                          <SelectTrigger
+                            aria-label={t("inventory.form.subcategory")}
+                            className={cn(!categoryId && "pointer-events-none")}
+                          >
+                            <SelectValue
+                              placeholder={
+                                subcategoriesLoading
+                                  ? t("common.loading")
+                                  : t("inventory.form.subcategoryPlaceholder")
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filteredSubcategories.map((subcategory) => (
+                              <SelectItem key={subcategory.id} value={subcategory.id}>
+                                {subcategory.name}
+                              </SelectItem>
+                            ))}
+                            <SelectCreateAction
+                              label={t("inventory.form.createSubcategory")}
+                              disabled={!categoryId || readOnly}
+                              onCreate={() => {
+                                setSubcategorySelectOpen(false)
+                                setCreateSubcategoryOpen(true)
+                              }}
+                            />
+                          </SelectContent>
+                        </Select>
+                      </DisabledTooltip>
+                    )
+                  }}
+                />
+                {errors.subcategoryId ? (
+                  <p className="text-sm text-destructive" data-field-error>
+                    {errors.subcategoryId.message}
+                  </p>
+                ) : null}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="inventory-item-quantity">{t("inventory.form.quantity")} *</Label>
-              <Input
-                id="inventory-item-quantity"
-                type="number"
-                min={INVENTORY_FIELD_LIMITS.quantityMin}
-                max={INVENTORY_FIELD_LIMITS.quantityMax}
-                step={1}
-                {...register("quantity", { valueAsNumber: true })}
-              />
-              {errors.quantity ? (
-                <p className="text-sm text-destructive" data-field-error>
-                  {errors.quantity.message}
-                </p>
-              ) : null}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="inventory-item-quantity">{t("inventory.form.quantity")} *</Label>
+                <Input
+                  id="inventory-item-quantity"
+                  type="number"
+                  min={INVENTORY_FIELD_LIMITS.quantityMin}
+                  max={INVENTORY_FIELD_LIMITS.quantityMax}
+                  step={1}
+                  {...register("quantity", { valueAsNumber: true })}
+                />
+                {errors.quantity ? (
+                  <p className="text-sm text-destructive" data-field-error>
+                    {errors.quantity.message}
+                  </p>
+                ) : null}
+              </div>
 
-            <div className="space-y-2">
-              <Label>{t("inventory.form.condition")} *</Label>
-              <Controller
-                control={control}
-                name="condition"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange} disabled={readOnly}>
-                    <SelectTrigger aria-label={t("inventory.form.condition")}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="good">{t("inventory.condition.good")}</SelectItem>
-                      <SelectItem value="needs_repair">
-                        {t("inventory.condition.needsRepair")}
-                      </SelectItem>
-                      {isWrittenOff ? (
-                        <SelectItem value="written_off">
-                          {t("inventory.condition.writtenOff")}
+              <div className="space-y-2">
+                <Label>{t("inventory.form.condition")} *</Label>
+                <Controller
+                  control={control}
+                  name="condition"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange} disabled={readOnly}>
+                      <SelectTrigger aria-label={t("inventory.form.condition")}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="good">{t("inventory.condition.good")}</SelectItem>
+                        <SelectItem value="needs_repair">
+                          {t("inventory.condition.needsRepair")}
                         </SelectItem>
-                      ) : null}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.condition ? (
-                <p className="text-sm text-destructive" data-field-error>
-                  {errors.condition.message}
-                </p>
-              ) : null}
-            </div>
+                        {isWrittenOff ? (
+                          <SelectItem value="written_off">
+                            {t("inventory.condition.writtenOff")}
+                          </SelectItem>
+                        ) : null}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.condition ? (
+                  <p className="text-sm text-destructive" data-field-error>
+                    {errors.condition.message}
+                  </p>
+                ) : null}
+              </div>
 
-            {isWrittenOff ? (
-              <>
-                <div className="space-y-2">
-                  <Label>{t("inventory.form.writeOffDate")}</Label>
-                  <Input value={toDateInputValue(initialData?.writeOffDate)} readOnly disabled />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t("inventory.form.writeOffReason")}</Label>
-                  <Textarea
-                    value={initialData?.writeOffReason ?? ""}
-                    rows={4}
-                    readOnly
-                    disabled
-                    className="min-h-0 resize-none"
-                  />
-                </div>
-              </>
-            ) : null}
-
-            <div className="space-y-2">
-              <Label>{t("inventory.form.location")} *</Label>
-              <Controller
-                control={control}
-                name="locationId"
-                render={({ field }) => (
-                  <Select
-                    open={locationSelectOpen}
-                    onOpenChange={setLocationSelectOpen}
-                    value={field.value || undefined}
-                    onValueChange={field.onChange}
-                    disabled={readOnly || locationsLoading}
-                  >
-                    <SelectTrigger aria-label={t("inventory.form.location")}>
-                      <SelectValue
-                        placeholder={
-                          locationsLoading
-                            ? t("common.loading")
-                            : t("inventory.form.locationPlaceholder")
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map((location) => (
-                        <SelectItem key={location.id} value={location.id}>
-                          {location.name}
-                        </SelectItem>
-                      ))}
-                      <SelectCreateAction
-                        label={t("inventory.form.createLocation")}
-                        disabled={readOnly}
-                        onCreate={() => {
-                          setLocationSelectOpen(false)
-                          setCreateLocationOpen(true)
-                        }}
-                      />
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.locationId ? (
-                <p className="text-sm text-destructive" data-field-error>
-                  {errors.locationId.message}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("inventory.form.availability")} *</Label>
-              <Controller
-                control={control}
-                name="availability"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange} disabled={readOnly}>
-                    <SelectTrigger aria-label={t("inventory.form.availability")}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="in_church">
-                        {t("inventory.availability.inChurch")}
-                      </SelectItem>
-                      <SelectItem value="borrowed">
-                        {t("inventory.availability.borrowed")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {availability === "borrowed" ? (
+              {isWrittenOff ? (
                 <>
-                  <Label htmlFor="inventory-item-availability-comment">
-                    {t("inventory.form.availabilityComment")} *
-                  </Label>
-                  <Input
-                    id="inventory-item-availability-comment"
-                    {...register("availabilityComment")}
-                    maxLength={INVENTORY_FIELD_LIMITS.availabilityComment}
-                    placeholder={t("inventory.form.availabilityCommentPlaceholder")}
-                  />
-                  {errors.availabilityComment ? (
-                    <p className="text-sm text-destructive" data-field-error>
-                      {errors.availabilityComment.message}
-                    </p>
-                  ) : null}
+                  <div className="space-y-2">
+                    <Label>{t("inventory.form.writeOffDate")}</Label>
+                    <Input value={toDateInputValue(initialData?.writeOffDate)} readOnly disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("inventory.form.writeOffReason")}</Label>
+                    <Textarea
+                      value={initialData?.writeOffReason ?? ""}
+                      rows={4}
+                      readOnly
+                      disabled
+                      className="min-h-0 resize-none"
+                    />
+                  </div>
                 </>
               ) : null}
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="inventory-item-supplier">{t("inventory.form.supplier")}</Label>
-              <Input
-                id="inventory-item-supplier"
-                {...register("supplier")}
-                maxLength={INVENTORY_FIELD_LIMITS.supplier}
-                placeholder={t("inventory.form.supplierPlaceholder")}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="inventory-item-price">{t("inventory.form.price")}</Label>
-              <Input
-                id="inventory-item-price"
-                type="number"
-                step="0.01"
-                min={INVENTORY_FIELD_LIMITS.priceMin}
-                max={INVENTORY_FIELD_LIMITS.priceMax}
-                {...register("price")}
-                placeholder={t("inventory.form.pricePlaceholder")}
-              />
-              {errors.price ? (
-                <p className="text-sm text-destructive" data-field-error>
-                  {errors.price.message}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="inventory-item-serial">{t("inventory.form.serialNumber")}</Label>
-              <Input
-                id="inventory-item-serial"
-                {...register("serialNumber")}
-                maxLength={INVENTORY_FIELD_LIMITS.serialNumber}
-                placeholder={t("inventory.form.serialNumberPlaceholder")}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="inventory-item-warranty">{t("inventory.form.warrantyUntil")}</Label>
-              <Input id="inventory-item-warranty" type="date" {...register("warrantyUntil")} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="inventory-item-comment">{t("inventory.form.comment")}</Label>
-              <Textarea
-                id="inventory-item-comment"
-                {...register("comment")}
-                rows={4}
-                maxLength={INVENTORY_FIELD_LIMITS.comment}
-                placeholder={t("inventory.form.commentPlaceholder")}
-                className="min-h-0 resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="inventory-item-photos">{t("inventory.form.photos")}</Label>
-              <Input
-                id="inventory-item-photos"
-                type="file"
-                accept="image/*"
-                multiple
-                disabled={isCompressing || readOnly}
-                onChange={(event) => {
-                  void onPhotosSelected(event.target.files)
-                  event.target.value = ""
-                }}
-              />
-              {isCompressing ? (
-                <p className="text-sm text-muted-foreground">
-                  {t("inventory.form.photosCompressing")}
-                </p>
-              ) : null}
-              {photos.length > 0 ? (
-                <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-                  {photos.map((photo) => {
-                    const isAvatar = avatarPhotoId === photo.id
-                    return (
-                      <div
-                        key={photo.id}
-                        className="relative aspect-square overflow-hidden rounded-md border bg-muted"
-                      >
-                        <img
-                          src={photo.dataUrl}
-                          alt=""
-                          className="size-full object-cover"
-                          draggable={false}
+              <div className="space-y-2">
+                <Label>{t("inventory.form.location")} *</Label>
+                <Controller
+                  control={control}
+                  name="locationId"
+                  render={({ field }) => (
+                    <Select
+                      open={locationSelectOpen}
+                      onOpenChange={setLocationSelectOpen}
+                      value={field.value || undefined}
+                      onValueChange={field.onChange}
+                      disabled={readOnly || locationsLoading}
+                    >
+                      <SelectTrigger aria-label={t("inventory.form.location")}>
+                        <SelectValue
+                          placeholder={
+                            locationsLoading
+                              ? t("common.loading")
+                              : t("inventory.form.locationPlaceholder")
+                          }
                         />
-                        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-black/50 p-1">
-                          <button
-                            type="button"
-                            className={cn(
-                              "rounded p-0.5 text-white transition-colors",
-                              isAvatar ? "text-amber-300" : "text-white/80 hover:text-amber-200",
-                            )}
-                            aria-label={t("inventory.form.setAvatar")}
-                            aria-pressed={isAvatar}
-                            onClick={() =>
-                              setValue("avatarPhotoId", photo.id, { shouldDirty: true })
-                            }
-                          >
-                            <Star
-                              className="size-3.5"
-                              fill={isAvatar ? "currentColor" : "none"}
-                              aria-hidden
-                            />
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded p-0.5 text-white/80 transition-colors hover:text-white"
-                            aria-label={t("inventory.form.removePhoto")}
-                            onClick={() => removePhoto(photo.id)}
-                          >
-                            <X className="size-3.5" aria-hidden />
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : null}
-            </div>
-
-            {isPageLayout ? null : (
-              <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-                <Button type="button" variant="outline" onClick={onCancel}>
-                  {t("inventory.actions.cancel")}
-                </Button>
-                {readOnly ? null : (
-                  <Button type="submit" disabled={isCompressing}>
-                    {submitLabel ?? t("inventory.form.save")}
-                  </Button>
-                )}
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locations.map((location) => (
+                          <SelectItem key={location.id} value={location.id}>
+                            {location.name}
+                          </SelectItem>
+                        ))}
+                        <SelectCreateAction
+                          label={t("inventory.form.createLocation")}
+                          disabled={readOnly}
+                          onCreate={() => {
+                            setLocationSelectOpen(false)
+                            setCreateLocationOpen(true)
+                          }}
+                        />
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.locationId ? (
+                  <p className="text-sm text-destructive" data-field-error>
+                    {errors.locationId.message}
+                  </p>
+                ) : null}
               </div>
-            )}
-          </fieldset>
+
+              <div className="space-y-2">
+                <Label>{t("inventory.form.availability")} *</Label>
+                <Controller
+                  control={control}
+                  name="availability"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange} disabled={readOnly}>
+                      <SelectTrigger aria-label={t("inventory.form.availability")}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="in_church">
+                          {t("inventory.availability.inChurch")}
+                        </SelectItem>
+                        <SelectItem value="borrowed">
+                          {t("inventory.availability.borrowed")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {availability === "borrowed" ? (
+                  <>
+                    <Label htmlFor="inventory-item-availability-comment">
+                      {t("inventory.form.availabilityComment")} *
+                    </Label>
+                    <Input
+                      id="inventory-item-availability-comment"
+                      {...register("availabilityComment")}
+                      maxLength={INVENTORY_FIELD_LIMITS.availabilityComment}
+                      placeholder={t("inventory.form.availabilityCommentPlaceholder")}
+                    />
+                    {errors.availabilityComment ? (
+                      <p className="text-sm text-destructive" data-field-error>
+                        {errors.availabilityComment.message}
+                      </p>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="inventory-item-supplier">{t("inventory.form.supplier")}</Label>
+                <Input
+                  id="inventory-item-supplier"
+                  {...register("supplier")}
+                  maxLength={INVENTORY_FIELD_LIMITS.supplier}
+                  placeholder={t("inventory.form.supplierPlaceholder")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="inventory-item-price">{t("inventory.form.price")}</Label>
+                <Input
+                  id="inventory-item-price"
+                  type="number"
+                  step="0.01"
+                  min={INVENTORY_FIELD_LIMITS.priceMin}
+                  max={INVENTORY_FIELD_LIMITS.priceMax}
+                  {...register("price")}
+                  placeholder={t("inventory.form.pricePlaceholder")}
+                />
+                {errors.price ? (
+                  <p className="text-sm text-destructive" data-field-error>
+                    {errors.price.message}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="inventory-item-serial">{t("inventory.form.serialNumber")}</Label>
+                <Input
+                  id="inventory-item-serial"
+                  {...register("serialNumber")}
+                  maxLength={INVENTORY_FIELD_LIMITS.serialNumber}
+                  placeholder={t("inventory.form.serialNumberPlaceholder")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="inventory-item-warranty">{t("inventory.form.warrantyUntil")}</Label>
+                <Input id="inventory-item-warranty" type="date" {...register("warrantyUntil")} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="inventory-item-comment">{t("inventory.form.comment")}</Label>
+                <Textarea
+                  id="inventory-item-comment"
+                  {...register("comment")}
+                  rows={4}
+                  maxLength={INVENTORY_FIELD_LIMITS.comment}
+                  placeholder={t("inventory.form.commentPlaceholder")}
+                  className="min-h-0 resize-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="inventory-item-photos">{t("inventory.form.photos")}</Label>
+                <Input
+                  id="inventory-item-photos"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  disabled={isCompressing || readOnly}
+                  onChange={(event) => {
+                    void onPhotosSelected(event.target.files)
+                    event.target.value = ""
+                  }}
+                />
+                {isCompressing ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("inventory.form.photosCompressing")}
+                  </p>
+                ) : null}
+                {photos.length > 0 ? (
+                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                    {photos.map((photo) => {
+                      const isAvatar = avatarPhotoId === photo.id
+                      return (
+                        <div
+                          key={photo.id}
+                          className="relative aspect-square overflow-hidden rounded-md border bg-muted"
+                        >
+                          <img
+                            src={photo.dataUrl}
+                            alt=""
+                            className="size-full object-cover"
+                            draggable={false}
+                          />
+                          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-black/50 p-1">
+                            <button
+                              type="button"
+                              className={cn(
+                                "rounded p-0.5 text-white transition-colors",
+                                isAvatar ? "text-amber-300" : "text-white/80 hover:text-amber-200",
+                              )}
+                              aria-label={t("inventory.form.setAvatar")}
+                              aria-pressed={isAvatar}
+                              onClick={() =>
+                                setValue("avatarPhotoId", photo.id, { shouldDirty: true })
+                              }
+                            >
+                              <Star
+                                className="size-3.5"
+                                fill={isAvatar ? "currentColor" : "none"}
+                                aria-hidden
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-0.5 text-white/80 transition-colors hover:text-white"
+                              aria-label={t("inventory.form.removePhoto")}
+                              onClick={() => removePhoto(photo.id)}
+                            >
+                              <X className="size-3.5" aria-hidden />
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : null}
+              </div>
+              {isPageLayout ? null : (
+                <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                  <Button type="button" variant="outline" onClick={onCancel}>
+                    {t("inventory.actions.cancel")}
+                  </Button>
+                  {readOnly ? null : (
+                    <Button type="submit" disabled={isCompressing}>
+                      {submitLabel ?? t("inventory.form.save")}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </fieldset>
+          </div>
         </form>
 
         <CreateCategoryDialog

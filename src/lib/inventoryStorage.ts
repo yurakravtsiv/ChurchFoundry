@@ -1,3 +1,5 @@
+import imageCompression from "browser-image-compression"
+
 import { filterVisible, isVisible } from "@/lib/removedEntity"
 import type {
   Category,
@@ -15,9 +17,6 @@ const CATEGORIES_KEY = "churchfoundry:categories"
 const SUBCATEGORIES_KEY = "churchfoundry:subcategories"
 const LOCATIONS_KEY = "churchfoundry:locations"
 const INVENTORY_ITEMS_KEY = "churchfoundry:inventory-items"
-
-const IMAGE_MAX_SIDE_PX = 800
-const IMAGE_JPEG_QUALITY = 0.8
 
 function newId() {
   return crypto.randomUUID()
@@ -465,47 +464,25 @@ export function returnToStock(writtenOffItemId: string): {
 }
 
 /**
- * Стискає зображення через canvas і повертає base64 dataUrl.
+ * Compresses an image with browser-image-compression and returns a base64 data URL.
+ * Uses a single-pass resize + JPEG encode (no Web Worker) — the default worker
+ * loads the lib from a CDN and is much slower for one-off uploads in Vite.
  *
  * NOTE: Photos are stored as base64 in localStorage for now. Browsers typically
  * allow only ~5MB per origin — fine for testing, but move images to Supabase
  * Storage before wiring a real backend.
  */
-export function compressImage(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file)
-    const image = new Image()
+export async function compressImage(file: File): Promise<string> {
+  const options = {
+    maxWidthOrHeight: 800,
+    // Soft cap after resize; high enough to avoid many quality binary-search passes.
+    maxSizeMB: 0.5,
+    initialQuality: 0.8,
+    maxIteration: 4,
+    useWebWorker: false,
+    fileType: "image/jpeg",
+  }
 
-    image.onload = () => {
-      try {
-        const longest = Math.max(image.width, image.height)
-        const scale = longest > IMAGE_MAX_SIDE_PX ? IMAGE_MAX_SIDE_PX / longest : 1
-        const width = Math.max(1, Math.round(image.width * scale))
-        const height = Math.max(1, Math.round(image.height * scale))
-
-        const canvas = document.createElement("canvas")
-        canvas.width = width
-        canvas.height = height
-        const context = canvas.getContext("2d")
-        if (!context) {
-          reject(new Error("Canvas 2D context unavailable"))
-          return
-        }
-
-        context.drawImage(image, 0, 0, width, height)
-        resolve(canvas.toDataURL("image/jpeg", IMAGE_JPEG_QUALITY))
-      } catch (error) {
-        reject(error)
-      } finally {
-        URL.revokeObjectURL(objectUrl)
-      }
-    }
-
-    image.onerror = () => {
-      URL.revokeObjectURL(objectUrl)
-      reject(new Error("Failed to load image for compression"))
-    }
-
-    image.src = objectUrl
-  })
+  const compressedFile = await imageCompression(file, options)
+  return imageCompression.getDataUrlFromFile(compressedFile)
 }

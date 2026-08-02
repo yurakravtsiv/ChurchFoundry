@@ -1224,28 +1224,27 @@ export function InventoryPage() {
           requestCloseCreate()
         }}
       >
-        <MotionDialogContent
-          open={createOpen}
-          className="flex max-h-[90vh] max-w-lg flex-col gap-0 overflow-hidden p-0"
-        >
+        <MotionDialogContent open={createOpen} className="gap-0 p-0">
           <DialogHeader className="shrink-0 space-y-1.5 border-b bg-background px-6 py-4 pr-12 text-left">
             <DialogTitle>{t("inventory.addItem")}</DialogTitle>
             <DialogDescription>{t("inventory.form.createDescription")}</DialogDescription>
           </DialogHeader>
-          <InventoryItemForm
-            id="inventory-item-create-form"
-            mode="create"
-            onDirtyChange={setCreateFormDirty}
-            onCancel={requestCloseCreate}
-            onSubmit={(data) => {
-              createItemMutation.mutate(data, {
-                onSuccess: () => {
-                  setCreateFormDirty(false)
-                  setCreateOpen(false)
-                },
-              })
-            }}
-          />
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <InventoryItemForm
+              id="inventory-item-create-form"
+              mode="create"
+              onDirtyChange={setCreateFormDirty}
+              onCancel={requestCloseCreate}
+              onSubmit={(data) => {
+                createItemMutation.mutate(data, {
+                  onSuccess: () => {
+                    setCreateFormDirty(false)
+                    setCreateOpen(false)
+                  },
+                })
+              }}
+            />
+          </div>
         </MotionDialogContent>
       </Dialog>
 
