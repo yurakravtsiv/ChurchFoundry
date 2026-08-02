@@ -7,6 +7,8 @@ import type { Category, InventoryItem, Location, Subcategory } from "@/types/inv
  * All user-facing / textual values that inventory search should match.
  * When adding a field to InventoryItem (or a displayed derived value),
  * add it here as well — see .cursor/rules/inventory-search-fields.mdc.
+ *
+ * Explicitly excluded: inventoryNumberId (sequential id; not searchable by product rule).
  */
 export function getInventoryItemSearchableValues(
   item: InventoryItem,

@@ -7,6 +7,7 @@ import { availabilityLabel, conditionLabel } from "@/lib/inventoryLabels"
 import type { Category, InventoryItem, Location, Subcategory } from "@/types/inventory"
 
 export type InventoryExportRow = {
+  inventoryNumberId: number
   name: string
   category: string
   subcategory: string
@@ -24,6 +25,7 @@ export type InventoryExportRow = {
 
 /** Stable column order for XLSX/PDF body cells. */
 const EXPORT_ROW_KEYS = [
+  "inventoryNumberId",
   "name",
   "category",
   "subcategory",
@@ -77,6 +79,7 @@ const PDF_PHOTO_SIZE_MM = 12
 
 export function getExportColumnHeaders(t: TFunction): Record<keyof InventoryExportRow, string> {
   return {
+    inventoryNumberId: t("export.columns.inventoryNumberId"),
     name: t("export.columns.name"),
     category: t("export.columns.category"),
     subcategory: t("export.columns.subcategory"),
@@ -164,6 +167,7 @@ export function prepareExportData(
   return items
     .filter((item) => !item.removed && !item.archived)
     .map((item) => ({
+      inventoryNumberId: item.inventoryNumberId,
       name: item.name,
       category: categories.find((category) => category.id === item.categoryId)?.name ?? "",
       subcategory:

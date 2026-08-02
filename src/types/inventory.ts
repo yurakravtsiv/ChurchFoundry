@@ -28,6 +28,8 @@ export type InventoryPhoto = {
 
 export type InventoryItem = {
   id: string
+  /** Sequential inventory number, assigned on create (starts at 1). Not used in text search. */
+  inventoryNumberId: number
   name: string // обов'язкове
   categoryId: string // обов'язкове
   subcategoryId: string // обов'язкове
@@ -51,16 +53,24 @@ export type InventoryItem = {
   updatedAt: string
 }
 
-/** Поля, які задає викликач при створенні (id / qr / timestamps генерує storage). */
+/** Поля, які задає викликач при створенні (id / number / qr / timestamps генерує storage). */
 export type CreateInventoryItemInput = Omit<
   InventoryItem,
-  "id" | "qrCodeValue" | "archived" | "removed" | "createdAt" | "updatedAt" | "price" | "condition"
+  | "id"
+  | "inventoryNumberId"
+  | "qrCodeValue"
+  | "archived"
+  | "removed"
+  | "createdAt"
+  | "updatedAt"
+  | "price"
+  | "condition"
 > & {
   price?: number | null
   condition?: ItemCondition
 }
 
-/** Часткове оновлення; id / createdAt / qrCodeValue не змінюються тут. */
+/** Часткове оновлення; id / inventoryNumberId / createdAt / qrCodeValue не змінюються тут. */
 export type UpdateInventoryItemInput = Partial<
-  Omit<InventoryItem, "id" | "createdAt" | "qrCodeValue">
+  Omit<InventoryItem, "id" | "inventoryNumberId" | "createdAt" | "qrCodeValue">
 >

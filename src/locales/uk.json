@@ -6,6 +6,7 @@
     "sheetName": "Інвентар",
     "columns": {
       "photo": "Фото",
+      "inventoryNumberId": "Інв. №",
       "name": "Назва",
       "category": "Категорія",
       "subcategory": "Підкатегорія",

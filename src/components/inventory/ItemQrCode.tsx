@@ -3,11 +3,12 @@ import { useRef } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
+import { formatInventoryPublicCode } from "@/lib/inventoryCode"
 
 type ItemQrCodeProps = {
   value: string
   itemName: string
-  itemId: string
+  inventoryNumberId: number
   size?: number
 }
 
@@ -22,13 +23,7 @@ function slugifyFileName(value: string) {
   return slug || "item"
 }
 
-function shortId(id: string) {
-  if (id.length <= 8) {
-    return id
-  }
-  return `${id.slice(0, 8)}…`
-}
-
+/** Wrap by words; break long unbroken tokens by character to fit maxWidth. */
 function wrapCanvasText(
   context: CanvasRenderingContext2D,
   text: string,
@@ -40,22 +35,45 @@ function wrapCanvasText(
   }
 
   const lines: string[] = []
-  let current = words[0]
+  let current = ""
 
-  for (let index = 1; index < words.length; index += 1) {
-    const word = words[index]
-    const candidate = `${current} ${word}`
-    if (context.measureText(candidate).width <= maxWidth) {
-      current = candidate
+  const flushCharacterWrapped = (token: string) => {
+    let piece = ""
+    for (const char of token) {
+      const nextPiece = `${piece}${char}`
+      if (piece && context.measureText(nextPiece).width > maxWidth) {
+        lines.push(piece)
+        piece = char
+      } else {
+        piece = nextPiece
+      }
+    }
+    current = piece
+  }
+
+  for (const word of words) {
+    const joined = current ? `${current} ${word}` : word
+    if (!current || context.measureText(joined).width <= maxWidth) {
+      current = joined
       continue
     }
-    lines.push(current)
-    current = word
-  }
-  lines.push(current)
 
-  // If a single word is still too wide, shrink is handled by the caller via font size.
-  return lines
+    lines.push(current)
+    current = ""
+
+    if (context.measureText(word).width <= maxWidth) {
+      current = word
+      continue
+    }
+
+    flushCharacterWrapped(word)
+  }
+
+  if (current) {
+    lines.push(current)
+  }
+
+  return lines.length > 0 ? lines : [""]
 }
 
 function fitWrappedText(
@@ -66,32 +84,33 @@ function fitWrappedText(
   minFontSize: number,
   fontWeight: string,
   fontFamily: string,
+  maxLines = 2,
 ): { fontSize: number; lines: string[] } {
   for (let fontSize = maxFontSize; fontSize >= minFontSize; fontSize -= 1) {
     context.font = `${fontWeight} ${fontSize}px ${fontFamily}`
     const lines = wrapCanvasText(context, text, maxWidth)
     const fits = lines.every((line) => context.measureText(line).width <= maxWidth)
-    if (fits && lines.length <= 2) {
+    if (fits && lines.length <= maxLines) {
       return { fontSize, lines }
     }
   }
 
   context.font = `${fontWeight} ${minFontSize}px ${fontFamily}`
-  const lines = wrapCanvasText(context, text, maxWidth).slice(0, 2)
-  if (lines.length === 2) {
-    // Truncate last line with ellipsis if still overflowing.
-    let last = lines[1]
+  const lines = wrapCanvasText(context, text, maxWidth).slice(0, maxLines)
+  if (lines.length === maxLines && maxLines > 0) {
+    let last = lines[maxLines - 1]
     while (last.length > 1 && context.measureText(`${last}…`).width > maxWidth) {
       last = last.slice(0, -1)
     }
-    lines[1] = context.measureText(last).width <= maxWidth ? last : `${last}…`
+    lines[maxLines - 1] = context.measureText(last).width <= maxWidth ? last : `${last}…`
   }
   return { fontSize: minFontSize, lines }
 }
 
-export function ItemQrCode({ value, itemName, itemId, size = 200 }: ItemQrCodeProps) {
+export function ItemQrCode({ value, itemName, inventoryNumberId, size = 200 }: ItemQrCodeProps) {
   const { t } = useTranslation()
   const svgRef = useRef<SVGSVGElement>(null)
+  const publicCode = formatInventoryPublicCode(inventoryNumberId)
 
   const downloadAsPng = async () => {
     const svg = svgRef.current
@@ -133,12 +152,26 @@ export function ItemQrCode({ value, itemName, itemId, size = 200 }: ItemQrCodePr
         11,
         "700",
         fontFamily,
+        3,
+      )
+      const codeLayout = fitWrappedText(
+        measureContext,
+        publicCode,
+        contentWidth,
+        11,
+        9,
+        "400",
+        fontFamily,
+        3,
       )
       const nameLineHeight = Math.round(nameLayout.fontSize * 1.25)
-      const idFontSize = 11
-      const idLineHeight = Math.round(idFontSize * 1.3)
+      const codeLineHeight = Math.round(codeLayout.fontSize * 1.3)
       const textBlockHeight =
-        textGap + nameLayout.lines.length * nameLineHeight + 4 + idLineHeight + padding
+        textGap +
+        nameLayout.lines.length * nameLineHeight +
+        4 +
+        codeLayout.lines.length * codeLineHeight +
+        padding
 
       const canvas = document.createElement("canvas")
       canvas.width = canvasWidth
@@ -165,13 +198,16 @@ export function ItemQrCode({ value, itemName, itemId, size = 200 }: ItemQrCodePr
 
       textY += 4
       context.fillStyle = "#6b7280"
-      context.font = `400 ${idFontSize}px ${fontFamily}`
-      context.fillText(itemId, canvasWidth / 2, textY, contentWidth)
+      context.font = `400 ${codeLayout.fontSize}px ${fontFamily}`
+      for (const line of codeLayout.lines) {
+        context.fillText(line, canvasWidth / 2, textY, contentWidth)
+        textY += codeLineHeight
+      }
 
       const pngUrl = canvas.toDataURL("image/png")
       const link = document.createElement("a")
       link.href = pngUrl
-      link.download = `qr-${slugifyFileName(itemName)}-${itemId.slice(0, 8)}.png`
+      link.download = `qr-${slugifyFileName(itemName)}-${publicCode}.png`
       link.click()
     } catch (error) {
       console.error("[ItemQrCode] PNG download failed", error)
@@ -193,8 +229,8 @@ export function ItemQrCode({ value, itemName, itemId, size = 200 }: ItemQrCodePr
         <p className="w-full max-w-full break-words text-sm font-semibold leading-snug text-foreground">
           {itemName}
         </p>
-        <p className="w-full max-w-full truncate text-xs text-muted-foreground" title={itemId}>
-          {shortId(itemId)}
+        <p className="w-full max-w-full break-all text-xs leading-snug text-muted-foreground">
+          {publicCode}
         </p>
       </div>
       <Button

@@ -335,7 +335,12 @@ export function InventoryItemDetailPage() {
             <CardTitle>{t("inventory.detail.qrTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="flex min-w-0 flex-col items-center gap-3">
-            <ItemQrCode value={item.qrCodeValue} itemName={item.name} itemId={item.id} size={200} />
+            <ItemQrCode
+              value={item.qrCodeValue}
+              itemName={item.name}
+              inventoryNumberId={item.inventoryNumberId}
+              size={200}
+            />
             <CardDescription className="text-center">
               {t("inventory.detail.qrHint")}
             </CardDescription>

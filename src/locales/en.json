@@ -6,6 +6,7 @@
     "sheetName": "Inventory",
     "columns": {
       "photo": "Photo",
+      "inventoryNumberId": "Inv. #",
       "name": "Name",
       "category": "Category",
       "subcategory": "Subcategory",

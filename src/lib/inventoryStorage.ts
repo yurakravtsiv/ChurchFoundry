@@ -143,6 +143,49 @@ function migrateLegacyLocationFields(): void {
   writeJson(INVENTORY_ITEMS_KEY, migrated)
 }
 
+function isValidInventoryNumberId(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1
+}
+
+function maxInventoryNumberId(items: InventoryItem[]): number {
+  let max = 0
+  for (const item of items) {
+    if (isValidInventoryNumberId(item.inventoryNumberId) && item.inventoryNumberId > max) {
+      max = item.inventoryNumberId
+    }
+  }
+  return max
+}
+
+/** Assigns sequential inventoryNumberId to legacy items missing a valid number. */
+function assignMissingInventoryNumberIds(items: InventoryItem[]): {
+  items: InventoryItem[]
+  dirty: boolean
+} {
+  const needingIndexes = items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => !isValidInventoryNumberId(item.inventoryNumberId))
+    .sort((a, b) => {
+      const byCreatedAt = a.item.createdAt.localeCompare(b.item.createdAt)
+      if (byCreatedAt !== 0) {
+        return byCreatedAt
+      }
+      return a.index - b.index
+    })
+
+  if (needingIndexes.length === 0) {
+    return { items, dirty: false }
+  }
+
+  let nextNumber = maxInventoryNumberId(items)
+  const next = [...items]
+  for (const { index } of needingIndexes) {
+    nextNumber += 1
+    next[index] = { ...next[index], inventoryNumberId: nextNumber }
+  }
+  return { items: next, dirty: true }
+}
+
 function normalizeInventoryItem(item: InventoryItem): InventoryItem {
   let next = item
   if (!(typeof item.price === "number" && Number.isFinite(item.price)) && item.price !== null) {
@@ -161,13 +204,18 @@ export function getInventoryItems(): InventoryItem[] {
   migrateLegacyLocationFields()
   const items = readJsonArray<InventoryItem>(INVENTORY_ITEMS_KEY)
   let dirty = false
-  const normalized = items.map((item) => {
+  let normalized = items.map((item) => {
     const next = normalizeInventoryItem(item)
     if (next !== item) {
       dirty = true
     }
     return next
   })
+  const withNumbers = assignMissingInventoryNumberIds(normalized)
+  normalized = withNumbers.items
+  if (withNumbers.dirty) {
+    dirty = true
+  }
   if (dirty) {
     writeJson(INVENTORY_ITEMS_KEY, normalized)
   }
@@ -214,18 +262,20 @@ export function createInventoryItem(data: CreateInventoryItemInput): InventoryIt
   const id = newId()
   const timestamp = nowIso()
   const origin = typeof window !== "undefined" ? window.location.origin : ""
+  const existingItems = getInventoryItems()
   const item: InventoryItem = {
     ...data,
     price: data.price ?? null,
     condition: data.condition ?? "good",
     id,
+    inventoryNumberId: maxInventoryNumberId(existingItems) + 1,
     qrCodeValue: `${origin}/inventory/${id}`,
     archived: false,
     removed: false,
     createdAt: timestamp,
     updatedAt: timestamp,
   }
-  saveInventoryItems([...getInventoryItems(), item])
+  saveInventoryItems([...existingItems, item])
   return item
 }
 
@@ -243,6 +293,7 @@ export function updateInventoryItem(
     ...items[index],
     ...data,
     id,
+    inventoryNumberId: items[index].inventoryNumberId,
     createdAt: items[index].createdAt,
     qrCodeValue: items[index].qrCodeValue,
     updatedAt: nowIso(),
