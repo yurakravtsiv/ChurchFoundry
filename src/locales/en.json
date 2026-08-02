@@ -63,6 +63,7 @@
     "detail": {
       "backToInventory": "Back to inventory",
       "returnToInventory": "Return to inventory",
+      "archivedBadge": "Archived",
       "qrTitle": "Item QR code",
       "qrHint": "Print and attach it to the item. Scanning opens this page."
     },

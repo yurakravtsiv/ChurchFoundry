@@ -1,10 +1,14 @@
-import { ArrowLeft, Check, PackageX, X } from "lucide-react"
+import { Archive, ArchiveRestore, ArrowLeft, Check, MoreVertical, PackageX, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useBlocker, useNavigate, useParams } from "react-router"
 
-import { InventoryItemForm } from "@/components/inventory/InventoryItemForm"
+import {
+  InventoryItemForm,
+  type InventoryItemFormHandle,
+} from "@/components/inventory/InventoryItemForm"
 import { ItemQrCode } from "@/components/inventory/ItemQrCode"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -14,11 +18,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
-import { getInventoryItemById, updateInventoryItem } from "@/lib/inventoryStorage"
+import {
+  archiveInventoryItem,
+  getInventoryItemById,
+  unarchiveInventoryItem,
+  updateInventoryItem,
+} from "@/lib/inventoryStorage"
 import type { InventoryItem } from "@/types/inventory"
 
 const EDIT_FORM_ID = "inventory-item-edit-form"
+
+function canNavigateBack() {
+  const idx = (window.history.state as { idx?: number } | null)?.idx
+  return typeof idx === "number" && idx > 0
+}
 
 export function InventoryItemDetailPage() {
   const { t } = useTranslation()
@@ -30,9 +50,12 @@ export function InventoryItemDetailPage() {
   const [formDirty, setFormDirty] = useState(false)
   const [formBusy, setFormBusy] = useState(false)
   const [unsavedPromptOpen, setUnsavedPromptOpen] = useState(false)
+  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false)
+  const formRef = useRef<InventoryItemFormHandle>(null)
   const allowLeaveRef = useRef(false)
   const leaveAfterSaveRef = useRef(false)
   const pendingLeaveToRef = useRef<string | null>(null)
+  const pendingArchiveAfterSaveRef = useRef(false)
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -63,7 +86,16 @@ export function InventoryItemDetailPage() {
     return () => window.removeEventListener("beforeunload", onBeforeUnload)
   }, [formDirty])
 
-  const goBackToInventory = () => {
+  const goToInventory = () => {
+    navigate("/inventory")
+  }
+
+  const navigateBackOrInventory = () => {
+    allowLeaveRef.current = true
+    if (canNavigateBack()) {
+      navigate(-1)
+      return
+    }
     navigate("/inventory")
   }
 
@@ -72,12 +104,17 @@ export function InventoryItemDetailPage() {
       setUnsavedPromptOpen(true)
       return
     }
-    goBackToInventory()
+    navigateBackOrInventory()
+  }
+
+  const clearPendingLeave = () => {
+    leaveAfterSaveRef.current = false
+    pendingLeaveToRef.current = null
+    pendingArchiveAfterSaveRef.current = false
   }
 
   const stayOnPage = () => {
-    leaveAfterSaveRef.current = false
-    pendingLeaveToRef.current = null
+    clearPendingLeave()
     setUnsavedPromptOpen(false)
     if (blocker.state === "blocked") {
       blocker.reset()
@@ -85,8 +122,7 @@ export function InventoryItemDetailPage() {
   }
 
   const confirmDiscard = () => {
-    leaveAfterSaveRef.current = false
-    pendingLeaveToRef.current = null
+    clearPendingLeave()
     allowLeaveRef.current = true
     setUnsavedPromptOpen(false)
     setFormDirty(false)
@@ -94,7 +130,7 @@ export function InventoryItemDetailPage() {
       blocker.proceed()
       return
     }
-    goBackToInventory()
+    navigateBackOrInventory()
   }
 
   const confirmSaveAndLeave = () => {
@@ -102,14 +138,52 @@ export function InventoryItemDetailPage() {
       pendingLeaveToRef.current = `${blocker.location.pathname}${blocker.location.search}`
       blocker.reset()
     } else {
-      pendingLeaveToRef.current = "/inventory"
+      pendingLeaveToRef.current = null
     }
+    pendingArchiveAfterSaveRef.current = false
     leaveAfterSaveRef.current = true
     setUnsavedPromptOpen(false)
     const form = document.getElementById(EDIT_FORM_ID)
     if (form instanceof HTMLFormElement) {
       form.requestSubmit()
     }
+  }
+
+  const applyArchiveAndLeave = () => {
+    if (!item) {
+      return
+    }
+    const updated = item.archived ? unarchiveInventoryItem(item.id) : archiveInventoryItem(item.id)
+    if (!updated) {
+      return
+    }
+    setFormDirty(false)
+    navigateBackOrInventory()
+  }
+
+  const requestArchiveConfirm = async () => {
+    const valid = await formRef.current?.validate()
+    if (!valid) {
+      return
+    }
+    setArchiveConfirmOpen(true)
+  }
+
+  const confirmArchiveAction = () => {
+    if (!item) {
+      return
+    }
+    setArchiveConfirmOpen(false)
+    pendingArchiveAfterSaveRef.current = true
+    leaveAfterSaveRef.current = false
+    pendingLeaveToRef.current = null
+    // Let the confirm dialog unmount before submit so field errors can scroll into view.
+    window.requestAnimationFrame(() => {
+      const form = document.getElementById(EDIT_FORM_ID)
+      if (form instanceof HTMLFormElement) {
+        form.requestSubmit()
+      }
+    })
   }
 
   if (!item) {
@@ -123,7 +197,7 @@ export function InventoryItemDetailPage() {
         <p className="text-2xl font-medium tracking-tight text-muted-foreground">
           {t("inventory.itemNotFound")}
         </p>
-        <Button type="button" className="mt-6" onClick={goBackToInventory}>
+        <Button type="button" className="mt-6" onClick={goToInventory}>
           {t("inventory.detail.returnToInventory")}
         </Button>
       </main>
@@ -142,10 +216,42 @@ export function InventoryItemDetailPage() {
             <ArrowLeft className="size-4" aria-hidden />
             {t("inventory.detail.backToInventory")}
           </button>
-          <div className="flex items-center justify-between gap-3">
-            <h1 className="min-w-0 truncate text-xl font-semibold tracking-tight sm:text-3xl">
-              {item.name}
-            </h1>
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+              <h1 className="min-w-0 truncate text-xl font-semibold leading-none tracking-tight sm:text-3xl sm:leading-none">
+                {item.name}
+              </h1>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 shrink-0"
+                    aria-label={t("inventory.actions.menu")}
+                  >
+                    <MoreVertical className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      void requestArchiveConfirm()
+                    }}
+                  >
+                    {item.archived ? <ArchiveRestore /> : <Archive />}
+                    {item.archived
+                      ? t("inventory.actions.unarchive")
+                      : t("inventory.actions.archive")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {item.archived ? (
+                <Badge variant="secondary" className="shrink-0">
+                  {t("inventory.detail.archivedBadge")}
+                </Badge>
+              ) : null}
+            </div>
             <div className="flex shrink-0 items-center gap-2">
               {formDirty ? (
                 <Button
@@ -168,7 +274,7 @@ export function InventoryItemDetailPage() {
                 aria-label={t("inventory.form.save")}
                 onClick={() => {
                   if (!formDirty) {
-                    goBackToInventory()
+                    navigateBackOrInventory()
                     return
                   }
                   const form = document.getElementById(EDIT_FORM_ID)
@@ -188,6 +294,7 @@ export function InventoryItemDetailPage() {
       <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-[15px] pb-[20px] pt-[10px] md:grid-cols-3 md:items-start">
         <div className="min-w-0 rounded-xl border bg-card md:col-span-2">
           <InventoryItemForm
+            ref={formRef}
             key={item.updatedAt}
             id={EDIT_FORM_ID}
             mode="edit"
@@ -197,22 +304,28 @@ export function InventoryItemDetailPage() {
             onDirtyChange={setFormDirty}
             onCancel={requestLeave}
             onInvalid={() => {
-              leaveAfterSaveRef.current = false
-              pendingLeaveToRef.current = null
+              clearPendingLeave()
             }}
             onSubmit={(data) => {
               const updated = updateInventoryItem(item.id, data)
               if (!updated) {
-                leaveAfterSaveRef.current = false
-                pendingLeaveToRef.current = null
+                clearPendingLeave()
                 return
               }
-              leaveAfterSaveRef.current = false
+              const shouldArchiveAfterSave = pendingArchiveAfterSaveRef.current
+              const pendingLeaveTo = pendingLeaveToRef.current
+              clearPendingLeave()
               allowLeaveRef.current = true
               setFormDirty(false)
-              const next = pendingLeaveToRef.current ?? "/inventory"
-              pendingLeaveToRef.current = null
-              navigate(next)
+              if (shouldArchiveAfterSave) {
+                applyArchiveAndLeave()
+                return
+              }
+              if (pendingLeaveTo) {
+                navigate(pendingLeaveTo)
+                return
+              }
+              navigateBackOrInventory()
             }}
           />
         </div>
@@ -255,6 +368,41 @@ export function InventoryItemDetailPage() {
             </Button>
             <Button type="button" onClick={confirmSaveAndLeave}>
               {t("inventory.unsavedChanges.yes")}
+            </Button>
+          </DialogFooter>
+        </MotionDialogContent>
+      </Dialog>
+
+      <Dialog
+        open={archiveConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setArchiveConfirmOpen(false)
+          }
+        }}
+      >
+        <MotionDialogContent open={archiveConfirmOpen}>
+          <DialogHeader>
+            <DialogTitle>
+              {t(
+                item.archived ? "inventory.unarchiveConfirmTitle" : "inventory.archiveConfirmTitle",
+                { name: item.name },
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {t(
+                item.archived
+                  ? "inventory.unarchiveConfirmDescription"
+                  : "inventory.archiveConfirmDescription",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setArchiveConfirmOpen(false)}>
+              {t("inventory.actions.cancel")}
+            </Button>
+            <Button type="button" onClick={confirmArchiveAction}>
+              {item.archived ? t("inventory.actions.unarchive") : t("inventory.actions.archive")}
             </Button>
           </DialogFooter>
         </MotionDialogContent>
