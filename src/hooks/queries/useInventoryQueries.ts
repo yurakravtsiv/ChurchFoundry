@@ -35,6 +35,11 @@ function delay(ms: number) {
   })
 }
 
+async function invalidateInventoryQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
+  await queryClient.invalidateQueries({ queryKey: ["events"] })
+}
+
 export function useInventoryItemsQuery() {
   return useQuery({
     queryKey: inventoryQueryKeys.items,
@@ -86,7 +91,7 @@ export function useCreateInventoryItemMutation() {
       userEmail: string
     }) => createInventoryItem(data, userEmail),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
+      await invalidateInventoryQueries(queryClient)
     },
   })
 }
@@ -104,7 +109,7 @@ export function useUpdateInventoryItemMutation() {
       userEmail: string
     }) => updateInventoryItem(id, data, userEmail),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
+      await invalidateInventoryQueries(queryClient)
     },
   })
 }
@@ -125,7 +130,7 @@ export function useArchiveInventoryItemMutation() {
         ? unarchiveInventoryItem(id, userEmail)
         : archiveInventoryItem(id, userEmail),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
+      await invalidateInventoryQueries(queryClient)
     },
   })
 }
@@ -147,7 +152,7 @@ export function useWriteOffItemMutation() {
       userEmail: string
     }) => writeOffItem(id, quantity, writeOffDate, writeOffReason, userEmail),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
+      await invalidateInventoryQueries(queryClient)
     },
   })
 }
@@ -163,7 +168,7 @@ export function useReturnToStockMutation() {
       userEmail: string
     }) => returnToStock(writtenOffItemId, userEmail),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
+      await invalidateInventoryQueries(queryClient)
     },
   })
 }
@@ -185,7 +190,7 @@ export function useMarkAsNeedsRepairMutation() {
       userEmail: string
     }) => markAsNeedsRepair(id, quantity, repairDate, repairComment, userEmail),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
+      await invalidateInventoryQueries(queryClient)
     },
   })
 }
@@ -196,7 +201,7 @@ export function useMarkAsRepairedMutation() {
     mutationFn: async ({ repairItemId, userEmail }: { repairItemId: string; userEmail: string }) =>
       markAsRepaired(repairItemId, userEmail),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
+      await invalidateInventoryQueries(queryClient)
     },
   })
 }

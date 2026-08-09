@@ -19,6 +19,7 @@ import {
   InventoryItemForm,
   type InventoryItemFormHandle,
 } from "@/components/inventory/InventoryItemForm"
+import { InventoryItemTimeline } from "@/components/inventory/InventoryItemTimeline"
 import { ItemQrCode } from "@/components/inventory/ItemQrCode"
 import { NeedsRepairDialog } from "@/components/inventory/NeedsRepairDialog"
 import { RepairedConfirmDialog } from "@/components/inventory/RepairedConfirmDialog"
@@ -58,6 +59,7 @@ import {
   useUpdateInventoryItemMutation,
 } from "@/hooks/queries/useInventoryQueries"
 import { useAuth } from "@/hooks/useAuth"
+import { EVENT_OBJECT_TYPE } from "@/types/events"
 
 const EDIT_FORM_ID = "inventory-item-edit-form"
 
@@ -605,6 +607,8 @@ export function InventoryItemDetailPage() {
         </div>
 
         <div className="flex min-w-0 flex-col gap-6 md:col-span-1">
+          <InventoryItemTimeline objectId={EVENT_OBJECT_TYPE.INVENTORY_ITEM} entityId={item.id} />
+
           {relatedRepairs.length > 0 ? (
             <Card className="min-w-0 overflow-hidden">
               <CardHeader className="px-2 py-4">

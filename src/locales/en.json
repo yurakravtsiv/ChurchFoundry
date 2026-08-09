@@ -96,6 +96,13 @@
       "qrTitle": "Item QR code",
       "qrHint": "Print and attach it to the item. Scanning opens this page."
     },
+    "timeline": {
+      "title": "Timeline",
+      "empty": "No history yet",
+      "created": "Created",
+      "updated": "Updated",
+      "archived": "Archived"
+    },
     "archiveConfirmTitle": "Archive “{{name}}”?",
     "archiveConfirmDescription": "Archived items can be shown again with the archive toggle.",
     "unarchiveConfirmTitle": "Unarchive “{{name}}”?",
