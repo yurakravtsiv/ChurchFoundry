@@ -1,13 +1,7 @@
 import { format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
-import { useState } from "react"
-import { enUS, uk } from "react-day-picker/locale"
-import { useTranslation } from "react-i18next"
 
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
+// FIXME: Custom Popover + Calendar DatePicker is temporarily disabled (month/year dropdown bug).
+// Re-enable after fixing src/components/ui/calendar.tsx caption selects inside Dialog/Popover.
 
 export type DatePickerProps = {
   value: Date | undefined
@@ -40,6 +34,17 @@ export function toDateInputValue(date: Date): string {
   return format(date, "yyyy-MM-dd")
 }
 
+/*
+import { CalendarIcon } from "lucide-react"
+import { useState } from "react"
+import { enUS, uk } from "react-day-picker/locale"
+import { useTranslation } from "react-i18next"
+
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
+
 function startOfLocalDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
@@ -58,7 +63,6 @@ export function DatePicker({
   const { i18n } = useTranslation()
   const locale = i18n.language.startsWith("en") ? enUS : uk
   const now = new Date()
-  // Dropdown captions need an explicit month range; defaults are too narrow for warranty dates.
   const startMonth = fromDate ?? new Date(now.getFullYear() - 100, 0)
   const endMonth = toDate ?? new Date(now.getFullYear() + 20, 11)
 
@@ -72,7 +76,6 @@ export function DatePicker({
           disabled={disabled}
           aria-label={ariaLabel}
           className={cn(
-            // Match Input field surface (bg-transparent), not outline Button (bg-background).
             "h-9 w-full justify-start px-3 text-left font-normal shadow-sm",
             "bg-transparent hover:bg-transparent hover:text-foreground",
             !value && "text-muted-foreground",
@@ -82,17 +85,7 @@ export function DatePicker({
           {value ? format(value, "dd.MM.yyyy") : placeholder}
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="z-[70] w-auto p-0"
-        align="start"
-        onPointerDownOutside={(event) => {
-          // Keep the date picker open while interacting with portaled month/year selects.
-          const target = event.target as HTMLElement | null
-          if (target?.closest("[role=listbox]")) {
-            event.preventDefault()
-          }
-        }}
-      >
+      <PopoverContent className="z-[70] w-auto p-0" align="start">
         <Calendar
           mode="single"
           captionLayout="dropdown"
@@ -120,3 +113,4 @@ export function DatePicker({
     </Popover>
   )
 }
+*/

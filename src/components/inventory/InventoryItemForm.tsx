@@ -8,11 +8,6 @@ import { z } from "zod"
 import { CreateReferenceEntityDialog } from "@/components/inventory/CreateReferenceEntityDialog"
 import { CreateSubcategoryDialog } from "@/components/inventory/CreateSubcategoryDialog"
 import { Button } from "@/components/ui/button"
-import {
-  DatePicker,
-  toDateInputValue as formatDateForStorage,
-  parseDateInputValue,
-} from "@/components/ui/date-picker"
 import { DisabledTooltip } from "@/components/ui/disabled-tooltip"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -857,19 +852,14 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
 
               <div className="space-y-2">
                 <Label htmlFor="inventory-item-warranty">{t("inventory.form.warrantyUntil")}</Label>
-                <Controller
-                  control={control}
-                  name="warrantyUntil"
-                  render={({ field }) => (
-                    <DatePicker
-                      id="inventory-item-warranty"
-                      aria-label={t("inventory.form.warrantyUntil")}
-                      value={parseDateInputValue(field.value)}
-                      onChange={(date) => field.onChange(date ? formatDateForStorage(date) : null)}
-                      disabled={readOnly}
-                      placeholder={t("inventory.form.warrantyPlaceholder")}
-                    />
-                  )}
+                <Input
+                  id="inventory-item-warranty"
+                  type="date"
+                  aria-label={t("inventory.form.warrantyUntil")}
+                  disabled={readOnly}
+                  {...register("warrantyUntil", {
+                    setValueAs: (value) => (value === "" ? null : value),
+                  })}
                 />
               </div>
 

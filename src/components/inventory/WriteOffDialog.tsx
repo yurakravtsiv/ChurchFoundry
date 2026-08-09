@@ -1,15 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useEffect, useMemo } from "react"
-import { Controller, type Resolver, useForm } from "react-hook-form"
+import { type Resolver, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
-import {
-  DatePicker,
-  toDateInputValue as formatDateForStorage,
-  parseDateInputValue,
-} from "@/components/ui/date-picker"
+import { toDateInputValue as formatDateForStorage } from "@/components/ui/date-picker"
 import {
   Dialog,
   DialogDescription,
@@ -84,7 +80,6 @@ export function WriteOffDialog({ item, open, onOpenChange, onConfirm }: WriteOff
 
   const {
     register,
-    control,
     handleSubmit,
     reset,
     watch,
@@ -159,19 +154,12 @@ export function WriteOffDialog({ item, open, onOpenChange, onConfirm }: WriteOff
 
           <div className="space-y-2">
             <Label htmlFor="write-off-date">{t("inventory.writeOff.date")} *</Label>
-            <Controller
-              control={control}
-              name="writeOffDate"
-              render={({ field }) => (
-                <DatePicker
-                  id="write-off-date"
-                  aria-label={t("inventory.writeOff.date")}
-                  value={parseDateInputValue(field.value)}
-                  onChange={(date) => field.onChange(date ? formatDateForStorage(date) : "")}
-                  toDate={new Date()}
-                  placeholder={t("inventory.writeOff.datePlaceholder")}
-                />
-              )}
+            <Input
+              id="write-off-date"
+              type="date"
+              aria-label={t("inventory.writeOff.date")}
+              max={formatDateForStorage(new Date())}
+              {...register("writeOffDate")}
             />
             {errors.writeOffDate ? (
               <p className="text-sm text-destructive">{errors.writeOffDate.message}</p>
