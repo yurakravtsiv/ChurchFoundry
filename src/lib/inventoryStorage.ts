@@ -206,6 +206,12 @@ function normalizeInventoryItem(item: InventoryItem): InventoryItem {
   if (typeof next.originalItemId !== "string" && next.originalItemId !== null) {
     next = { ...next, originalItemId: null }
   }
+  if (typeof next.repairDate !== "string" && next.repairDate !== null) {
+    next = { ...next, repairDate: null }
+  }
+  if (typeof next.repairComment !== "string" && next.repairComment !== null) {
+    next = { ...next, repairComment: null }
+  }
   return next
 }
 
@@ -293,6 +299,8 @@ export function createInventoryItem(data: CreateInventoryItemInput): InventoryIt
     writeOffDate: null,
     writeOffReason: null,
     originalItemId: null,
+    repairDate: null,
+    repairComment: null,
     createdAt: timestamp,
     updatedAt: timestamp,
   }
@@ -370,6 +378,11 @@ export function writeOffItem(
       `[inventoryStorage] writeOffItem: archived item cannot be written off (${originalItemId})`,
     )
   }
+  if (original.condition === "needs_repair") {
+    throw new Error(
+      `[inventoryStorage] writeOffItem: item needing repair cannot be written off (${originalItemId})`,
+    )
+  }
   if (!Number.isFinite(quantityToWriteOff) || quantityToWriteOff <= 0) {
     throw new Error("[inventoryStorage] writeOffItem: quantityToWriteOff must be > 0")
   }
@@ -398,6 +411,8 @@ export function writeOffItem(
     writeOffDate,
     writeOffReason,
     originalItemId: original.id,
+    repairDate: null,
+    repairComment: null,
     qrCodeValue: `${origin}/inventory/${newIdValue}`,
     removed: false,
     archived: false,
@@ -461,6 +476,123 @@ export function returnToStock(writtenOffItemId: string): {
   saveInventoryItems(next)
 
   return { updatedOriginal, removedWrittenOffItem }
+}
+
+/**
+ * Splits quantity from an active item into a new needs-repair item.
+ * If the original quantity becomes 0, the original is soft-deleted (`removed: true`).
+ */
+export function markAsNeedsRepair(
+  originalItemId: string,
+  quantityNeedingRepair: number,
+  repairDate: string,
+  repairComment: string,
+): { updatedOriginal: InventoryItem; newRepairItem: InventoryItem } {
+  const items = getAllInventoryItemsRaw()
+  const originalIndex = items.findIndex((item) => item.id === originalItemId)
+  if (originalIndex === -1) {
+    throw new Error(`[inventoryStorage] markAsNeedsRepair: item not found (${originalItemId})`)
+  }
+
+  const original = items[originalIndex]
+  if (original.condition === "written_off") {
+    throw new Error(
+      `[inventoryStorage] markAsNeedsRepair: written-off item cannot be marked for repair (${originalItemId})`,
+    )
+  }
+  if (!Number.isFinite(quantityNeedingRepair) || quantityNeedingRepair <= 0) {
+    throw new Error("[inventoryStorage] markAsNeedsRepair: quantityNeedingRepair must be > 0")
+  }
+  if (quantityNeedingRepair > original.quantity) {
+    throw new Error(
+      `[inventoryStorage] markAsNeedsRepair: quantityNeedingRepair (${quantityNeedingRepair}) exceeds available quantity (${original.quantity})`,
+    )
+  }
+
+  const timestamp = nowIso()
+  const newQuantity = original.quantity - quantityNeedingRepair
+  const updatedOriginal: InventoryItem = {
+    ...original,
+    quantity: newQuantity,
+    removed: newQuantity === 0 ? true : original.removed,
+    updatedAt: timestamp,
+  }
+
+  const newIdValue = newId()
+  const origin = typeof window !== "undefined" ? window.location.origin : ""
+  const newRepairItem: InventoryItem = {
+    ...original,
+    id: newIdValue,
+    quantity: quantityNeedingRepair,
+    condition: "needs_repair",
+    repairDate,
+    repairComment,
+    originalItemId: original.id,
+    writeOffDate: null,
+    writeOffReason: null,
+    qrCodeValue: `${origin}/inventory/${newIdValue}`,
+    removed: false,
+    archived: false,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  }
+
+  const next = [...items]
+  next[originalIndex] = updatedOriginal
+  next.push(newRepairItem)
+  saveInventoryItems(next)
+
+  return { updatedOriginal, newRepairItem }
+}
+
+/**
+ * Returns a needs-repair split item back into its original stock.
+ * Soft-deletes the repair row and restores the original (`removed: false`).
+ */
+export function markAsRepaired(repairItemId: string): {
+  updatedOriginal: InventoryItem
+  removedRepairItem: InventoryItem
+} {
+  const items = getAllInventoryItemsRaw()
+  const repairIndex = items.findIndex((item) => item.id === repairItemId)
+  if (repairIndex === -1) {
+    throw new Error(`[inventoryStorage] markAsRepaired: item not found (${repairItemId})`)
+  }
+
+  const repairItem = items[repairIndex]
+  if (repairItem.condition !== "needs_repair" || !repairItem.originalItemId) {
+    throw new Error(
+      `[inventoryStorage] markAsRepaired: item is not a needs-repair split (${repairItemId})`,
+    )
+  }
+
+  const originalIndex = items.findIndex((item) => item.id === repairItem.originalItemId)
+  if (originalIndex === -1) {
+    throw new Error(
+      `[inventoryStorage] markAsRepaired: original item not found (${repairItem.originalItemId})`,
+    )
+  }
+
+  const timestamp = nowIso()
+  const original = items[originalIndex]
+  const updatedOriginal: InventoryItem = {
+    ...original,
+    quantity: original.quantity + repairItem.quantity,
+    removed: false,
+    updatedAt: timestamp,
+  }
+  const removedRepairItem: InventoryItem = {
+    ...repairItem,
+    removed: true,
+    updatedAt: timestamp,
+  }
+
+  const next = [...items]
+  next[originalIndex] = updatedOriginal
+  next[repairIndex] = removedRepairItem
+  saveInventoryItems(next)
+
+  return { updatedOriginal, removedRepairItem }
 }
 
 /**

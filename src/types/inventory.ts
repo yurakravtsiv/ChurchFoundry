@@ -56,6 +56,10 @@ export type InventoryItem = {
   writeOffReason: string | null
   /** Original item id this write-off was split from — only on written-off items. */
   originalItemId: string | null
+  /** ISO date — only set on needs-repair (split) items created via markAsNeedsRepair. */
+  repairDate: string | null
+  /** Repair comment — only set on needs-repair (split) items created via markAsNeedsRepair. */
+  repairComment: string | null
   createdAt: string
   updatedAt: string
 }
@@ -71,6 +75,8 @@ export type CreateInventoryItemInput = Omit<
   | "writeOffDate"
   | "writeOffReason"
   | "originalItemId"
+  | "repairDate"
+  | "repairComment"
   | "createdAt"
   | "updatedAt"
   | "price"
