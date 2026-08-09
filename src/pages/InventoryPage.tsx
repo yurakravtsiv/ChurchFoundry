@@ -493,6 +493,21 @@ export function InventoryPage() {
     t,
   ])
 
+  const hasRepairItems = useMemo(
+    () => filteredItems.some((item) => item.condition === "needs_repair"),
+    [filteredItems],
+  )
+
+  // Drop repair column sort when the conditional columns are removed.
+  useEffect(() => {
+    if (hasRepairItems) {
+      return
+    }
+    setSorting((prev) =>
+      prev.filter((entry) => entry.id !== "repairDate" && entry.id !== "repairComment"),
+    )
+  }, [hasRepairItems])
+
   const columns = useMemo<ColumnDef<InventoryItem>[]>(() => {
     const baseColumns: ColumnDef<InventoryItem>[] = [
       {
@@ -606,60 +621,66 @@ export function InventoryPage() {
           return <Badge variant="success">{t("inventory.condition.good")}</Badge>
         },
       },
-      {
-        id: "repairDate",
-        accessorFn: (row) => (row.condition === "needs_repair" ? (row.repairDate ?? null) : null),
-        sortingFn: createNullableDateSortingFn((item) =>
-          item.condition === "needs_repair" ? parseDateMs(item.repairDate) : null,
-        ),
-        header: ({ column }) => (
-          <SortableColumnHeader label={t("inventory.columns.repairDate")} column={column} />
-        ),
-        cell: ({ row }) => {
-          const item = row.original
-          if (item.condition !== "needs_repair") {
-            return <span className="text-muted-foreground">—</span>
-          }
-          return (
-            <span className="whitespace-nowrap tabular-nums">
-              {formatWriteOffDate(item.repairDate)}
-            </span>
-          )
-        },
-      },
-      {
-        id: "repairComment",
-        header: t("inventory.columns.repairComment"),
-        cell: ({ row }) => {
-          const item = row.original
-          if (item.condition !== "needs_repair") {
-            return <span className="text-muted-foreground">—</span>
-          }
-          return <TruncatedCell value={item.repairComment ?? ""} className="max-w-[14rem]" />
-        },
-        enableSorting: false,
-      },
-      {
-        id: "availability",
-        accessorFn: (row) => availabilityLabel(row.availability as AvailabilityStatus, t),
-        sortingFn: (rowA, rowB) =>
-          compareLocaleText(
-            availabilityLabel(rowA.original.availability as AvailabilityStatus, t),
-            availabilityLabel(rowB.original.availability as AvailabilityStatus, t),
-            i18n.language,
-          ),
-        header: ({ column }) => (
-          <SortableColumnHeader label={t("inventory.columns.availability")} column={column} />
-        ),
-        cell: ({ row }) => {
-          const status = row.original.availability as AvailabilityStatus
-          if (status === "borrowed") {
-            return <Badge variant="warning">{t("inventory.availability.borrowed")}</Badge>
-          }
-          return <Badge variant="success">{t("inventory.availability.inChurch")}</Badge>
-        },
-      },
     ]
+
+    if (hasRepairItems) {
+      baseColumns.push(
+        {
+          id: "repairDate",
+          accessorFn: (row) => (row.condition === "needs_repair" ? (row.repairDate ?? null) : null),
+          sortingFn: createNullableDateSortingFn((item) =>
+            item.condition === "needs_repair" ? parseDateMs(item.repairDate) : null,
+          ),
+          header: ({ column }) => (
+            <SortableColumnHeader label={t("inventory.columns.repairDate")} column={column} />
+          ),
+          cell: ({ row }) => {
+            const item = row.original
+            if (item.condition !== "needs_repair") {
+              return <span className="text-muted-foreground">—</span>
+            }
+            return (
+              <span className="whitespace-nowrap tabular-nums">
+                {formatWriteOffDate(item.repairDate)}
+              </span>
+            )
+          },
+        },
+        {
+          id: "repairComment",
+          header: t("inventory.columns.repairComment"),
+          cell: ({ row }) => {
+            const item = row.original
+            if (item.condition !== "needs_repair") {
+              return <span className="text-muted-foreground">—</span>
+            }
+            return <TruncatedCell value={item.repairComment ?? ""} className="max-w-[14rem]" />
+          },
+          enableSorting: false,
+        },
+      )
+    }
+
+    baseColumns.push({
+      id: "availability",
+      accessorFn: (row) => availabilityLabel(row.availability as AvailabilityStatus, t),
+      sortingFn: (rowA, rowB) =>
+        compareLocaleText(
+          availabilityLabel(rowA.original.availability as AvailabilityStatus, t),
+          availabilityLabel(rowB.original.availability as AvailabilityStatus, t),
+          i18n.language,
+        ),
+      header: ({ column }) => (
+        <SortableColumnHeader label={t("inventory.columns.availability")} column={column} />
+      ),
+      cell: ({ row }) => {
+        const status = row.original.availability as AvailabilityStatus
+        if (status === "borrowed") {
+          return <Badge variant="warning">{t("inventory.availability.borrowed")}</Badge>
+        }
+        return <Badge variant="success">{t("inventory.availability.inChurch")}</Badge>
+      },
+    })
 
     if (showWrittenOff) {
       baseColumns.push(
@@ -860,6 +881,7 @@ export function InventoryPage() {
   }, [
     categoryNameById,
     formatWriteOffDate,
+    hasRepairItems,
     i18n.language,
     locationNameById,
     navigate,
@@ -892,7 +914,7 @@ export function InventoryPage() {
     )
   }
 
-  const skeletonColumnCount = showWrittenOff ? 15 : 13
+  const skeletonColumnCount = 11 + (hasRepairItems ? 2 : 0) + (showWrittenOff ? 2 : 0)
   const skeletonColumnClassNames = showWrittenOff
     ? [
         "size-10",
