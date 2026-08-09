@@ -1356,6 +1356,7 @@ export function InventoryPage() {
         <MotionDialogContent
           open={discardCreateOpen}
           className="z-[70] max-w-sm"
+          closeOnBackdropClick={false}
           onPointerDownOutside={(event) => event.preventDefault()}
           onInteractOutside={(event) => event.preventDefault()}
         >

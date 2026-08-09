@@ -4,18 +4,29 @@ import { AnimatePresence, motion } from "motion/react"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
-import { DialogPortal } from "@/components/ui/dialog"
+import { DialogClose, DialogPortal } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
 type MotionDialogContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
   open: boolean
+  /** When false, clicking the dimmed backdrop does not close the dialog. Default true. */
+  closeOnBackdropClick?: boolean
 }
 
 const MotionDialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   MotionDialogContentProps
->(({ className, children, open, ...props }, ref) => {
+>(({ className, children, open, closeOnBackdropClick = true, ...props }, ref) => {
   const { t } = useTranslation()
+  const backdropCloseRef = React.useRef<HTMLButtonElement>(null)
+
+  const handleBackdropPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!closeOnBackdropClick || event.target !== event.currentTarget) {
+      return
+    }
+    backdropCloseRef.current?.click()
+  }
+
   return (
     <AnimatePresence>
       {open ? (
@@ -34,10 +45,13 @@ const MotionDialogContent = React.forwardRef<
               Full-screen flex shell centers the panel without CSS/motion translate
               on the scrollable surface (avoids transform + overflow bugs).
             */}
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
+            <div
+              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+              onPointerDown={handleBackdropPointerDown}
+            >
               <motion.div
                 className={cn(
-                  "pointer-events-auto relative flex max-h-[min(90vh,100dvh)] w-full max-w-lg flex-col overflow-hidden border bg-background p-6 shadow-lg sm:rounded-lg",
+                  "relative flex max-h-[min(90vh,100dvh)] w-full max-w-lg flex-col overflow-hidden border bg-background p-6 shadow-lg sm:rounded-lg",
                   className,
                 )}
                 initial={{ opacity: 0, scale: 0.96 }}
@@ -51,6 +65,7 @@ const MotionDialogContent = React.forwardRef<
                   <span className="sr-only">{t("a11y.close")}</span>
                 </DialogPrimitive.Close>
               </motion.div>
+              <DialogClose ref={backdropCloseRef} className="sr-only" tabIndex={-1} aria-hidden />
             </div>
           </DialogPrimitive.Content>
         </DialogPortal>
