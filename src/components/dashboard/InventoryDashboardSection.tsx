@@ -29,8 +29,12 @@ export function InventoryDashboardSection() {
   const { needsRepairCount, borrowedCount } = useMemo(() => {
     const activeItems = items.filter((item) => !item.archived && !item.removed)
     return {
-      needsRepairCount: activeItems.filter((item) => item.condition === "needs_repair").length,
-      borrowedCount: activeItems.filter((item) => item.availability === "borrowed").length,
+      needsRepairCount: activeItems
+        .filter((item) => item.condition === "needs_repair")
+        .reduce((sum, item) => sum + item.quantity, 0),
+      borrowedCount: activeItems
+        .filter((item) => item.availability === "borrowed")
+        .reduce((sum, item) => sum + item.quantity, 0),
     }
   }, [items])
 
