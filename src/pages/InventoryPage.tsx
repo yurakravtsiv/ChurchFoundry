@@ -1,4 +1,5 @@
 import {
+  type Column,
   type ColumnDef,
   flexRender,
   getCoreRowModel,
@@ -78,6 +79,7 @@ import {
 } from "@/hooks/queries/useInventoryQueries"
 import { useTypewriterPlaceholder } from "@/hooks/useTypewriterPlaceholder"
 import { exportToPdf, exportToXlsx, prepareExportData } from "@/lib/inventoryExport"
+import { availabilityLabel, conditionLabel } from "@/lib/inventoryLabels"
 import { itemMatchesSearch } from "@/lib/inventorySearch"
 import { cn } from "@/lib/utils"
 import type { AvailabilityStatus, InventoryItem, ItemCondition } from "@/types/inventory"
@@ -90,6 +92,30 @@ const rowMenuListVariants = {
 const rowMenuItemVariants = {
   hidden: { opacity: 0, x: -4 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.1 } },
+}
+
+function compareLocaleText(a: string, b: string, locale: string) {
+  return a.localeCompare(b, locale, { sensitivity: "base" })
+}
+
+function SortableColumnHeader({
+  label,
+  column,
+}: {
+  label: string
+  column: Column<InventoryItem, unknown>
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      className="-ml-3 h-8"
+      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    >
+      {label}
+      <ArrowUpDown className="size-3.5" />
+    </Button>
+  )
 }
 
 function FilterClearButton({
@@ -431,15 +457,7 @@ export function InventoryPage() {
       {
         accessorKey: "name",
         header: ({ column }) => (
-          <Button
-            type="button"
-            variant="ghost"
-            className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            {t("inventory.columns.name")}
-            <ArrowUpDown className="size-3.5" />
-          </Button>
+          <SortableColumnHeader label={t("inventory.columns.name")} column={column} />
         ),
         cell: ({ row }) => (
           <TruncatedCell value={row.original.name} className="max-w-[14rem] font-medium" />
@@ -447,35 +465,86 @@ export function InventoryPage() {
       },
       {
         id: "category",
-        header: t("inventory.columns.category"),
+        accessorFn: (row) => categoryNameById.get(row.categoryId) ?? "",
+        sortingFn: (rowA, rowB) =>
+          compareLocaleText(
+            categoryNameById.get(rowA.original.categoryId) ?? "",
+            categoryNameById.get(rowB.original.categoryId) ?? "",
+            i18n.language,
+          ),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.category")} column={column} />
+        ),
         cell: ({ row }) => <TruncatedCell value={categoryNameById.get(row.original.categoryId)} />,
-        enableSorting: false,
       },
       {
         id: "subcategory",
-        header: t("inventory.columns.subcategory"),
+        accessorFn: (row) => subcategoryNameById.get(row.subcategoryId) ?? "",
+        sortingFn: (rowA, rowB) =>
+          compareLocaleText(
+            subcategoryNameById.get(rowA.original.subcategoryId) ?? "",
+            subcategoryNameById.get(rowB.original.subcategoryId) ?? "",
+            i18n.language,
+          ),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.subcategory")} column={column} />
+        ),
         cell: ({ row }) => (
           <TruncatedCell value={subcategoryNameById.get(row.original.subcategoryId)} />
         ),
-        enableSorting: false,
       },
       {
         accessorKey: "quantity",
         header: ({ column }) => (
-          <Button
-            type="button"
-            variant="ghost"
-            className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            {t("inventory.columns.quantity")}
-            <ArrowUpDown className="size-3.5" />
-          </Button>
+          <SortableColumnHeader label={t("inventory.columns.quantity")} column={column} />
         ),
       },
       {
-        accessorKey: "condition",
-        header: t("inventory.columns.condition"),
+        id: "location",
+        accessorFn: (row) => locationNameById.get(row.locationId) ?? "",
+        sortingFn: (rowA, rowB) =>
+          compareLocaleText(
+            locationNameById.get(rowA.original.locationId) ?? "",
+            locationNameById.get(rowB.original.locationId) ?? "",
+            i18n.language,
+          ),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.location")} column={column} />
+        ),
+        cell: ({ row }) => <TruncatedCell value={locationNameById.get(row.original.locationId)} />,
+      },
+      {
+        id: "availability",
+        accessorFn: (row) => availabilityLabel(row.availability as AvailabilityStatus, t),
+        sortingFn: (rowA, rowB) =>
+          compareLocaleText(
+            availabilityLabel(rowA.original.availability as AvailabilityStatus, t),
+            availabilityLabel(rowB.original.availability as AvailabilityStatus, t),
+            i18n.language,
+          ),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.availability")} column={column} />
+        ),
+        cell: ({ row }) => {
+          const status = row.original.availability as AvailabilityStatus
+          if (status === "borrowed") {
+            return <Badge variant="warning">{t("inventory.availability.borrowed")}</Badge>
+          }
+          return <Badge variant="success">{t("inventory.availability.inChurch")}</Badge>
+        },
+      },
+      {
+        id: "condition",
+        accessorFn: (row) => conditionLabel(row.condition as ItemCondition, t),
+        sortingFn: (rowA, rowB) =>
+          compareLocaleText(
+            conditionLabel(rowA.original.condition as ItemCondition, t),
+            conditionLabel(rowB.original.condition as ItemCondition, t),
+            i18n.language,
+          ),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.condition")} column={column} />
+        ),
         cell: ({ row }) => {
           const condition = row.original.condition as ItemCondition
           if (condition === "needs_repair") {
@@ -490,7 +559,6 @@ export function InventoryPage() {
           }
           return <Badge variant="success">{t("inventory.condition.good")}</Badge>
         },
-        enableSorting: false,
       },
     ]
 
@@ -518,24 +586,6 @@ export function InventoryPage() {
     }
 
     baseColumns.push(
-      {
-        accessorKey: "locationId",
-        header: t("inventory.columns.location"),
-        cell: ({ row }) => <TruncatedCell value={locationNameById.get(row.original.locationId)} />,
-        enableSorting: false,
-      },
-      {
-        accessorKey: "availability",
-        header: t("inventory.columns.availability"),
-        cell: ({ row }) => {
-          const status = row.original.availability as AvailabilityStatus
-          if (status === "borrowed") {
-            return <Badge variant="warning">{t("inventory.availability.borrowed")}</Badge>
-          }
-          return <Badge variant="success">{t("inventory.availability.inChurch")}</Badge>
-        },
-        enableSorting: false,
-      },
       {
         accessorKey: "availabilityComment",
         header: t("inventory.columns.availabilityComment"),
@@ -646,6 +696,7 @@ export function InventoryPage() {
   }, [
     categoryNameById,
     formatWriteOffDate,
+    i18n.language,
     locationNameById,
     navigate,
     showWrittenOff,
@@ -685,11 +736,11 @@ export function InventoryPage() {
         "h-4 w-24",
         "h-4 w-24",
         "h-4 w-10",
+        "h-4 w-24",
+        "h-4 w-20",
         "h-4 w-20",
         "h-4 w-24",
         "h-4 w-28",
-        "h-4 w-24",
-        "h-4 w-20",
         "h-4 w-28",
         "h-4 w-28",
         "size-8",
@@ -700,8 +751,8 @@ export function InventoryPage() {
         "h-4 w-24",
         "h-4 w-24",
         "h-4 w-10",
-        "h-4 w-20",
         "h-4 w-24",
+        "h-4 w-20",
         "h-4 w-20",
         "h-4 w-28",
         "h-4 w-28",
