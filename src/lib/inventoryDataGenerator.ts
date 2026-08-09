@@ -4,18 +4,26 @@ import {
   createLocation,
   createSubcategory,
   getCategories,
+  getInventoryItemById,
   getLocations,
   getSubcategories,
+  markAsNeedsRepair,
+  writeOffItem,
 } from "@/lib/inventoryStorage"
 import type {
   AvailabilityStatus,
   Category,
   CreateInventoryItemInput,
+  InventoryItem,
   Location,
   Subcategory,
 } from "@/types/inventory"
 
 const SEED_ITEM_COUNT = 20
+/** ~15% of seed items — disjoint from repair batch candidates. */
+const WRITE_OFF_BATCH_COUNT = 3
+/** ~15% of seed items — disjoint from write-off batch candidates. */
+const REPAIR_BATCH_COUNT = 3
 
 const seedCategories = [
   { name: "Звук", subcategories: ["Мікрофони", "Колонки", "Мікшери"] },
@@ -78,6 +86,22 @@ const itemComments = [
   "",
 ]
 
+const writeOffReasons = [
+  "Зношення, не підлягає відновленню",
+  "Втрачено на виїзному заході",
+  "Пошкоджено під час транспортування",
+  "Морально застаріло",
+  "Невідповідність технічним вимогам",
+] as const
+
+const repairComments = [
+  "Не працює живлення",
+  "Тріщина на корпусі",
+  "Потребує заміни батареї",
+  "Скрипить/заїдає механізм",
+  "Пошкоджений кабель",
+] as const
+
 const techCategoryNames = new Set(["Звук", "Техніка"])
 
 type CategorySubcategoryPair = {
@@ -94,6 +118,35 @@ function pickIndex(length: number, seed: number): number {
 
 function pickOne<T>(items: readonly T[], seed: number): T {
   return items[pickIndex(items.length, seed)]!
+}
+
+function shuffledIndices(count: number, seed: number): number[] {
+  const indices = Array.from({ length: count }, (_, index) => index)
+  for (let index = count - 1; index > 0; index -= 1) {
+    const swapIndex = pickIndex(index + 1, seed + index)
+    const current = indices[index]!
+    indices[index] = indices[swapIndex]!
+    indices[swapIndex] = current
+  }
+  return indices
+}
+
+function buildRecentIsoDate(seed: number, minDaysAgo: number, maxDaysAgo: number): string {
+  const span = Math.max(maxDaysAgo - minDaysAgo, 0)
+  const daysAgo = minDaysAgo + pickIndex(span + 1, seed)
+  const date = new Date()
+  date.setDate(date.getDate() - daysAgo)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+function pickSplitQuantity(maxQuantity: number, seed: number): number {
+  if (maxQuantity <= 0) {
+    return 0
+  }
+  return 1 + pickIndex(maxQuantity, seed)
 }
 
 function isTechCategory(categoryName: string): boolean {
@@ -195,13 +248,68 @@ function buildItemInput(
   }
 }
 
+function generateWriteOffBatches(candidates: readonly InventoryItem[]): void {
+  for (const [batchIndex, seedItem] of candidates.entries()) {
+    const current = getInventoryItemById(seedItem.id)
+    if (!current || current.quantity <= 0) {
+      continue
+    }
+
+    const quantityToWriteOff = pickSplitQuantity(current.quantity, batchIndex + 501)
+    if (quantityToWriteOff <= 0) {
+      continue
+    }
+
+    writeOffItem(
+      current.id,
+      quantityToWriteOff,
+      buildRecentIsoDate(batchIndex + 601, 30, 60),
+      pickOne(writeOffReasons, batchIndex + 701),
+    )
+  }
+}
+
+function generateRepairBatches(candidates: readonly InventoryItem[]): void {
+  for (const [batchIndex, seedItem] of candidates.entries()) {
+    const current = getInventoryItemById(seedItem.id)
+    if (!current || current.quantity <= 0) {
+      continue
+    }
+
+    const quantityForRepair = pickSplitQuantity(current.quantity, batchIndex + 801)
+    if (quantityForRepair <= 0) {
+      continue
+    }
+
+    markAsNeedsRepair(
+      current.id,
+      quantityForRepair,
+      buildRecentIsoDate(batchIndex + 901, 30, 60),
+      pickOne(repairComments, batchIndex + 1001),
+    )
+  }
+}
+
 /** Creates 20 varied inventory items (and seed taxonomy if storage is empty). */
 function generateSeedData(): void {
   const { pairs, locations } = ensureSeedTaxonomy()
 
+  const createdItems: InventoryItem[] = []
   for (let index = 0; index < SEED_ITEM_COUNT; index += 1) {
-    createInventoryItem(buildItemInput(index, pairs, locations))
+    createdItems.push(createInventoryItem(buildItemInput(index, pairs, locations)))
   }
+
+  // Disjoint subsets: the same seed item never goes to both write-off and repair flows.
+  const shuffled = shuffledIndices(createdItems.length, 17)
+  const writeOffCandidates = shuffled
+    .slice(0, WRITE_OFF_BATCH_COUNT)
+    .map((index) => createdItems[index]!)
+  const repairCandidates = shuffled
+    .slice(WRITE_OFF_BATCH_COUNT, WRITE_OFF_BATCH_COUNT + REPAIR_BATCH_COUNT)
+    .map((index) => createdItems[index]!)
+
+  generateWriteOffBatches(writeOffCandidates)
+  generateRepairBatches(repairCandidates)
 }
 
 export { generateSeedData, SEED_ITEM_COUNT }
