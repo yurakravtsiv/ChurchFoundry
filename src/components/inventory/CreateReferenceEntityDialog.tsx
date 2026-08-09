@@ -6,6 +6,7 @@ import { Dialog, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
+import { useFocusOnOpen } from "@/hooks/useFocusOnMount"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
 
 type CreateReferenceEntityMutation<T> = {
@@ -40,6 +41,7 @@ export function CreateReferenceEntityDialog<T>({
   const [name, setName] = useState("")
   const [error, setError] = useState("")
   const mutation = createMutationHook()
+  const nameInputRef = useFocusOnOpen<HTMLInputElement>(open)
 
   const reset = () => {
     setName("")
@@ -73,13 +75,18 @@ export function CreateReferenceEntityDialog<T>({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <MotionDialogContent open={open} className="max-w-sm">
+      <MotionDialogContent
+        open={open}
+        className="max-w-sm"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>{t(titleKey)}</DialogTitle>
         </DialogHeader>
         <div className="space-y-2">
           <Label htmlFor={inputIdPrefix}>{t(labelKey)}</Label>
           <Input
+            ref={nameInputRef}
             id={inputIdPrefix}
             className="my-[16px]"
             value={name}
@@ -91,7 +98,6 @@ export function CreateReferenceEntityDialog<T>({
               }
             }}
             placeholder={t(placeholderKey)}
-            autoFocus
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault()

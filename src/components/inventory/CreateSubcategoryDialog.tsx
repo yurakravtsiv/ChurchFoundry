@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { useCreateSubcategoryMutation } from "@/hooks/queries/useInventoryQueries"
+import { useFocusOnOpen } from "@/hooks/useFocusOnMount"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
 import type { Subcategory } from "@/types/inventory"
 
@@ -33,6 +34,7 @@ export function CreateSubcategoryDialog({
 }: CreateSubcategoryDialogProps) {
   const { t } = useTranslation()
   const createSubcategoryMutation = useCreateSubcategoryMutation()
+  const nameInputRef = useFocusOnOpen<HTMLInputElement>(open)
   const [name, setName] = useState("")
   const [error, setError] = useState("")
 
@@ -75,7 +77,11 @@ export function CreateSubcategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <MotionDialogContent open={open} className="max-w-sm">
+      <MotionDialogContent
+        open={open}
+        className="max-w-sm"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>{t("inventory.form.createSubcategoryTitle")}</DialogTitle>
           <DialogDescription>
@@ -85,6 +91,7 @@ export function CreateSubcategoryDialog({
         <div className="space-y-2">
           <Label htmlFor="create-subcategory-name">{t("inventory.form.subcategoryName")}</Label>
           <Input
+            ref={nameInputRef}
             id="create-subcategory-name"
             className="my-[16px]"
             value={name}
@@ -96,7 +103,6 @@ export function CreateSubcategoryDialog({
               }
             }}
             placeholder={t("inventory.form.subcategoryNamePlaceholder")}
-            autoFocus
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault()

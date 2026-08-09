@@ -25,7 +25,7 @@ import {
   X,
 } from "lucide-react"
 import { motion } from "motion/react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { type Ref, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
 import { InventoryItemForm } from "@/components/inventory/InventoryItemForm"
@@ -165,6 +165,7 @@ function InventorySearchInput({
   clearLabel,
   ariaLabel,
   typewriterText,
+  inputRef,
 }: {
   id: string
   value: string
@@ -173,6 +174,7 @@ function InventorySearchInput({
   clearLabel: string
   ariaLabel: string
   typewriterText: string
+  inputRef?: Ref<HTMLInputElement>
 }) {
   const showTypewriter = value.length === 0
 
@@ -183,6 +185,7 @@ function InventorySearchInput({
         aria-hidden
       />
       <Input
+        ref={inputRef}
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -307,6 +310,18 @@ export function InventoryPage() {
   const [showArchived, setShowArchived] = useState(false)
   const [showWrittenOff, setShowWrittenOff] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
+  const desktopSearchRef = useRef<HTMLInputElement>(null)
+  const mobileSearchRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const focusVisibleSearch = () => {
+      const isDesktop = window.matchMedia("(min-width: 768px)").matches
+      const target = isDesktop ? desktopSearchRef.current : mobileSearchRef.current
+      target?.focus({ preventScroll: true })
+    }
+    const frame = requestAnimationFrame(focusVisibleSearch)
+    return () => cancelAnimationFrame(frame)
+  }, [])
   const [createFormDirty, setCreateFormDirty] = useState(false)
   const [discardCreateOpen, setDiscardCreateOpen] = useState(false)
   const [archiveTarget, setArchiveTarget] = useState<InventoryItem | null>(null)
@@ -813,6 +828,7 @@ export function InventoryPage() {
           <div className="hidden min-w-0 flex-1 md:block md:max-w-sm">
             <InventorySearchInput
               id="inventory-search"
+              inputRef={desktopSearchRef}
               value={search}
               onChange={setSearch}
               onClear={() => setSearch("")}
@@ -876,6 +892,7 @@ export function InventoryPage() {
               </Label>
               <InventorySearchInput
                 id="inventory-search-mobile"
+                inputRef={mobileSearchRef}
                 value={search}
                 onChange={setSearch}
                 onClear={() => setSearch("")}
@@ -1306,7 +1323,11 @@ export function InventoryPage() {
           requestCloseCreate()
         }}
       >
-        <MotionDialogContent open={createOpen} className="gap-0 p-0">
+        <MotionDialogContent
+          open={createOpen}
+          className="gap-0 p-0"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
           <DialogHeader className="shrink-0 space-y-1.5 border-b bg-background px-6 py-4 pr-12 text-left">
             <DialogTitle>{t("inventory.addItem")}</DialogTitle>
             <DialogDescription>{t("inventory.form.createDescription")}</DialogDescription>
@@ -1315,6 +1336,7 @@ export function InventoryPage() {
             <InventoryItemForm
               id="inventory-item-create-form"
               mode="create"
+              autoFocusFirstField
               onDirtyChange={setCreateFormDirty}
               onCancel={requestCloseCreate}
               onSubmit={(data) => {

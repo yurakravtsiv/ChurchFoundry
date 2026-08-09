@@ -63,6 +63,8 @@ type InventoryItemFormProps = {
   onBusyChange?: (busy: boolean) => void
   /** Disables all fields (e.g. written-off items). */
   readOnly?: boolean
+  /** Focus the name field after the form mounts (create dialog / edit page). */
+  autoFocusFirstField?: boolean
 }
 
 function toDateInputValue(value: string | null | undefined) {
@@ -121,6 +123,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
       id,
       onBusyChange,
       readOnly = false,
+      autoFocusFirstField = false,
     },
     ref,
   ) {
@@ -326,6 +329,18 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
       mode: "onSubmit",
       reValidateMode: "onChange",
     })
+
+    const { ref: nameFieldRef, ...nameFieldRegister } = register("name")
+
+    useEffect(() => {
+      if (!autoFocusFirstField || readOnly) {
+        return
+      }
+      const frame = requestAnimationFrame(() => {
+        document.getElementById("inventory-item-name")?.focus({ preventScroll: true })
+      })
+      return () => cancelAnimationFrame(frame)
+    }, [autoFocusFirstField, readOnly])
 
     // Keep defaults in sync and clear false dirty state after mount/effects.
     useEffect(() => {
@@ -540,7 +555,8 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                 <Label htmlFor="inventory-item-name">{t("inventory.form.name")} *</Label>
                 <Input
                   id="inventory-item-name"
-                  {...register("name")}
+                  {...nameFieldRegister}
+                  ref={nameFieldRef}
                   maxLength={INVENTORY_FIELD_LIMITS.name}
                   placeholder={t("inventory.form.namePlaceholder")}
                   disabled={readOnly}

@@ -473,6 +473,7 @@ export function InventoryItemDetailPage() {
             id={EDIT_FORM_ID}
             mode="edit"
             layout="page"
+            autoFocusFirstField={!isWrittenOff}
             initialData={item}
             readOnly={isWrittenOff}
             onBusyChange={setFormBusy}
