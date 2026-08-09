@@ -363,6 +363,33 @@ export function InventoryItemDetailPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
                   {isWrittenOff ? (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <DropdownMenuItem disabled>
+                              <Wrench />
+                              {t("inventory.actions.needsRepair")}
+                            </DropdownMenuItem>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {t("inventory.actions.needsRepairWrittenOffHint")}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : isNeedsRepair ? (
+                    <DropdownMenuItem onClick={() => setRepairedConfirmOpen(true)}>
+                      <CheckCircle2 />
+                      {t("inventory.actions.markRepaired")}
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={() => setNeedsRepairOpen(true)}>
+                      <Wrench />
+                      {t("inventory.actions.needsRepair")}
+                    </DropdownMenuItem>
+                  )}
+                  {isWrittenOff ? (
                     <DropdownMenuItem onClick={() => setReturnToStockOpen(true)}>
                       <PackagePlus />
                       {t("inventory.actions.returnToStock")}
@@ -403,33 +430,6 @@ export function InventoryItemDetailPage() {
                     <DropdownMenuItem onClick={() => setWriteOffOpen(true)}>
                       <PackageMinus />
                       {t("inventory.actions.writeOff")}
-                    </DropdownMenuItem>
-                  )}
-                  {isWrittenOff ? (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <DropdownMenuItem disabled>
-                              <Wrench />
-                              {t("inventory.actions.needsRepair")}
-                            </DropdownMenuItem>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {t("inventory.actions.needsRepairWrittenOffHint")}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : isNeedsRepair ? (
-                    <DropdownMenuItem onClick={() => setRepairedConfirmOpen(true)}>
-                      <CheckCircle2 />
-                      {t("inventory.actions.markRepaired")}
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={() => setNeedsRepairOpen(true)}>
-                      <Wrench />
-                      {t("inventory.actions.needsRepair")}
                     </DropdownMenuItem>
                   )}
                   {isWrittenOff ? (

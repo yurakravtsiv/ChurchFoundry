@@ -131,6 +131,11 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
     const isWrittenOff = initialData?.condition === "written_off"
     const isNeedsRepair = initialData?.condition === "needs_repair"
     const { t } = useTranslation()
+    const readOnlyWarningMessage = isWrittenOff
+      ? t("inventory.detail.readOnlyWrittenOffWarning")
+      : isNeedsRepair
+        ? t("inventory.detail.readOnlyNeedsRepairWarning")
+        : t("inventory.detail.readOnlyWrittenOffWarning")
     const {
       data: categories = [],
       isLoading: categoriesLoading,
@@ -522,7 +527,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
               {readOnly ? (
                 <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
                   <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-                  <p>{t("inventory.detail.readOnlyWarning")}</p>
+                  <p>{readOnlyWarningMessage}</p>
                 </div>
               ) : null}
 

@@ -754,6 +754,35 @@ export function InventoryPage() {
                   </motion.div>
                   <motion.div variants={rowMenuItemVariants}>
                     {isWrittenOff ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Wrench />
+                                {t("inventory.actions.needsRepair")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.needsRepairWrittenOffHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : isNeedsRepair ? (
+                      <DropdownMenuItem onClick={() => setRepairedConfirmTarget(item)}>
+                        <CheckCircle2 />
+                        {t("inventory.actions.markRepaired")}
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onClick={() => setNeedsRepairTarget(item)}>
+                        <Wrench />
+                        {t("inventory.actions.needsRepair")}
+                      </DropdownMenuItem>
+                    )}
+                  </motion.div>
+                  <motion.div variants={rowMenuItemVariants}>
+                    {isWrittenOff ? (
                       <DropdownMenuItem onClick={() => setReturnToStockTarget(item)}>
                         <PackagePlus />
                         {t("inventory.actions.returnToStock")}
@@ -794,35 +823,6 @@ export function InventoryPage() {
                       <DropdownMenuItem onClick={() => setWriteOffTarget(item)}>
                         <PackageMinus />
                         {t("inventory.actions.writeOff")}
-                      </DropdownMenuItem>
-                    )}
-                  </motion.div>
-                  <motion.div variants={rowMenuItemVariants}>
-                    {isWrittenOff ? (
-                      <TooltipProvider delayDuration={200}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div>
-                              <DropdownMenuItem disabled>
-                                <Wrench />
-                                {t("inventory.actions.needsRepair")}
-                              </DropdownMenuItem>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {t("inventory.actions.needsRepairWrittenOffHint")}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ) : isNeedsRepair ? (
-                      <DropdownMenuItem onClick={() => setRepairedConfirmTarget(item)}>
-                        <CheckCircle2 />
-                        {t("inventory.actions.markRepaired")}
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem onClick={() => setNeedsRepairTarget(item)}>
-                        <Wrench />
-                        {t("inventory.actions.needsRepair")}
                       </DropdownMenuItem>
                     )}
                   </motion.div>
