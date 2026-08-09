@@ -13,6 +13,8 @@ export type InventoryExportRow = {
   subcategory: string
   quantity: number
   condition: string
+  repairDate: string
+  repairComment: string
   writeOffDate?: string
   writeOffReason?: string
   location: string
@@ -38,6 +40,8 @@ const BASE_EXPORT_ROW_KEYS = [
   "subcategory",
   "quantity",
   "condition",
+  "repairDate",
+  "repairComment",
   "location",
   "availability",
   "availabilityComment",
@@ -55,8 +59,8 @@ function getExportRowKeys(includeWriteOffColumns: boolean): ExportRowKey[] {
     return [...BASE_EXPORT_ROW_KEYS]
   }
   const keys: ExportRowKey[] = [...BASE_EXPORT_ROW_KEYS]
-  const conditionIndex = keys.indexOf("condition")
-  keys.splice(conditionIndex + 1, 0, "writeOffDate", "writeOffReason")
+  const repairCommentIndex = keys.indexOf("repairComment")
+  keys.splice(repairCommentIndex + 1, 0, "writeOffDate", "writeOffReason")
   return keys
 }
 
@@ -100,6 +104,8 @@ export function getExportColumnHeaders(t: TFunction): Record<ExportRowKey, strin
     subcategory: t("export.columns.subcategory"),
     quantity: t("export.columns.quantity"),
     condition: t("export.columns.condition"),
+    repairDate: t("export.columns.repairDate"),
+    repairComment: t("export.columns.repairComment"),
     writeOffDate: t("export.columns.writeOffDate"),
     writeOffReason: t("export.columns.writeOffReason"),
     location: t("export.columns.location"),
@@ -203,6 +209,9 @@ export function prepareExportData(
           subcategories.find((subcategory) => subcategory.id === item.subcategoryId)?.name ?? "",
         quantity: item.quantity,
         condition: conditionLabel(item.condition, t),
+        repairDate:
+          item.condition === "needs_repair" ? formatWriteOffDateForExport(item.repairDate) : "",
+        repairComment: item.condition === "needs_repair" ? (item.repairComment ?? "") : "",
         location: locations.find((location) => location.id === item.locationId)?.name ?? "",
         availability: availabilityLabel(item.availability, t),
         availabilityComment: item.availabilityComment,

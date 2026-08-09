@@ -5,6 +5,7 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  type SortingFn,
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table"
@@ -12,6 +13,7 @@ import {
   Archive,
   ArchiveRestore,
   ArrowUpDown,
+  CheckCircle2,
   FileSpreadsheet,
   FileText,
   FilterX,
@@ -22,6 +24,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Wrench,
   X,
 } from "lucide-react"
 import { motion } from "motion/react"
@@ -29,6 +32,8 @@ import { type Ref, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
 import { InventoryItemForm } from "@/components/inventory/InventoryItemForm"
+import { NeedsRepairDialog } from "@/components/inventory/NeedsRepairDialog"
+import { RepairedConfirmDialog } from "@/components/inventory/RepairedConfirmDialog"
 import { ReturnToStockDialog } from "@/components/inventory/ReturnToStockDialog"
 import { WriteOffDialog } from "@/components/inventory/WriteOffDialog"
 import { Badge } from "@/components/ui/badge"
@@ -96,6 +101,40 @@ const rowMenuItemVariants = {
 
 function compareLocaleText(a: string, b: string, locale: string) {
   return a.localeCompare(b, locale, { sensitivity: "base" })
+}
+
+function parseDateMs(value: string | null | undefined): number | null {
+  if (!value) {
+    return null
+  }
+  const ms = new Date(value).getTime()
+  return Number.isNaN(ms) ? null : ms
+}
+
+/** Null/invalid dates always sort last, in both ascending and descending order. */
+function compareNullableDateSort(aMs: number | null, bMs: number | null, desc: boolean): number {
+  const aNull = aMs === null
+  const bNull = bMs === null
+  if (aNull && bNull) {
+    return 0
+  }
+  if (aNull) {
+    return desc ? -1 : 1
+  }
+  if (bNull) {
+    return desc ? 1 : -1
+  }
+  return aMs - bMs
+}
+
+function createNullableDateSortingFn(
+  getDateMs: (item: InventoryItem) => number | null,
+): SortingFn<InventoryItem> {
+  return (rowA, rowB, columnId) => {
+    const column = rowA._getAllCellsByColumnId()[columnId]?.column
+    const desc = column?.getIsSorted() === "desc"
+    return compareNullableDateSort(getDateMs(rowA.original), getDateMs(rowB.original), desc)
+  }
 }
 
 function SortableColumnHeader({
@@ -327,6 +366,8 @@ export function InventoryPage() {
   const [archiveTarget, setArchiveTarget] = useState<InventoryItem | null>(null)
   const [writeOffTarget, setWriteOffTarget] = useState<InventoryItem | null>(null)
   const [returnToStockTarget, setReturnToStockTarget] = useState<InventoryItem | null>(null)
+  const [needsRepairTarget, setNeedsRepairTarget] = useState<InventoryItem | null>(null)
+  const [repairedConfirmTarget, setRepairedConfirmTarget] = useState<InventoryItem | null>(null)
 
   const formatWriteOffDate = useCallback(
     (value: string | null) => {
@@ -348,6 +389,16 @@ export function InventoryPage() {
     setConditionFilter(initialConditionFilter(params))
     setAvailabilityFilter(initialAvailabilityFilter(params))
   }, [locationSearch])
+
+  // Drop write-off column sort when the conditional columns are removed.
+  useEffect(() => {
+    if (showWrittenOff) {
+      return
+    }
+    setSorting((prev) =>
+      prev.filter((entry) => entry.id !== "writeOffDate" && entry.id !== "writeOffReason"),
+    )
+  }, [showWrittenOff])
 
   const requestCloseCreate = useCallback(() => {
     if (createFormDirty) {
@@ -529,26 +580,6 @@ export function InventoryPage() {
         cell: ({ row }) => <TruncatedCell value={locationNameById.get(row.original.locationId)} />,
       },
       {
-        id: "availability",
-        accessorFn: (row) => availabilityLabel(row.availability as AvailabilityStatus, t),
-        sortingFn: (rowA, rowB) =>
-          compareLocaleText(
-            availabilityLabel(rowA.original.availability as AvailabilityStatus, t),
-            availabilityLabel(rowB.original.availability as AvailabilityStatus, t),
-            i18n.language,
-          ),
-        header: ({ column }) => (
-          <SortableColumnHeader label={t("inventory.columns.availability")} column={column} />
-        ),
-        cell: ({ row }) => {
-          const status = row.original.availability as AvailabilityStatus
-          if (status === "borrowed") {
-            return <Badge variant="warning">{t("inventory.availability.borrowed")}</Badge>
-          }
-          return <Badge variant="success">{t("inventory.availability.inChurch")}</Badge>
-        },
-      },
-      {
         id: "condition",
         accessorFn: (row) => conditionLabel(row.condition as ItemCondition, t),
         sortingFn: (rowA, rowB) =>
@@ -575,19 +606,75 @@ export function InventoryPage() {
           return <Badge variant="success">{t("inventory.condition.good")}</Badge>
         },
       },
+      {
+        id: "repairDate",
+        accessorFn: (row) => (row.condition === "needs_repair" ? (row.repairDate ?? null) : null),
+        sortingFn: createNullableDateSortingFn((item) =>
+          item.condition === "needs_repair" ? parseDateMs(item.repairDate) : null,
+        ),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.repairDate")} column={column} />
+        ),
+        cell: ({ row }) => {
+          const item = row.original
+          if (item.condition !== "needs_repair") {
+            return <span className="text-muted-foreground">—</span>
+          }
+          return (
+            <span className="whitespace-nowrap tabular-nums">
+              {formatWriteOffDate(item.repairDate)}
+            </span>
+          )
+        },
+      },
+      {
+        id: "repairComment",
+        header: t("inventory.columns.repairComment"),
+        cell: ({ row }) => {
+          const item = row.original
+          if (item.condition !== "needs_repair") {
+            return <span className="text-muted-foreground">—</span>
+          }
+          return <TruncatedCell value={item.repairComment ?? ""} className="max-w-[14rem]" />
+        },
+        enableSorting: false,
+      },
+      {
+        id: "availability",
+        accessorFn: (row) => availabilityLabel(row.availability as AvailabilityStatus, t),
+        sortingFn: (rowA, rowB) =>
+          compareLocaleText(
+            availabilityLabel(rowA.original.availability as AvailabilityStatus, t),
+            availabilityLabel(rowB.original.availability as AvailabilityStatus, t),
+            i18n.language,
+          ),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.availability")} column={column} />
+        ),
+        cell: ({ row }) => {
+          const status = row.original.availability as AvailabilityStatus
+          if (status === "borrowed") {
+            return <Badge variant="warning">{t("inventory.availability.borrowed")}</Badge>
+          }
+          return <Badge variant="success">{t("inventory.availability.inChurch")}</Badge>
+        },
+      },
     ]
 
     if (showWrittenOff) {
       baseColumns.push(
         {
           id: "writeOffDate",
-          header: t("inventory.columns.writeOffDate"),
+          accessorFn: (row) => row.writeOffDate ?? null,
+          sortingFn: createNullableDateSortingFn((item) => parseDateMs(item.writeOffDate)),
+          header: ({ column }) => (
+            <SortableColumnHeader label={t("inventory.columns.writeOffDate")} column={column} />
+          ),
           cell: ({ row }) => (
             <span className="whitespace-nowrap tabular-nums">
               {formatWriteOffDate(row.original.writeOffDate)}
             </span>
           ),
-          enableSorting: false,
         },
         {
           id: "writeOffReason",
@@ -621,6 +708,7 @@ export function InventoryPage() {
         cell: ({ row }) => {
           const item = row.original
           const isWrittenOff = item.condition === "written_off"
+          const isNeedsRepair = item.condition === "needs_repair"
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -665,10 +753,55 @@ export function InventoryPage() {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                    ) : isNeedsRepair ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <PackageMinus />
+                                {t("inventory.actions.writeOff")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.writeOffNeedsRepairHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     ) : (
                       <DropdownMenuItem onClick={() => setWriteOffTarget(item)}>
                         <PackageMinus />
                         {t("inventory.actions.writeOff")}
+                      </DropdownMenuItem>
+                    )}
+                  </motion.div>
+                  <motion.div variants={rowMenuItemVariants}>
+                    {isWrittenOff ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Wrench />
+                                {t("inventory.actions.needsRepair")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.needsRepairWrittenOffHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : isNeedsRepair ? (
+                      <DropdownMenuItem onClick={() => setRepairedConfirmTarget(item)}>
+                        <CheckCircle2 />
+                        {t("inventory.actions.markRepaired")}
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onClick={() => setNeedsRepairTarget(item)}>
+                        <Wrench />
+                        {t("inventory.actions.needsRepair")}
                       </DropdownMenuItem>
                     )}
                   </motion.div>
@@ -686,6 +819,22 @@ export function InventoryPage() {
                           </TooltipTrigger>
                           <TooltipContent>
                             {t("inventory.actions.archiveWrittenOffHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : isNeedsRepair ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Archive />
+                                {t("inventory.actions.archive")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.archiveNeedsRepairHint")}
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -743,7 +892,7 @@ export function InventoryPage() {
     )
   }
 
-  const skeletonColumnCount = showWrittenOff ? 13 : 11
+  const skeletonColumnCount = showWrittenOff ? 15 : 13
   const skeletonColumnClassNames = showWrittenOff
     ? [
         "size-10",
@@ -753,6 +902,8 @@ export function InventoryPage() {
         "h-4 w-10",
         "h-4 w-24",
         "h-4 w-20",
+        "h-4 w-24",
+        "h-4 w-28",
         "h-4 w-20",
         "h-4 w-24",
         "h-4 w-28",
@@ -768,6 +919,8 @@ export function InventoryPage() {
         "h-4 w-10",
         "h-4 w-24",
         "h-4 w-20",
+        "h-4 w-24",
+        "h-4 w-28",
         "h-4 w-20",
         "h-4 w-28",
         "h-4 w-28",
@@ -1446,6 +1599,32 @@ export function InventoryPage() {
         }}
         onConfirm={() => {
           setReturnToStockTarget(null)
+        }}
+      />
+
+      <NeedsRepairDialog
+        item={needsRepairTarget}
+        open={needsRepairTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setNeedsRepairTarget(null)
+          }
+        }}
+        onConfirm={() => {
+          setNeedsRepairTarget(null)
+        }}
+      />
+
+      <RepairedConfirmDialog
+        item={repairedConfirmTarget}
+        open={repairedConfirmTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRepairedConfirmTarget(null)
+          }
+        }}
+        onConfirm={() => {
+          setRepairedConfirmTarget(null)
         }}
       />
     </main>

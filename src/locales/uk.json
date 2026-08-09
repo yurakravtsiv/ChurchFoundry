@@ -12,6 +12,8 @@
       "subcategory": "Підкатегорія",
       "quantity": "Кількість",
       "condition": "Стан",
+      "repairDate": "Дата несправності",
+      "repairComment": "Несправність",
       "writeOffDate": "Дата списання",
       "writeOffReason": "Причина списання",
       "location": "Локація",
@@ -84,7 +86,9 @@
       "returnToInventory": "Повернутись до інвентарю",
       "archivedBadge": "Архів",
       "writtenOffBadge": "Списано",
+      "needsRepairBadge": "Потребує\nремонту",
       "writeOffBatchesTitle": "Списані предмети",
+      "repairBatchesTitle": "Потребують ремонту",
       "readOnlyWarning": "Списаний предмет не можна редагувати",
       "writeOffDate": "Дата списання",
       "writeOffReason": "Причина списання",
@@ -128,6 +132,8 @@
       "quantity": "Кількість",
       "location": "Локація",
       "condition": "Стан",
+      "repairDate": "Дата несправності",
+      "repairComment": "Несправність",
       "availability": "Наявність",
       "availabilityComment": "Коментар наявності",
       "comment": "Коментар",
@@ -142,8 +148,15 @@
       "cancel": "Скасувати",
       "writeOff": "Списати",
       "returnToStock": "Повернути в наявність",
+      "needsRepair": "Потребує ремонту",
+      "markRepaired": "Відремонтовано",
+      "markNeedsRepair": "Позначити",
+      "confirm": "Підтвердити",
       "archiveWrittenOffHint": "Списаний предмет не можна архівувати",
-      "writeOffArchivedHint": "Архівований предмет не можна списати"
+      "archiveNeedsRepairHint": "Предмет, що потребує ремонту, не можна архівувати",
+      "writeOffArchivedHint": "Архівований предмет не можна списати",
+      "writeOffNeedsRepairHint": "Предмет, що потребує ремонту, не можна списати",
+      "needsRepairWrittenOffHint": "Списаний предмет не може потребувати ремонту"
     },
     "writeOff": {
       "title": "Списати «{{name}}»",
@@ -163,6 +176,24 @@
     "returnToStock": {
       "title": "Повернути в наявність?",
       "description": "Повернути {{quantity}} шт. предмета «{{name}}» в наявність оригінального предмету?"
+    },
+    "needsRepair": {
+      "title": "Потребує ремонту «{{name}}»",
+      "description": "Наявна кількість: {{quantity}}",
+      "quantity": "Кількість, що потребує ремонту",
+      "date": "Дата",
+      "comment": "Коментар про несправність",
+      "validation": {
+        "quantityInvalid": "Вкажіть ціле число",
+        "quantityMin": "Мінімум 1",
+        "quantityMax": "Не може перевищувати наявну кількість ({{quantity}})",
+        "dateRequired": "Вкажіть дату",
+        "commentRequired": "Вкажіть коментар"
+      }
+    },
+    "repaired": {
+      "title": "Відремонтовано?",
+      "description": "Позначити {{quantity}} шт. предмета «{{name}}» як відремонтовані і повернути в наявність оригінального предмету?"
     },
     "form": {
       "createDescription": "Заповніть дані предмета інвентарю",
@@ -205,6 +236,8 @@
       "commentPlaceholder": "Додаткові нотатки",
       "writeOffDate": "Дата списання",
       "writeOffReason": "Причина списання",
+      "repairDate": "Дата",
+      "repairComment": "Коментар про несправність",
       "photos": "Фото",
       "photosCompressing": "Стиснення фото…",
       "setAvatar": "Зробити головним фото",

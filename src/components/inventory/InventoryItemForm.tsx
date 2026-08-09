@@ -129,6 +129,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
   ) {
     const isPageLayout = layout === "page"
     const isWrittenOff = initialData?.condition === "written_off"
+    const isNeedsRepair = initialData?.condition === "needs_repair"
     const { t } = useTranslation()
     const {
       data: categories = [],
@@ -210,7 +211,6 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
               )
               .optional()
               .default(""),
-            condition: z.enum(["good", "needs_repair", "written_off"]),
             supplier: z
               .string()
               .max(
@@ -296,12 +296,6 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
         locationId: initialData?.locationId ?? "",
         availability: initialData?.availability ?? ("in_church" as const),
         availabilityComment: initialData?.availabilityComment ?? "",
-        condition:
-          initialData?.condition === "written_off"
-            ? ("written_off" as const)
-            : initialData?.condition === "needs_repair"
-              ? ("needs_repair" as const)
-              : ("good" as const),
         supplier: initialData?.supplier ?? "",
         price: initialData?.price ?? null,
         serialNumber: initialData?.serialNumber ?? "",
@@ -456,7 +450,6 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           availability: values.availability,
           availabilityComment:
             values.availability === "borrowed" ? (values.availabilityComment?.trim() ?? "") : "",
-          condition: values.condition,
           supplier: values.supplier?.trim() ?? "",
           price: values.price ?? null,
           serialNumber: values.serialNumber?.trim() ?? "",
@@ -690,37 +683,6 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                 ) : null}
               </div>
 
-              <div className="space-y-2">
-                <Label>{t("inventory.form.condition")} *</Label>
-                <Controller
-                  control={control}
-                  name="condition"
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange} disabled={readOnly}>
-                      <SelectTrigger aria-label={t("inventory.form.condition")}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="good">{t("inventory.condition.good")}</SelectItem>
-                        <SelectItem value="needs_repair">
-                          {t("inventory.condition.needsRepair")}
-                        </SelectItem>
-                        {isWrittenOff ? (
-                          <SelectItem value="written_off">
-                            {t("inventory.condition.writtenOff")}
-                          </SelectItem>
-                        ) : null}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.condition ? (
-                  <p className="text-sm text-destructive" data-field-error>
-                    {errors.condition.message}
-                  </p>
-                ) : null}
-              </div>
-
               {isWrittenOff ? (
                 <>
                   <div className="space-y-2">
@@ -731,6 +693,25 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                     <Label>{t("inventory.form.writeOffReason")}</Label>
                     <Textarea
                       value={initialData?.writeOffReason ?? ""}
+                      rows={4}
+                      readOnly
+                      disabled
+                      className="min-h-0 resize-none"
+                    />
+                  </div>
+                </>
+              ) : null}
+
+              {isNeedsRepair ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>{t("inventory.form.repairDate")}</Label>
+                    <Input value={toDateInputValue(initialData?.repairDate)} readOnly disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("inventory.form.repairComment")}</Label>
+                    <Textarea
+                      value={initialData?.repairComment ?? ""}
                       rows={4}
                       readOnly
                       disabled

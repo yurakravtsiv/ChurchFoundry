@@ -290,7 +290,7 @@ export function createInventoryItem(data: CreateInventoryItemInput): InventoryIt
   const item: InventoryItem = {
     ...data,
     price: data.price ?? null,
-    condition: data.condition ?? "good",
+    condition: "good",
     id,
     inventoryNumberId: maxInventoryNumberId(existingItems) + 1,
     qrCodeValue: `${origin}/inventory/${id}`,

@@ -10,6 +10,8 @@ import {
   getInventoryItems,
   getLocations,
   getSubcategories,
+  markAsNeedsRepair,
+  markAsRepaired,
   returnToStock,
   unarchiveInventoryItem,
   updateInventoryItem,
@@ -129,6 +131,36 @@ export function useReturnToStockMutation() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (writtenOffItemId: string) => returnToStock(writtenOffItemId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
+    },
+  })
+}
+
+export function useMarkAsNeedsRepairMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      quantity,
+      repairDate,
+      repairComment,
+    }: {
+      id: string
+      quantity: number
+      repairDate: string
+      repairComment: string
+    }) => markAsNeedsRepair(id, quantity, repairDate, repairComment),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
+    },
+  })
+}
+
+export function useMarkAsRepairedMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (repairItemId: string) => markAsRepaired(repairItemId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
     },

@@ -83,7 +83,6 @@ export type CreateInventoryItemInput = Omit<
   | "condition"
 > & {
   price?: number | null
-  condition?: ItemCondition
 }
 
 /** Часткове оновлення; id / inventoryNumberId / createdAt / qrCodeValue не змінюються тут. */

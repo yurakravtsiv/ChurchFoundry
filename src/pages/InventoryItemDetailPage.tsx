@@ -3,10 +3,12 @@ import {
   ArchiveRestore,
   ArrowLeft,
   Check,
+  CheckCircle2,
   MoreVertical,
   PackageMinus,
   PackagePlus,
   PackageX,
+  Wrench,
   X,
 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -18,6 +20,8 @@ import {
   type InventoryItemFormHandle,
 } from "@/components/inventory/InventoryItemForm"
 import { ItemQrCode } from "@/components/inventory/ItemQrCode"
+import { NeedsRepairDialog } from "@/components/inventory/NeedsRepairDialog"
+import { RepairedConfirmDialog } from "@/components/inventory/RepairedConfirmDialog"
 import { ReturnToStockDialog } from "@/components/inventory/ReturnToStockDialog"
 import { WriteOffDialog } from "@/components/inventory/WriteOffDialog"
 import { Badge } from "@/components/ui/badge"
@@ -121,6 +125,17 @@ export function InventoryItemDetailPage() {
       (entry) => entry.originalItemId === item.id && entry.condition === "written_off",
     )
   }, [item, items])
+  const relatedRepairs = useMemo(() => {
+    if (!item || item.condition === "written_off") {
+      return []
+    }
+    return items.filter(
+      (entry) =>
+        entry.originalItemId === item.id &&
+        entry.condition === "needs_repair" &&
+        entry.removed !== true,
+    )
+  }, [item, items])
 
   const [formDirty, setFormDirty] = useState(false)
   const [formBusy, setFormBusy] = useState(false)
@@ -128,7 +143,11 @@ export function InventoryItemDetailPage() {
   const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false)
   const [writeOffOpen, setWriteOffOpen] = useState(false)
   const [returnToStockOpen, setReturnToStockOpen] = useState(false)
+  const [needsRepairOpen, setNeedsRepairOpen] = useState(false)
+  const [repairedConfirmOpen, setRepairedConfirmOpen] = useState(false)
   const isWrittenOff = item?.condition === "written_off"
+  const isNeedsRepair = item?.condition === "needs_repair"
+  const isReadOnly = isWrittenOff || isNeedsRepair
 
   const formatWriteOffDate = (value: string | null) => {
     if (!value) {
@@ -140,6 +159,7 @@ export function InventoryItemDetailPage() {
     }
     return date.toLocaleDateString(i18n.language)
   }
+  const formatRepairDate = formatWriteOffDate
   const formRef = useRef<InventoryItemFormHandle>(null)
   const allowLeaveRef = useRef(false)
   const leaveAfterSaveRef = useRef(false)
@@ -363,10 +383,53 @@ export function InventoryItemDetailPage() {
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
+                  ) : isNeedsRepair ? (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <DropdownMenuItem disabled>
+                              <PackageMinus />
+                              {t("inventory.actions.writeOff")}
+                            </DropdownMenuItem>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {t("inventory.actions.writeOffNeedsRepairHint")}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   ) : (
                     <DropdownMenuItem onClick={() => setWriteOffOpen(true)}>
                       <PackageMinus />
                       {t("inventory.actions.writeOff")}
+                    </DropdownMenuItem>
+                  )}
+                  {isWrittenOff ? (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <DropdownMenuItem disabled>
+                              <Wrench />
+                              {t("inventory.actions.needsRepair")}
+                            </DropdownMenuItem>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {t("inventory.actions.needsRepairWrittenOffHint")}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : isNeedsRepair ? (
+                    <DropdownMenuItem onClick={() => setRepairedConfirmOpen(true)}>
+                      <CheckCircle2 />
+                      {t("inventory.actions.markRepaired")}
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={() => setNeedsRepairOpen(true)}>
+                      <Wrench />
+                      {t("inventory.actions.needsRepair")}
                     </DropdownMenuItem>
                   )}
                   {isWrittenOff ? (
@@ -382,6 +445,22 @@ export function InventoryItemDetailPage() {
                         </TooltipTrigger>
                         <TooltipContent>
                           {t("inventory.actions.archiveWrittenOffHint")}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : isNeedsRepair ? (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <DropdownMenuItem disabled>
+                              <Archive />
+                              {t("inventory.actions.archive")}
+                            </DropdownMenuItem>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {t("inventory.actions.archiveNeedsRepairHint")}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -403,6 +482,10 @@ export function InventoryItemDetailPage() {
                 <Badge variant="secondary" className="shrink-0">
                   {t("inventory.detail.writtenOffBadge")}
                 </Badge>
+              ) : isNeedsRepair ? (
+                <Badge className="shrink-0 whitespace-pre-line border-transparent bg-red-100 text-center leading-tight text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                  {t("inventory.detail.needsRepairBadge")}
+                </Badge>
               ) : null}
               {item.archived ? (
                 <Badge variant="secondary" className="shrink-0">
@@ -411,7 +494,7 @@ export function InventoryItemDetailPage() {
               ) : null}
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              {isWrittenOff ? (
+              {isReadOnly ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -473,9 +556,9 @@ export function InventoryItemDetailPage() {
             id={EDIT_FORM_ID}
             mode="edit"
             layout="page"
-            autoFocusFirstField={!isWrittenOff}
+            autoFocusFirstField={!isReadOnly}
             initialData={item}
-            readOnly={isWrittenOff}
+            readOnly={isReadOnly}
             onBusyChange={setFormBusy}
             onDirtyChange={setFormDirty}
             onCancel={requestLeave}
@@ -483,7 +566,7 @@ export function InventoryItemDetailPage() {
               clearPendingLeave()
             }}
             onSubmit={(data) => {
-              if (isWrittenOff) {
+              if (isReadOnly) {
                 return
               }
               updateItemMutation.mutate(
@@ -519,6 +602,42 @@ export function InventoryItemDetailPage() {
         </div>
 
         <div className="flex min-w-0 flex-col gap-6 md:col-span-1">
+          {relatedRepairs.length > 0 ? (
+            <Card className="min-w-0 overflow-hidden">
+              <CardHeader className="px-2 py-4">
+                <CardTitle>{t("inventory.detail.repairBatchesTitle")}</CardTitle>
+              </CardHeader>
+              <CardContent className="min-w-0 overflow-x-auto p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("inventory.columns.quantity")}</TableHead>
+                      <TableHead>{t("inventory.columns.repairDate")}</TableHead>
+                      <TableHead>{t("inventory.columns.repairComment")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {relatedRepairs.map((batch) => (
+                      <TableRow
+                        key={batch.id}
+                        className="cursor-pointer"
+                        onClick={() => navigate(`/inventory/${batch.id}`)}
+                      >
+                        <TableCell className="tabular-nums">{batch.quantity}</TableCell>
+                        <TableCell className="whitespace-nowrap tabular-nums">
+                          {formatRepairDate(batch.repairDate)}
+                        </TableCell>
+                        <TableCell className="max-w-[10rem] truncate">
+                          {batch.repairComment || "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ) : null}
+
           {relatedWriteOffs.length > 0 ? (
             <Card className="min-w-0 overflow-hidden">
               <CardHeader className="px-2 py-4">
@@ -658,6 +777,30 @@ export function InventoryItemDetailPage() {
         item={item}
         open={returnToStockOpen}
         onOpenChange={setReturnToStockOpen}
+        onConfirm={() => {
+          navigateBackOrInventory()
+        }}
+      />
+
+      <NeedsRepairDialog
+        item={item}
+        open={needsRepairOpen}
+        onOpenChange={setNeedsRepairOpen}
+        onConfirm={() => {
+          setFormDirty(false)
+          void refetch().then((result) => {
+            const refreshed = result.data?.find((entry) => entry.id === id)
+            if (!refreshed) {
+              navigateBackOrInventory()
+            }
+          })
+        }}
+      />
+
+      <RepairedConfirmDialog
+        item={item}
+        open={repairedConfirmOpen}
+        onOpenChange={setRepairedConfirmOpen}
         onConfirm={() => {
           navigateBackOrInventory()
         }}

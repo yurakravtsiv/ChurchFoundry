@@ -11,7 +11,6 @@ import type {
   AvailabilityStatus,
   Category,
   CreateInventoryItemInput,
-  ItemCondition,
   Location,
   Subcategory,
 } from "@/types/inventory"
@@ -174,7 +173,6 @@ function buildItemInput(
   const pair = pickOne(pairs, index + 11)
   const location = pickOne(locations, index + 23)
   const availability: AvailabilityStatus = index % 10 < 7 ? "in_church" : "borrowed"
-  const condition: ItemCondition = index % 10 < 7 ? "good" : "needs_repair"
   const supplier = pickOne(suppliers, index + 5)
   const hasPrice = index % 3 !== 0
   const price = hasPrice ? 50 + pickIndex(4951, index + 41) : null
@@ -187,7 +185,6 @@ function buildItemInput(
     locationId: location.id,
     availability,
     availabilityComment: availability === "borrowed" ? pickOne(borrowedComments, index + 19) : "",
-    condition,
     supplier,
     price,
     serialNumber: buildSerialNumber(index, pair.category.name),
