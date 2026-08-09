@@ -68,7 +68,7 @@
       "pdfTooltip": "Export the filtered table to a *.pdf file",
       "empty": "No data to export"
     },
-    "showArchived": "Show archived",
+    "showArchived": "Show only archived",
     "hideArchived": "Hide archived",
     "showWrittenOff": "Show only written off",
     "hideWrittenOff": "Hide written off",

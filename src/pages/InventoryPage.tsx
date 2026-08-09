@@ -348,11 +348,15 @@ export function InventoryPage() {
         if (item.condition !== "written_off") {
           return false
         }
+      } else if (showArchived) {
+        if (!item.archived) {
+          return false
+        }
       } else {
         if (item.condition === "written_off") {
           return false
         }
-        if (!showArchived && item.archived) {
+        if (item.archived) {
           return false
         }
       }
@@ -368,7 +372,12 @@ export function InventoryPage() {
       if (locationFilter !== "all" && item.locationId !== locationFilter) {
         return false
       }
-      if (!showWrittenOff && conditionFilter !== "all" && item.condition !== conditionFilter) {
+      if (
+        !showWrittenOff &&
+        !showArchived &&
+        conditionFilter !== "all" &&
+        item.condition !== conditionFilter
+      ) {
         return false
       }
       if (!itemMatchesSearch(item, search, categories, subcategories, locations, t)) {
@@ -724,9 +733,10 @@ export function InventoryPage() {
 
   const runExport = async (format: "xlsx" | "pdf") => {
     const exportOptions = { includeWriteOffColumns: showWrittenOff }
-    const exportItems = showWrittenOff
-      ? filteredItems
-      : filteredItems.filter((item) => !item.removed && !item.archived)
+    const exportItems =
+      showWrittenOff || showArchived
+        ? filteredItems
+        : filteredItems.filter((item) => !item.removed && !item.archived)
     if (exportItems.length === 0) {
       window.alert(t("inventory.export.empty"))
       return
@@ -1207,7 +1217,7 @@ export function InventoryPage() {
                   key={row.id}
                   className={cn(
                     "cursor-pointer",
-                    row.original.archived && "bg-muted/50 text-muted-foreground opacity-70",
+                    row.original.archived && "bg-muted/60 text-foreground/85",
                   )}
                   onClick={() => navigate(`/inventory/${row.original.id}`)}
                 >
