@@ -82,10 +82,11 @@ export function CreateSubcategoryDialog({
             {t("inventory.form.createSubcategoryFor", { category: categoryName })}
           </DialogDescription>
         </DialogHeader>
-        <div className="my-4 space-y-2">
+        <div className="space-y-2">
           <Label htmlFor="create-subcategory-name">{t("inventory.form.subcategoryName")}</Label>
           <Input
             id="create-subcategory-name"
+            className="my-[16px]"
             value={name}
             maxLength={INVENTORY_FIELD_LIMITS.entityName}
             onChange={(event) => {

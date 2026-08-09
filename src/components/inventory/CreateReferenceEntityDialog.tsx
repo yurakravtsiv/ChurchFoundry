@@ -77,10 +77,11 @@ export function CreateReferenceEntityDialog<T>({
         <DialogHeader>
           <DialogTitle>{t(titleKey)}</DialogTitle>
         </DialogHeader>
-        <div className="my-4 space-y-2">
+        <div className="space-y-2">
           <Label htmlFor={inputIdPrefix}>{t(labelKey)}</Label>
           <Input
             id={inputIdPrefix}
+            className="my-[16px]"
             value={name}
             maxLength={INVENTORY_FIELD_LIMITS.entityName}
             onChange={(event) => {
