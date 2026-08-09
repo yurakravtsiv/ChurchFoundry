@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { Textarea } from "@/components/ui/textarea"
 import { useMarkAsNeedsRepairMutation } from "@/hooks/queries/useInventoryQueries"
+import { useAuth } from "@/hooks/useAuth"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
 import type { InventoryItem } from "@/types/inventory"
 
@@ -40,6 +41,7 @@ function todayDateInputValue() {
 
 export function NeedsRepairDialog({ item, open, onOpenChange, onConfirm }: NeedsRepairDialogProps) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const needsRepairMutation = useMarkAsNeedsRepairMutation()
   const maxQuantity = item?.quantity ?? 1
 
@@ -116,6 +118,7 @@ export function NeedsRepairDialog({ item, open, onOpenChange, onConfirm }: Needs
         quantity: values.quantity,
         repairDate: values.repairDate,
         repairComment: values.repairComment.trim(),
+        userEmail: user?.email ?? "",
       },
       {
         onSuccess: () => {

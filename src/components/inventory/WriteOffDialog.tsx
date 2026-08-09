@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { Textarea } from "@/components/ui/textarea"
 import { useWriteOffItemMutation } from "@/hooks/queries/useInventoryQueries"
+import { useAuth } from "@/hooks/useAuth"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
 import type { InventoryItem } from "@/types/inventory"
 
@@ -40,6 +41,7 @@ function todayDateInputValue() {
 
 export function WriteOffDialog({ item, open, onOpenChange, onConfirm }: WriteOffDialogProps) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const writeOffMutation = useWriteOffItemMutation()
   const maxQuantity = item?.quantity ?? 1
 
@@ -116,6 +118,7 @@ export function WriteOffDialog({ item, open, onOpenChange, onConfirm }: WriteOff
         quantity: values.quantity,
         writeOffDate: values.writeOffDate,
         writeOffReason: values.writeOffReason.trim(),
+        userEmail: user?.email ?? "",
       },
       {
         onSuccess: () => {

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { useMarkAsRepairedMutation } from "@/hooks/queries/useInventoryQueries"
+import { useAuth } from "@/hooks/useAuth"
 import type { InventoryItem } from "@/types/inventory"
 
 type RepairedConfirmDialogProps = {
@@ -26,18 +27,22 @@ export function RepairedConfirmDialog({
   onConfirm,
 }: RepairedConfirmDialogProps) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const markAsRepairedMutation = useMarkAsRepairedMutation()
 
   const confirm = () => {
     if (!item) {
       return
     }
-    markAsRepairedMutation.mutate(item.id, {
-      onSuccess: () => {
-        onOpenChange(false)
-        onConfirm()
+    markAsRepairedMutation.mutate(
+      { repairItemId: item.id, userEmail: user?.email ?? "" },
+      {
+        onSuccess: () => {
+          onOpenChange(false)
+          onConfirm()
+        },
       },
-    })
+    )
   }
 
   return (

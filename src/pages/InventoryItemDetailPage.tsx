@@ -57,6 +57,7 @@ import {
   useInventoryItemsQuery,
   useUpdateInventoryItemMutation,
 } from "@/hooks/queries/useInventoryQueries"
+import { useAuth } from "@/hooks/useAuth"
 
 const EDIT_FORM_ID = "inventory-item-edit-form"
 
@@ -113,6 +114,8 @@ export function InventoryItemDetailPage() {
   const navigate = useNavigate()
   const { id } = useParams()
   const { data: items = [], isLoading, isError, refetch } = useInventoryItemsQuery()
+  const { user } = useAuth()
+  const userEmail = user?.email ?? ""
   const updateItemMutation = useUpdateInventoryItemMutation()
   const archiveItemMutation = useArchiveInventoryItemMutation()
 
@@ -264,7 +267,7 @@ export function InventoryItemDetailPage() {
       return
     }
     archiveItemMutation.mutate(
-      { id: item.id, currentlyArchived: item.archived },
+      { id: item.id, currentlyArchived: item.archived, userEmail },
       {
         onSuccess: (updated) => {
           if (!updated) {
@@ -570,7 +573,7 @@ export function InventoryItemDetailPage() {
                 return
               }
               updateItemMutation.mutate(
-                { id: item.id, data },
+                { id: item.id, data, userEmail },
                 {
                   onSuccess: (updated) => {
                     if (!updated) {

@@ -82,6 +82,7 @@ import {
   useLocationsQuery,
   useSubcategoriesQuery,
 } from "@/hooks/queries/useInventoryQueries"
+import { useAuth } from "@/hooks/useAuth"
 import { useTypewriterPlaceholder } from "@/hooks/useTypewriterPlaceholder"
 import { exportToPdf, exportToXlsx, prepareExportData } from "@/lib/inventoryExport"
 import { availabilityLabel, conditionLabel } from "@/lib/inventoryLabels"
@@ -292,6 +293,8 @@ export function InventoryPage() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { search: locationSearch } = useLocation()
+  const { user } = useAuth()
+  const userEmail = user?.email ?? ""
 
   const {
     data: items = [],
@@ -905,7 +908,7 @@ export function InventoryPage() {
       return
     }
     archiveItemMutation.mutate(
-      { id: archiveTarget.id, currentlyArchived: archiveTarget.archived },
+      { id: archiveTarget.id, currentlyArchived: archiveTarget.archived, userEmail },
       {
         onSuccess: () => {
           setArchiveTarget(null)
@@ -1515,12 +1518,15 @@ export function InventoryPage() {
               onDirtyChange={setCreateFormDirty}
               onCancel={requestCloseCreate}
               onSubmit={(data) => {
-                createItemMutation.mutate(data, {
-                  onSuccess: () => {
-                    setCreateFormDirty(false)
-                    setCreateOpen(false)
+                createItemMutation.mutate(
+                  { data, userEmail },
+                  {
+                    onSuccess: () => {
+                      setCreateFormDirty(false)
+                      setCreateOpen(false)
+                    },
                   },
-                })
+                )
               }}
             />
           </div>

@@ -19,6 +19,8 @@ import type {
   Subcategory,
 } from "@/types/inventory"
 
+const SEED_USER_EMAIL = "seed-data@churchfoundry.local"
+
 const SEED_ITEM_COUNT = 20
 /** ~15% of seed items — disjoint from repair batch candidates. */
 const WRITE_OFF_BATCH_COUNT = 3
@@ -265,6 +267,7 @@ function generateWriteOffBatches(candidates: readonly InventoryItem[]): void {
       quantityToWriteOff,
       buildRecentIsoDate(batchIndex + 601, 30, 60),
       pickOne(writeOffReasons, batchIndex + 701),
+      SEED_USER_EMAIL,
     )
   }
 }
@@ -286,6 +289,7 @@ function generateRepairBatches(candidates: readonly InventoryItem[]): void {
       quantityForRepair,
       buildRecentIsoDate(batchIndex + 901, 30, 60),
       pickOne(repairComments, batchIndex + 1001),
+      SEED_USER_EMAIL,
     )
   }
 }
@@ -296,7 +300,7 @@ function generateSeedData(): void {
 
   const createdItems: InventoryItem[] = []
   for (let index = 0; index < SEED_ITEM_COUNT; index += 1) {
-    createdItems.push(createInventoryItem(buildItemInput(index, pairs, locations)))
+    createdItems.push(createInventoryItem(buildItemInput(index, pairs, locations), SEED_USER_EMAIL))
   }
 
   // Disjoint subsets: the same seed item never goes to both write-off and repair flows.

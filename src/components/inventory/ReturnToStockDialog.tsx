@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { useReturnToStockMutation } from "@/hooks/queries/useInventoryQueries"
+import { useAuth } from "@/hooks/useAuth"
 import type { InventoryItem } from "@/types/inventory"
 
 type ReturnToStockDialogProps = {
@@ -26,18 +27,22 @@ export function ReturnToStockDialog({
   onConfirm,
 }: ReturnToStockDialogProps) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const returnToStockMutation = useReturnToStockMutation()
 
   const confirm = () => {
     if (!item) {
       return
     }
-    returnToStockMutation.mutate(item.id, {
-      onSuccess: () => {
-        onOpenChange(false)
-        onConfirm()
+    returnToStockMutation.mutate(
+      { writtenOffItemId: item.id, userEmail: user?.email ?? "" },
+      {
+        onSuccess: () => {
+          onOpenChange(false)
+          onConfirm()
+        },
       },
-    })
+    )
   }
 
   return (

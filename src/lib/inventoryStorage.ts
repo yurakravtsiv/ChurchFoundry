@@ -1,6 +1,10 @@
 import imageCompression from "browser-image-compression"
 
+import { createEvent } from "@/lib/eventsStorage"
+import { buildCreatedPayload, buildUpdatedPayload } from "@/lib/inventoryEventDiff"
 import { filterVisible, isVisible } from "@/lib/removedEntity"
+import type { UpdatedEventPayload } from "@/types/events"
+import { EVENT_OBJECT_TYPE } from "@/types/events"
 import type {
   Category,
   CreateInventoryItemInput,
@@ -24,6 +28,48 @@ function newId() {
 
 function nowIso() {
   return new Date().toISOString()
+}
+
+function recordInventoryCreated(item: InventoryItem, userEmail: string): void {
+  createEvent({
+    objectId: EVENT_OBJECT_TYPE.INVENTORY_ITEM,
+    entityId: item.id,
+    type: "created",
+    userEmail,
+    payload: buildCreatedPayload(item),
+  })
+}
+
+function recordInventoryUpdated(
+  before: InventoryItem,
+  after: InventoryItem,
+  userEmail: string,
+): void {
+  const payload = buildUpdatedPayload(before, after)
+  if (!payload) {
+    return
+  }
+  createEvent({
+    objectId: EVENT_OBJECT_TYPE.INVENTORY_ITEM,
+    entityId: after.id,
+    type: "updated",
+    userEmail,
+    payload,
+  })
+}
+
+function recordInventoryCustomUpdate(
+  entityId: string,
+  userEmail: string,
+  payload: UpdatedEventPayload,
+): void {
+  createEvent({
+    objectId: EVENT_OBJECT_TYPE.INVENTORY_ITEM,
+    entityId,
+    type: "updated",
+    userEmail,
+    payload,
+  })
 }
 
 function readJsonArray<T>(key: string): T[] {
@@ -282,7 +328,10 @@ export function deleteCategory(id: string): void {
   saveSubcategories(getSubcategories().filter((subcategory) => subcategory.categoryId !== id))
 }
 
-export function createInventoryItem(data: CreateInventoryItemInput): InventoryItem {
+export function createInventoryItem(
+  data: CreateInventoryItemInput,
+  userEmail: string,
+): InventoryItem {
   const id = newId()
   const timestamp = nowIso()
   const origin = typeof window !== "undefined" ? window.location.origin : ""
@@ -305,12 +354,14 @@ export function createInventoryItem(data: CreateInventoryItemInput): InventoryIt
     updatedAt: timestamp,
   }
   saveInventoryItems([...existingItems, item])
+  recordInventoryCreated(item, userEmail)
   return item
 }
 
 export function updateInventoryItem(
   id: string,
   data: UpdateInventoryItemInput,
+  userEmail: string,
 ): InventoryItem | undefined {
   const items = getAllInventoryItemsRaw()
   const index = items.findIndex((item) => item.id === id)
@@ -318,27 +369,69 @@ export function updateInventoryItem(
     return undefined
   }
 
+  const before = items[index]
   const updated: InventoryItem = {
-    ...items[index],
+    ...before,
     ...data,
     id,
-    inventoryNumberId: items[index].inventoryNumberId,
-    createdAt: items[index].createdAt,
-    qrCodeValue: items[index].qrCodeValue,
+    inventoryNumberId: before.inventoryNumberId,
+    createdAt: before.createdAt,
+    qrCodeValue: before.qrCodeValue,
     updatedAt: nowIso(),
   }
   const next = [...items]
   next[index] = updated
   saveInventoryItems(next)
+  recordInventoryUpdated(before, updated, userEmail)
   return updated
 }
 
-export function archiveInventoryItem(id: string): InventoryItem | undefined {
-  return updateInventoryItem(id, { archived: true })
+export function archiveInventoryItem(id: string, userEmail: string): InventoryItem | undefined {
+  const items = getAllInventoryItemsRaw()
+  const index = items.findIndex((item) => item.id === id)
+  if (index === -1 || !isVisible(items[index])) {
+    return undefined
+  }
+
+  const before = items[index]
+  if (before.archived) {
+    return before
+  }
+
+  const updated: InventoryItem = {
+    ...before,
+    archived: true,
+    updatedAt: nowIso(),
+  }
+  const next = [...items]
+  next[index] = updated
+  saveInventoryItems(next)
+  recordInventoryCustomUpdate(id, userEmail, { archived: { old: false, new: true } })
+  return updated
 }
 
-export function unarchiveInventoryItem(id: string): InventoryItem | undefined {
-  return updateInventoryItem(id, { archived: false })
+export function unarchiveInventoryItem(id: string, userEmail: string): InventoryItem | undefined {
+  const items = getAllInventoryItemsRaw()
+  const index = items.findIndex((item) => item.id === id)
+  if (index === -1 || !isVisible(items[index])) {
+    return undefined
+  }
+
+  const before = items[index]
+  if (!before.archived) {
+    return before
+  }
+
+  const updated: InventoryItem = {
+    ...before,
+    archived: false,
+    updatedAt: nowIso(),
+  }
+  const next = [...items]
+  next[index] = updated
+  saveInventoryItems(next)
+  recordInventoryCustomUpdate(id, userEmail, { archived: { old: true, new: false } })
+  return updated
 }
 
 export function getInventoryItemById(id: string): InventoryItem | undefined {
@@ -365,6 +458,7 @@ export function writeOffItem(
   quantityToWriteOff: number,
   writeOffDate: string,
   writeOffReason: string,
+  userEmail: string,
 ): { updatedOriginal: InventoryItem; newWrittenOffItem: InventoryItem } {
   const items = getAllInventoryItemsRaw()
   const originalIndex = items.findIndex((item) => item.id === originalItemId)
@@ -425,6 +519,9 @@ export function writeOffItem(
   next.push(newWrittenOffItem)
   saveInventoryItems(next)
 
+  recordInventoryUpdated(original, updatedOriginal, userEmail)
+  recordInventoryCreated(newWrittenOffItem, userEmail)
+
   return { updatedOriginal, newWrittenOffItem }
 }
 
@@ -432,7 +529,10 @@ export function writeOffItem(
  * Returns a written-off split item back into its original stock.
  * Soft-deletes the written-off row and restores the original (`removed: false`).
  */
-export function returnToStock(writtenOffItemId: string): {
+export function returnToStock(
+  writtenOffItemId: string,
+  userEmail: string,
+): {
   updatedOriginal: InventoryItem
   removedWrittenOffItem: InventoryItem
 } {
@@ -475,6 +575,8 @@ export function returnToStock(writtenOffItemId: string): {
   next[writtenOffIndex] = removedWrittenOffItem
   saveInventoryItems(next)
 
+  recordInventoryUpdated(original, updatedOriginal, userEmail)
+
   return { updatedOriginal, removedWrittenOffItem }
 }
 
@@ -487,6 +589,7 @@ export function markAsNeedsRepair(
   quantityNeedingRepair: number,
   repairDate: string,
   repairComment: string,
+  userEmail: string,
 ): { updatedOriginal: InventoryItem; newRepairItem: InventoryItem } {
   const items = getAllInventoryItemsRaw()
   const originalIndex = items.findIndex((item) => item.id === originalItemId)
@@ -542,6 +645,9 @@ export function markAsNeedsRepair(
   next.push(newRepairItem)
   saveInventoryItems(next)
 
+  recordInventoryUpdated(original, updatedOriginal, userEmail)
+  recordInventoryCreated(newRepairItem, userEmail)
+
   return { updatedOriginal, newRepairItem }
 }
 
@@ -549,7 +655,10 @@ export function markAsNeedsRepair(
  * Returns a needs-repair split item back into its original stock.
  * Soft-deletes the repair row and restores the original (`removed: false`).
  */
-export function markAsRepaired(repairItemId: string): {
+export function markAsRepaired(
+  repairItemId: string,
+  userEmail: string,
+): {
   updatedOriginal: InventoryItem
   removedRepairItem: InventoryItem
 } {
@@ -591,6 +700,8 @@ export function markAsRepaired(repairItemId: string): {
   next[originalIndex] = updatedOriginal
   next[repairIndex] = removedRepairItem
   saveInventoryItems(next)
+
+  recordInventoryUpdated(original, updatedOriginal, userEmail)
 
   return { updatedOriginal, removedRepairItem }
 }

@@ -78,7 +78,13 @@ export function useLocationsQuery() {
 export function useCreateInventoryItemMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (data: CreateInventoryItemInput) => createInventoryItem(data),
+    mutationFn: async ({
+      data,
+      userEmail,
+    }: {
+      data: CreateInventoryItemInput
+      userEmail: string
+    }) => createInventoryItem(data, userEmail),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
     },
@@ -88,8 +94,15 @@ export function useCreateInventoryItemMutation() {
 export function useUpdateInventoryItemMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateInventoryItemInput }) =>
-      updateInventoryItem(id, data),
+    mutationFn: async ({
+      id,
+      data,
+      userEmail,
+    }: {
+      id: string
+      data: UpdateInventoryItemInput
+      userEmail: string
+    }) => updateInventoryItem(id, data, userEmail),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
     },
@@ -99,8 +112,18 @@ export function useUpdateInventoryItemMutation() {
 export function useArchiveInventoryItemMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, currentlyArchived }: { id: string; currentlyArchived: boolean }) =>
-      currentlyArchived ? unarchiveInventoryItem(id) : archiveInventoryItem(id),
+    mutationFn: async ({
+      id,
+      currentlyArchived,
+      userEmail,
+    }: {
+      id: string
+      currentlyArchived: boolean
+      userEmail: string
+    }) =>
+      currentlyArchived
+        ? unarchiveInventoryItem(id, userEmail)
+        : archiveInventoryItem(id, userEmail),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
     },
@@ -115,12 +138,14 @@ export function useWriteOffItemMutation() {
       quantity,
       writeOffDate,
       writeOffReason,
+      userEmail,
     }: {
       id: string
       quantity: number
       writeOffDate: string
       writeOffReason: string
-    }) => writeOffItem(id, quantity, writeOffDate, writeOffReason),
+      userEmail: string
+    }) => writeOffItem(id, quantity, writeOffDate, writeOffReason, userEmail),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
     },
@@ -130,7 +155,13 @@ export function useWriteOffItemMutation() {
 export function useReturnToStockMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (writtenOffItemId: string) => returnToStock(writtenOffItemId),
+    mutationFn: async ({
+      writtenOffItemId,
+      userEmail,
+    }: {
+      writtenOffItemId: string
+      userEmail: string
+    }) => returnToStock(writtenOffItemId, userEmail),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
     },
@@ -145,12 +176,14 @@ export function useMarkAsNeedsRepairMutation() {
       quantity,
       repairDate,
       repairComment,
+      userEmail,
     }: {
       id: string
       quantity: number
       repairDate: string
       repairComment: string
-    }) => markAsNeedsRepair(id, quantity, repairDate, repairComment),
+      userEmail: string
+    }) => markAsNeedsRepair(id, quantity, repairDate, repairComment, userEmail),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
     },
@@ -160,7 +193,8 @@ export function useMarkAsNeedsRepairMutation() {
 export function useMarkAsRepairedMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (repairItemId: string) => markAsRepaired(repairItemId),
+    mutationFn: async ({ repairItemId, userEmail }: { repairItemId: string; userEmail: string }) =>
+      markAsRepaired(repairItemId, userEmail),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items })
     },
