@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { inventoryQueryKeys } from "@/hooks/queries/useInventoryQueries"
+import { useAuth } from "@/hooks/useAuth"
 import { generateSeedData, SEED_ITEM_COUNT } from "@/lib/inventoryDataGenerator"
 
 type GenerateDataDialogProps = {
@@ -22,18 +23,21 @@ type GenerateDataDialogProps = {
 
 export function GenerateDataDialog({ open, onOpenChange }: GenerateDataDialogProps) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const queryClient = useQueryClient()
   const [isGenerating, setIsGenerating] = useState(false)
+  const userEmail = user?.email ?? ""
 
   async function handleGenerate() {
     setIsGenerating(true)
     try {
-      generateSeedData()
+      generateSeedData(userEmail)
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items }),
         queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.categories }),
         queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.subcategories }),
         queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.locations }),
+        queryClient.invalidateQueries({ queryKey: ["events"] }),
       ])
       onOpenChange(false)
     } finally {

@@ -8,6 +8,7 @@ import {
   getLocations,
   getSubcategories,
   markAsNeedsRepair,
+  updateInventoryItem,
   writeOffItem,
 } from "@/lib/inventoryStorage"
 import type {
@@ -17,15 +18,16 @@ import type {
   InventoryItem,
   Location,
   Subcategory,
+  UpdateInventoryItemInput,
 } from "@/types/inventory"
-
-const SEED_USER_EMAIL = "seed-data@churchfoundry.local"
 
 const SEED_ITEM_COUNT = 20
 /** ~15% of seed items — disjoint from repair batch candidates. */
 const WRITE_OFF_BATCH_COUNT = 3
 /** ~15% of seed items — disjoint from write-off batch candidates. */
 const REPAIR_BATCH_COUNT = 3
+/** Share of created items that get a follow-up edit (excluding write-off/repair picks). */
+const SEED_UPDATE_RATIO = 0.3
 
 const seedCategories = [
   { name: "Звук", subcategories: ["Мікрофони", "Колонки", "Мікшери"] },
@@ -87,6 +89,13 @@ const itemComments = [
   "",
   "",
 ]
+
+const seedUpdateComments = [
+  "Уточнено кількість після інвентаризації",
+  "Додано примітку після перевірки",
+  "Оновлено після переміщення на склад",
+  "Скориговано за результатами огляду",
+] as const
 
 const writeOffReasons = [
   "Зношення, не підлягає відновленню",
@@ -250,7 +259,60 @@ function buildItemInput(
   }
 }
 
-function generateWriteOffBatches(candidates: readonly InventoryItem[]): void {
+function buildSeedUpdate(
+  item: InventoryItem,
+  updateIndex: number,
+): UpdateInventoryItemInput | null {
+  if (updateIndex % 2 === 0 && item.quantity > 1) {
+    return { quantity: item.quantity - 1 }
+  }
+
+  const nextComment = pickOne(seedUpdateComments, updateIndex + 301)
+  if (nextComment === item.comment) {
+    return { comment: `${nextComment} (уточнено)` }
+  }
+  return { comment: nextComment }
+}
+
+function generateSeedUpdates(
+  createdItems: readonly InventoryItem[],
+  excludedIndices: ReadonlySet<number>,
+  userEmail: string,
+): void {
+  const eligibleIndices = createdItems
+    .map((_, index) => index)
+    .filter((index) => !excludedIndices.has(index))
+
+  const targetUpdateCount = Math.round(SEED_ITEM_COUNT * SEED_UPDATE_RATIO)
+  const updateCount = Math.min(targetUpdateCount, eligibleIndices.length)
+  if (updateCount <= 0) {
+    return
+  }
+
+  const pickedEligiblePositions = shuffledIndices(eligibleIndices.length, 31).slice(0, updateCount)
+
+  for (const [updateIndex, eligiblePosition] of pickedEligiblePositions.entries()) {
+    const itemIndex = eligibleIndices[eligiblePosition]!
+    const seedItem = createdItems[itemIndex]
+    if (!seedItem) {
+      continue
+    }
+
+    const current = getInventoryItemById(seedItem.id)
+    if (!current) {
+      continue
+    }
+
+    const updates = buildSeedUpdate(current, updateIndex)
+    if (!updates) {
+      continue
+    }
+
+    updateInventoryItem(current.id, updates, userEmail)
+  }
+}
+
+function generateWriteOffBatches(candidates: readonly InventoryItem[], userEmail: string): void {
   for (const [batchIndex, seedItem] of candidates.entries()) {
     const current = getInventoryItemById(seedItem.id)
     if (!current || current.quantity <= 0) {
@@ -267,12 +329,12 @@ function generateWriteOffBatches(candidates: readonly InventoryItem[]): void {
       quantityToWriteOff,
       buildRecentIsoDate(batchIndex + 601, 30, 60),
       pickOne(writeOffReasons, batchIndex + 701),
-      SEED_USER_EMAIL,
+      userEmail,
     )
   }
 }
 
-function generateRepairBatches(candidates: readonly InventoryItem[]): void {
+function generateRepairBatches(candidates: readonly InventoryItem[], userEmail: string): void {
   for (const [batchIndex, seedItem] of candidates.entries()) {
     const current = getInventoryItemById(seedItem.id)
     if (!current || current.quantity <= 0) {
@@ -289,31 +351,39 @@ function generateRepairBatches(candidates: readonly InventoryItem[]): void {
       quantityForRepair,
       buildRecentIsoDate(batchIndex + 901, 30, 60),
       pickOne(repairComments, batchIndex + 1001),
-      SEED_USER_EMAIL,
+      userEmail,
     )
   }
 }
 
-/** Creates 20 varied inventory items (and seed taxonomy if storage is empty). */
-function generateSeedData(): void {
+/**
+ * Creates 20 varied inventory items (and seed taxonomy if storage is empty).
+ * All inventory changes go through inventoryStorage mutators so audit events
+ * are recorded automatically.
+ */
+function generateSeedData(userEmail: string): void {
   const { pairs, locations } = ensureSeedTaxonomy()
 
   const createdItems: InventoryItem[] = []
   for (let index = 0; index < SEED_ITEM_COUNT; index += 1) {
-    createdItems.push(createInventoryItem(buildItemInput(index, pairs, locations), SEED_USER_EMAIL))
+    createdItems.push(createInventoryItem(buildItemInput(index, pairs, locations), userEmail))
   }
 
-  // Disjoint subsets: the same seed item never goes to both write-off and repair flows.
   const shuffled = shuffledIndices(createdItems.length, 17)
-  const writeOffCandidates = shuffled
-    .slice(0, WRITE_OFF_BATCH_COUNT)
-    .map((index) => createdItems[index]!)
-  const repairCandidates = shuffled
-    .slice(WRITE_OFF_BATCH_COUNT, WRITE_OFF_BATCH_COUNT + REPAIR_BATCH_COUNT)
-    .map((index) => createdItems[index]!)
+  const writeOffItemIndices = shuffled.slice(0, WRITE_OFF_BATCH_COUNT)
+  const repairItemIndices = shuffled.slice(
+    WRITE_OFF_BATCH_COUNT,
+    WRITE_OFF_BATCH_COUNT + REPAIR_BATCH_COUNT,
+  )
+  const excludedIndices = new Set([...writeOffItemIndices, ...repairItemIndices])
 
-  generateWriteOffBatches(writeOffCandidates)
-  generateRepairBatches(repairCandidates)
+  generateSeedUpdates(createdItems, excludedIndices, userEmail)
+
+  const writeOffCandidates = writeOffItemIndices.map((index) => createdItems[index]!)
+  const repairCandidates = repairItemIndices.map((index) => createdItems[index]!)
+
+  generateWriteOffBatches(writeOffCandidates, userEmail)
+  generateRepairBatches(repairCandidates, userEmail)
 }
 
 export { generateSeedData, SEED_ITEM_COUNT }
