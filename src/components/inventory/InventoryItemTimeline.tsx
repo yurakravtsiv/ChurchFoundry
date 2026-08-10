@@ -11,11 +11,13 @@ import {
   useSubcategoriesQuery,
 } from "@/hooks/queries/useInventoryQueries"
 import type { EventTaxonomyLookups } from "@/lib/eventFieldDisplay"
+import { cn } from "@/lib/utils"
 import type { EventObjectType } from "@/types/events"
 
 type InventoryItemTimelineProps = {
   objectId: EventObjectType
   entityId: string
+  className?: string
 }
 
 function TimelineSkeleton() {
@@ -30,7 +32,11 @@ function TimelineSkeleton() {
   )
 }
 
-export function InventoryItemTimeline({ objectId, entityId }: InventoryItemTimelineProps) {
+export function InventoryItemTimeline({
+  objectId,
+  entityId,
+  className,
+}: InventoryItemTimelineProps) {
   const { t } = useTranslation()
   const { data: events = [], isLoading } = useEventsForEntityQuery(objectId, entityId)
   const { data: categories = [] } = useCategoriesQuery()
@@ -49,17 +55,17 @@ export function InventoryItemTimeline({ objectId, entityId }: InventoryItemTimel
   )
 
   return (
-    <Card className="min-w-0 overflow-hidden">
-      <CardHeader className="px-4 py-4">
+    <Card className={cn("flex h-full max-h-full min-w-0 flex-col", className)}>
+      <CardHeader className="shrink-0 px-4 py-4">
         <CardTitle>{t("inventory.timeline.title")}</CardTitle>
       </CardHeader>
-      <CardContent className="px-4 pb-4 pt-0">
+      <CardContent className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-0">
         {isLoading ? (
           <TimelineSkeleton />
         ) : events.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("inventory.timeline.empty")}</p>
         ) : (
-          <div className="max-h-[500px] space-y-3 overflow-y-auto pr-1">
+          <div className="space-y-3 pr-1">
             {events.map((event) => (
               <EventTimelineCard key={event.id} event={event} lookups={lookups} />
             ))}

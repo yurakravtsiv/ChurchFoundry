@@ -11,7 +11,7 @@ import {
   Wrench,
   X,
 } from "lucide-react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import { useTranslation } from "react-i18next"
 import { useBlocker, useNavigate, useParams } from "react-router"
 
@@ -59,9 +59,28 @@ import {
   useUpdateInventoryItemMutation,
 } from "@/hooks/queries/useInventoryQueries"
 import { useAuth } from "@/hooks/useAuth"
+import { cn } from "@/lib/utils"
 import { EVENT_OBJECT_TYPE } from "@/types/events"
 
 const EDIT_FORM_ID = "inventory-item-edit-form"
+
+/** App Header (`h-14` / 3.5rem) + safe-area — sticky Timeline top offset and max height. */
+const STICKY_PANEL_TOP_CLASS = "top-[calc(3.5rem+env(safe-area-inset-top,0px))]"
+const STICKY_PANEL_MAX_HEIGHT_CLASS = "max-h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px))]"
+
+function subscribeMdUp(onStoreChange: () => void) {
+  const mediaQuery = window.matchMedia("(min-width: 768px)")
+  mediaQuery.addEventListener("change", onStoreChange)
+  return () => mediaQuery.removeEventListener("change", onStoreChange)
+}
+
+function getMdUpSnapshot() {
+  return window.matchMedia("(min-width: 768px)").matches
+}
+
+function getMdUpServerSnapshot() {
+  return true
+}
 
 function canNavigateBack() {
   const idx = (window.history.state as { idx?: number } | null)?.idx
@@ -166,6 +185,7 @@ export function InventoryItemDetailPage() {
   }
   const formatRepairDate = formatWriteOffDate
   const formRef = useRef<InventoryItemFormHandle>(null)
+  const isMdUp = useSyncExternalStore(subscribeMdUp, getMdUpSnapshot, getMdUpServerSnapshot)
   const allowLeaveRef = useRef(false)
   const leaveAfterSaveRef = useRef(false)
   const pendingLeaveToRef = useRef<string | null>(null)
@@ -337,9 +357,152 @@ export function InventoryItemDetailPage() {
     )
   }
 
+  const renderEditForm = () => (
+    <InventoryItemForm
+      ref={formRef}
+      key={item.updatedAt}
+      id={EDIT_FORM_ID}
+      mode="edit"
+      layout="page"
+      autoFocusFirstField={!isReadOnly}
+      initialData={item}
+      readOnly={isReadOnly}
+      onBusyChange={setFormBusy}
+      onDirtyChange={setFormDirty}
+      onCancel={requestLeave}
+      onInvalid={() => {
+        clearPendingLeave()
+      }}
+      onSubmit={(data) => {
+        if (isReadOnly) {
+          return
+        }
+        updateItemMutation.mutate(
+          { id: item.id, data, userEmail },
+          {
+            onSuccess: (updated) => {
+              if (!updated) {
+                clearPendingLeave()
+                return
+              }
+              const shouldArchiveAfterSave = pendingArchiveAfterSaveRef.current
+              const pendingLeaveTo = pendingLeaveToRef.current
+              clearPendingLeave()
+              allowLeaveRef.current = true
+              setFormDirty(false)
+              if (shouldArchiveAfterSave) {
+                applyArchiveAndLeave()
+                return
+              }
+              if (pendingLeaveTo) {
+                navigate(pendingLeaveTo)
+                return
+              }
+              navigateBackOrInventory()
+            },
+            onError: () => {
+              clearPendingLeave()
+            },
+          },
+        )
+      }}
+    />
+  )
+
+  const renderRepairsTable = () =>
+    relatedRepairs.length > 0 ? (
+      <Card className="min-w-0 overflow-hidden">
+        <CardHeader className="px-2 py-4">
+          <CardTitle>{t("inventory.detail.repairBatchesTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent className="min-w-0 overflow-x-auto p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("inventory.columns.quantity")}</TableHead>
+                <TableHead>{t("inventory.columns.repairDate")}</TableHead>
+                <TableHead>{t("inventory.columns.repairComment")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {relatedRepairs.map((batch) => (
+                <TableRow
+                  key={batch.id}
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/inventory/${batch.id}`)}
+                >
+                  <TableCell className="tabular-nums">{batch.quantity}</TableCell>
+                  <TableCell className="whitespace-nowrap tabular-nums">
+                    {formatRepairDate(batch.repairDate)}
+                  </TableCell>
+                  <TableCell className="max-w-[10rem] truncate">
+                    {batch.repairComment || "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    ) : null
+
+  const renderWriteOffsTable = () =>
+    relatedWriteOffs.length > 0 ? (
+      <Card className="min-w-0 overflow-hidden">
+        <CardHeader className="px-2 py-4">
+          <CardTitle>{t("inventory.detail.writeOffBatchesTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent className="min-w-0 overflow-x-auto p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("inventory.columns.quantity")}</TableHead>
+                <TableHead>{t("inventory.columns.writeOffDate")}</TableHead>
+                <TableHead>{t("inventory.columns.writeOffReason")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {relatedWriteOffs.map((batch) => (
+                <TableRow
+                  key={batch.id}
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/inventory/${batch.id}`)}
+                >
+                  <TableCell className="tabular-nums">{batch.quantity}</TableCell>
+                  <TableCell className="whitespace-nowrap tabular-nums">
+                    {formatWriteOffDate(batch.writeOffDate)}
+                  </TableCell>
+                  <TableCell className="max-w-[10rem] truncate">
+                    {batch.writeOffReason || "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    ) : null
+
+  const renderQrCard = () => (
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader>
+        <CardTitle>{t("inventory.detail.qrTitle")}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex min-w-0 flex-col items-center gap-3">
+        <ItemQrCode
+          value={item.qrCodeValue}
+          itemName={item.name}
+          inventoryNumberId={item.inventoryNumberId}
+          size={200}
+        />
+        <CardDescription className="text-center">{t("inventory.detail.qrHint")}</CardDescription>
+      </CardContent>
+    </Card>
+  )
+
   return (
     <main className="bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-6">
+      <header className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-6 md:static md:z-auto">
         <div className="mx-auto w-full max-w-[1400px] space-y-3">
           <button
             type="button"
@@ -553,150 +716,39 @@ export function InventoryItemDetailPage() {
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-[15px] pb-[20px] pt-[10px] md:grid-cols-3 md:items-start">
-        <div className="min-w-0 rounded-xl border bg-card md:col-span-2">
-          <InventoryItemForm
-            ref={formRef}
-            key={item.updatedAt}
-            id={EDIT_FORM_ID}
-            mode="edit"
-            layout="page"
-            autoFocusFirstField={!isReadOnly}
-            initialData={item}
-            readOnly={isReadOnly}
-            onBusyChange={setFormBusy}
-            onDirtyChange={setFormDirty}
-            onCancel={requestLeave}
-            onInvalid={() => {
-              clearPendingLeave()
-            }}
-            onSubmit={(data) => {
-              if (isReadOnly) {
-                return
-              }
-              updateItemMutation.mutate(
-                { id: item.id, data, userEmail },
-                {
-                  onSuccess: (updated) => {
-                    if (!updated) {
-                      clearPendingLeave()
-                      return
-                    }
-                    const shouldArchiveAfterSave = pendingArchiveAfterSaveRef.current
-                    const pendingLeaveTo = pendingLeaveToRef.current
-                    clearPendingLeave()
-                    allowLeaveRef.current = true
-                    setFormDirty(false)
-                    if (shouldArchiveAfterSave) {
-                      applyArchiveAndLeave()
-                      return
-                    }
-                    if (pendingLeaveTo) {
-                      navigate(pendingLeaveTo)
-                      return
-                    }
-                    navigateBackOrInventory()
-                  },
-                  onError: () => {
-                    clearPendingLeave()
-                  },
-                },
-              )
-            }}
-          />
+      <div className="mx-auto w-full max-w-[1400px] px-[15px] pb-[20px] pt-[10px]">
+        <div className="hidden md:grid md:grid-cols-[2fr_1fr_1fr] md:items-start gap-6">
+          <div className="min-w-0">
+            <div className="rounded-xl border bg-card">{isMdUp ? renderEditForm() : null}</div>
+          </div>
+
+          <div
+            className={cn(
+              "sticky flex min-h-0 min-w-0 flex-col overflow-hidden",
+              STICKY_PANEL_TOP_CLASS,
+              STICKY_PANEL_MAX_HEIGHT_CLASS,
+            )}
+          >
+            <InventoryItemTimeline objectId={EVENT_OBJECT_TYPE.INVENTORY_ITEM} entityId={item.id} />
+          </div>
+
+          <div className="min-w-0 space-y-6">
+            {renderRepairsTable()}
+            {renderWriteOffsTable()}
+            {renderQrCard()}
+          </div>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-6 md:col-span-1">
+        <div className="grid gap-6 md:hidden">
+          <div className="min-w-0 rounded-xl border bg-card">
+            {isMdUp ? null : renderEditForm()}
+          </div>
+
           <InventoryItemTimeline objectId={EVENT_OBJECT_TYPE.INVENTORY_ITEM} entityId={item.id} />
 
-          {relatedRepairs.length > 0 ? (
-            <Card className="min-w-0 overflow-hidden">
-              <CardHeader className="px-2 py-4">
-                <CardTitle>{t("inventory.detail.repairBatchesTitle")}</CardTitle>
-              </CardHeader>
-              <CardContent className="min-w-0 overflow-x-auto p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("inventory.columns.quantity")}</TableHead>
-                      <TableHead>{t("inventory.columns.repairDate")}</TableHead>
-                      <TableHead>{t("inventory.columns.repairComment")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {relatedRepairs.map((batch) => (
-                      <TableRow
-                        key={batch.id}
-                        className="cursor-pointer"
-                        onClick={() => navigate(`/inventory/${batch.id}`)}
-                      >
-                        <TableCell className="tabular-nums">{batch.quantity}</TableCell>
-                        <TableCell className="whitespace-nowrap tabular-nums">
-                          {formatRepairDate(batch.repairDate)}
-                        </TableCell>
-                        <TableCell className="max-w-[10rem] truncate">
-                          {batch.repairComment || "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {relatedWriteOffs.length > 0 ? (
-            <Card className="min-w-0 overflow-hidden">
-              <CardHeader className="px-2 py-4">
-                <CardTitle>{t("inventory.detail.writeOffBatchesTitle")}</CardTitle>
-              </CardHeader>
-              <CardContent className="min-w-0 overflow-x-auto p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("inventory.columns.quantity")}</TableHead>
-                      <TableHead>{t("inventory.columns.writeOffDate")}</TableHead>
-                      <TableHead>{t("inventory.columns.writeOffReason")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {relatedWriteOffs.map((batch) => (
-                      <TableRow
-                        key={batch.id}
-                        className="cursor-pointer"
-                        onClick={() => navigate(`/inventory/${batch.id}`)}
-                      >
-                        <TableCell className="tabular-nums">{batch.quantity}</TableCell>
-                        <TableCell className="whitespace-nowrap tabular-nums">
-                          {formatWriteOffDate(batch.writeOffDate)}
-                        </TableCell>
-                        <TableCell className="max-w-[10rem] truncate">
-                          {batch.writeOffReason || "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <Card className="min-w-0 overflow-hidden">
-            <CardHeader>
-              <CardTitle>{t("inventory.detail.qrTitle")}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex min-w-0 flex-col items-center gap-3">
-              <ItemQrCode
-                value={item.qrCodeValue}
-                itemName={item.name}
-                inventoryNumberId={item.inventoryNumberId}
-                size={200}
-              />
-              <CardDescription className="text-center">
-                {t("inventory.detail.qrHint")}
-              </CardDescription>
-            </CardContent>
-          </Card>
+          {renderRepairsTable()}
+          {renderWriteOffsTable()}
+          {renderQrCard()}
         </div>
       </div>
 
