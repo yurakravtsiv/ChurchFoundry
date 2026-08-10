@@ -2,6 +2,9 @@
   "app": {
     "name": "ChurchFoundry"
   },
+  "events": {
+    "viewLink": "View →"
+  },
   "export": {
     "sheetName": "Inventory",
     "columns": {
@@ -101,7 +104,19 @@
       "empty": "No history yet",
       "created": "Created",
       "updated": "Updated",
-      "archived": "Archived"
+      "archived": "Archived",
+      "writtenOff": "Written off",
+      "writtenOffQuantity": "Written off {{quantity}} item(s)",
+      "writtenOffReason": "Reason: {{reason}}",
+      "writtenOffDate": "Date: {{date}}",
+      "returnedToStock": "Returned to stock",
+      "returnedToStockQuantity": "Returned {{quantity}} item(s) to stock",
+      "markedForRepair": "Sent for repair",
+      "markedForRepairQuantity": "Sent {{quantity}} item(s) for repair",
+      "markedForRepairComment": "Issue: {{comment}}",
+      "markedForRepairDate": "Date: {{date}}",
+      "repaired": "Repaired",
+      "repairedQuantity": "Repaired and returned {{quantity}} item(s) to stock"
     },
     "archiveConfirmTitle": "Archive “{{name}}”?",
     "archiveConfirmDescription": "Archived items can be shown again with the archive toggle.",

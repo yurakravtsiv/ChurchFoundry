@@ -1,10 +1,4 @@
-import type {
-  AppEvent,
-  CreatedEventPayload,
-  EventObjectType,
-  EventType,
-  UpdatedEventPayload,
-} from "@/types/events"
+import type { AppEvent, EventObjectType, EventPayload, EventType } from "@/types/events"
 
 const EVENTS_KEY = "churchfoundry:events"
 
@@ -47,7 +41,7 @@ export function createEvent(params: {
   entityId: string
   type: EventType
   userEmail: string
-  payload: CreatedEventPayload | UpdatedEventPayload
+  payload: EventPayload
 }): AppEvent {
   const event: AppEvent = {
     id: newId(),

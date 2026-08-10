@@ -2,6 +2,9 @@
   "app": {
     "name": "ChurchFoundry"
   },
+  "events": {
+    "viewLink": "Переглянути →"
+  },
   "export": {
     "sheetName": "Інвентар",
     "columns": {
@@ -101,7 +104,19 @@
       "empty": "Історія відсутня",
       "created": "Створено",
       "updated": "Оновлено",
-      "archived": "Архівовано"
+      "archived": "Архівовано",
+      "writtenOff": "Списано",
+      "writtenOffQuantity": "Списано {{quantity}} шт.",
+      "writtenOffReason": "Причина: {{reason}}",
+      "writtenOffDate": "Дата: {{date}}",
+      "returnedToStock": "Повернено в наявність",
+      "returnedToStockQuantity": "Повернено {{quantity}} шт. в наявність",
+      "markedForRepair": "Відправлено на ремонт",
+      "markedForRepairQuantity": "На ремонт відправлено {{quantity}} шт.",
+      "markedForRepairComment": "Несправність: {{comment}}",
+      "markedForRepairDate": "Дата: {{date}}",
+      "repaired": "Відремонтовано",
+      "repairedQuantity": "Відремонтовано і повернено {{quantity}} шт. в наявність"
     },
     "archiveConfirmTitle": "Архівувати «{{name}}»?",
     "archiveConfirmDescription": "Архівовані предмети можна знову показати через перемикач архіву.",

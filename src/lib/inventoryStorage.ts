@@ -1,9 +1,15 @@
 import imageCompression from "browser-image-compression"
 
 import { createEvent } from "@/lib/eventsStorage"
-import { buildCreatedPayload, buildUpdatedPayload } from "@/lib/inventoryEventDiff"
+import { buildCreatedPayload, buildUpdatedPayloadExcluding } from "@/lib/inventoryEventDiff"
 import { filterVisible, isVisible } from "@/lib/removedEntity"
-import type { UpdatedEventPayload } from "@/types/events"
+import type {
+  MarkedForRepairEventPayload,
+  RepairedEventPayload,
+  ReturnedToStockEventPayload,
+  UpdatedEventPayload,
+  WrittenOffEventPayload,
+} from "@/types/events"
 import { EVENT_OBJECT_TYPE } from "@/types/events"
 import type {
   Category,
@@ -45,7 +51,7 @@ function recordInventoryUpdated(
   after: InventoryItem,
   userEmail: string,
 ): void {
-  const payload = buildUpdatedPayload(before, after)
+  const payload = buildUpdatedPayloadExcluding(before, after, [])
   if (!payload) {
     return
   }
@@ -53,6 +59,80 @@ function recordInventoryUpdated(
     objectId: EVENT_OBJECT_TYPE.INVENTORY_ITEM,
     entityId: after.id,
     type: "updated",
+    userEmail,
+    payload,
+  })
+}
+
+function recordInventoryUpdatedExcludingQuantity(
+  before: InventoryItem,
+  after: InventoryItem,
+  userEmail: string,
+): void {
+  const payload = buildUpdatedPayloadExcluding(before, after, ["quantity"])
+  if (!payload) {
+    return
+  }
+  createEvent({
+    objectId: EVENT_OBJECT_TYPE.INVENTORY_ITEM,
+    entityId: after.id,
+    type: "updated",
+    userEmail,
+    payload,
+  })
+}
+
+function recordWrittenOff(
+  originalItemId: string,
+  userEmail: string,
+  payload: WrittenOffEventPayload,
+): void {
+  createEvent({
+    objectId: EVENT_OBJECT_TYPE.INVENTORY_ITEM,
+    entityId: originalItemId,
+    type: "written_off",
+    userEmail,
+    payload,
+  })
+}
+
+function recordReturnedToStock(
+  originalItemId: string,
+  userEmail: string,
+  payload: ReturnedToStockEventPayload,
+): void {
+  createEvent({
+    objectId: EVENT_OBJECT_TYPE.INVENTORY_ITEM,
+    entityId: originalItemId,
+    type: "returned_to_stock",
+    userEmail,
+    payload,
+  })
+}
+
+function recordMarkedForRepair(
+  originalItemId: string,
+  userEmail: string,
+  payload: MarkedForRepairEventPayload,
+): void {
+  createEvent({
+    objectId: EVENT_OBJECT_TYPE.INVENTORY_ITEM,
+    entityId: originalItemId,
+    type: "marked_for_repair",
+    userEmail,
+    payload,
+  })
+}
+
+function recordRepaired(
+  originalItemId: string,
+  userEmail: string,
+  payload: RepairedEventPayload,
+): void {
+  createEvent({
+    objectId: EVENT_OBJECT_TYPE.INVENTORY_ITEM,
+    entityId: originalItemId,
+    type: "repaired",
     userEmail,
     payload,
   })
@@ -519,7 +599,13 @@ export function writeOffItem(
   next.push(newWrittenOffItem)
   saveInventoryItems(next)
 
-  recordInventoryUpdated(original, updatedOriginal, userEmail)
+  recordInventoryUpdatedExcludingQuantity(original, updatedOriginal, userEmail)
+  recordWrittenOff(original.id, userEmail, {
+    quantity: quantityToWriteOff,
+    writeOffDate,
+    writeOffReason,
+    relatedItemId: newWrittenOffItem.id,
+  })
   recordInventoryCreated(newWrittenOffItem, userEmail)
 
   return { updatedOriginal, newWrittenOffItem }
@@ -575,7 +661,11 @@ export function returnToStock(
   next[writtenOffIndex] = removedWrittenOffItem
   saveInventoryItems(next)
 
-  recordInventoryUpdated(original, updatedOriginal, userEmail)
+  recordInventoryUpdatedExcludingQuantity(original, updatedOriginal, userEmail)
+  recordReturnedToStock(original.id, userEmail, {
+    quantity: writtenOffItem.quantity,
+    relatedItemId: writtenOffItemId,
+  })
 
   return { updatedOriginal, removedWrittenOffItem }
 }
@@ -645,7 +735,13 @@ export function markAsNeedsRepair(
   next.push(newRepairItem)
   saveInventoryItems(next)
 
-  recordInventoryUpdated(original, updatedOriginal, userEmail)
+  recordInventoryUpdatedExcludingQuantity(original, updatedOriginal, userEmail)
+  recordMarkedForRepair(original.id, userEmail, {
+    quantity: quantityNeedingRepair,
+    repairDate,
+    repairComment,
+    relatedItemId: newRepairItem.id,
+  })
   recordInventoryCreated(newRepairItem, userEmail)
 
   return { updatedOriginal, newRepairItem }
@@ -701,7 +797,11 @@ export function markAsRepaired(
   next[repairIndex] = removedRepairItem
   saveInventoryItems(next)
 
-  recordInventoryUpdated(original, updatedOriginal, userEmail)
+  recordInventoryUpdatedExcludingQuantity(original, updatedOriginal, userEmail)
+  recordRepaired(original.id, userEmail, {
+    quantity: repairItem.quantity,
+    relatedItemId: repairItemId,
+  })
 
   return { updatedOriginal, removedRepairItem }
 }

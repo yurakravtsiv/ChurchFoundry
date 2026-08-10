@@ -41,4 +41,19 @@ function buildUpdatedPayload(
   return Object.keys(diff).length > 0 ? diff : null
 }
 
-export { buildCreatedPayload, buildUpdatedPayload, TRACKED_FIELDS }
+function buildUpdatedPayloadExcluding(
+  before: InventoryItem,
+  after: InventoryItem,
+  excludeFields: readonly string[],
+): UpdatedEventPayload | null {
+  const diff = buildUpdatedPayload(before, after)
+  if (!diff) {
+    return null
+  }
+  for (const field of excludeFields) {
+    delete diff[field]
+  }
+  return Object.keys(diff).length > 0 ? diff : null
+}
+
+export { buildCreatedPayload, buildUpdatedPayload, buildUpdatedPayloadExcluding, TRACKED_FIELDS }

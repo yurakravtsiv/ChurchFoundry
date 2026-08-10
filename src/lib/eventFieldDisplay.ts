@@ -92,3 +92,14 @@ export function formatEventDateTime(iso: string, locale: string): string {
     minute: "2-digit",
   })
 }
+
+export function formatEventDateOnly(value: string, locale: string): string {
+  if (!value) {
+    return "—"
+  }
+  const date = parseDateInputValue(value) ?? new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, 10)
+  }
+  return date.toLocaleDateString(locale)
+}

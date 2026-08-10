@@ -1,25 +1,44 @@
-import { Archive, ChevronDown, Pencil, PlusCircle } from "lucide-react"
+import {
+  Archive,
+  CheckCircle2,
+  ChevronDown,
+  PackageMinus,
+  PackagePlus,
+  Pencil,
+  PlusCircle,
+  Wrench,
+} from "lucide-react"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
+import { Link } from "react-router"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
   EVENT_FIELD_I18N_KEYS,
   type EventTaxonomyLookups,
+  formatEventDateOnly,
   formatEventDateTime,
   formatEventFieldValue,
 } from "@/lib/eventFieldDisplay"
 import { TRACKED_FIELDS } from "@/lib/inventoryEventDiff"
 import { cn } from "@/lib/utils"
-import type { AppEvent, CreatedEventPayload, UpdatedEventPayload } from "@/types/events"
+import type {
+  AppEvent,
+  CreatedEventPayload,
+  MarkedForRepairEventPayload,
+  RepairedEventPayload,
+  ReturnedToStockEventPayload,
+  UpdatedEventPayload,
+  WrittenOffEventPayload,
+} from "@/types/events"
 
 type EventTimelineCardProps = {
   event: AppEvent
   lookups: EventTaxonomyLookups
 }
 
-type ParsedPayload = CreatedEventPayload | UpdatedEventPayload
+type ParsedPayload = Record<string, unknown>
 
 function parseEventPayload(payload: string): ParsedPayload | null {
   try {
@@ -45,6 +64,73 @@ function isUpdatedPayload(payload: ParsedPayload): payload is UpdatedEventPayloa
     !Array.isArray(firstValue) &&
     "old" in firstValue &&
     "new" in firstValue
+  )
+}
+
+function parseWrittenOffPayload(payload: ParsedPayload): WrittenOffEventPayload | null {
+  if (
+    typeof payload.quantity === "number" &&
+    typeof payload.writeOffDate === "string" &&
+    typeof payload.writeOffReason === "string" &&
+    typeof payload.relatedItemId === "string"
+  ) {
+    return payload as WrittenOffEventPayload
+  }
+  return null
+}
+
+function parseReturnedToStockPayload(payload: ParsedPayload): ReturnedToStockEventPayload | null {
+  if (typeof payload.quantity === "number" && typeof payload.relatedItemId === "string") {
+    return payload as ReturnedToStockEventPayload
+  }
+  return null
+}
+
+function parseMarkedForRepairPayload(payload: ParsedPayload): MarkedForRepairEventPayload | null {
+  if (
+    typeof payload.quantity === "number" &&
+    typeof payload.repairDate === "string" &&
+    typeof payload.repairComment === "string" &&
+    typeof payload.relatedItemId === "string"
+  ) {
+    return payload as MarkedForRepairEventPayload
+  }
+  return null
+}
+
+function parseRepairedPayload(payload: ParsedPayload): RepairedEventPayload | null {
+  if (typeof payload.quantity === "number" && typeof payload.relatedItemId === "string") {
+    return payload as RepairedEventPayload
+  }
+  return null
+}
+
+function EventCardHeader({
+  icon: Icon,
+  iconClassName,
+  title,
+  createdAt,
+  userEmail,
+  locale,
+}: {
+  icon: typeof PlusCircle
+  iconClassName: string
+  title: string
+  createdAt: string
+  userEmail: string
+  locale: string
+}) {
+  return (
+    <div className="flex gap-3">
+      <Icon className={cn("mt-0.5 size-4 shrink-0", iconClassName)} aria-hidden />
+      <div className="min-w-0 flex-1 space-y-0.5">
+        <p className="font-medium leading-none">{title}</p>
+        <p className="text-sm tabular-nums text-muted-foreground">
+          {formatEventDateTime(createdAt, locale)}
+        </p>
+        <p className="truncate text-sm text-muted-foreground">{userEmail || "—"}</p>
+      </div>
+    </div>
   )
 }
 
@@ -137,9 +223,180 @@ function UpdatedPayloadDetails({
   )
 }
 
-export function EventTimelineCard({ event, lookups }: EventTimelineCardProps) {
-  const { t, i18n } = useTranslation()
-  const payload = useMemo(() => parseEventPayload(event.payload), [event.payload])
+function EventViewLink({
+  relatedItemId,
+  t,
+}: {
+  relatedItemId: string
+  t: ReturnType<typeof useTranslation>["t"]
+}) {
+  return (
+    <Link
+      to={`/inventory/${relatedItemId}`}
+      className="inline-block text-sm font-medium text-primary hover:underline"
+    >
+      {t("events.viewLink")}
+    </Link>
+  )
+}
+
+function WrittenOffEventCard({
+  event,
+  payload,
+  locale,
+  t,
+}: {
+  event: AppEvent
+  payload: WrittenOffEventPayload
+  locale: string
+  t: ReturnType<typeof useTranslation>["t"]
+}) {
+  return (
+    <Card className="shadow-sm">
+      <CardContent className="space-y-3 p-3">
+        <EventCardHeader
+          icon={PackageMinus}
+          iconClassName="text-red-600 dark:text-red-500"
+          title={t("inventory.timeline.writtenOff")}
+          createdAt={event.createdAt}
+          userEmail={event.userEmail}
+          locale={locale}
+        />
+        <div className="space-y-1 text-sm">
+          <p>{t("inventory.timeline.writtenOffQuantity", { quantity: payload.quantity })}</p>
+          <p>
+            {t("inventory.timeline.writtenOffReason", {
+              reason: payload.writeOffReason || "—",
+            })}
+          </p>
+          <p>
+            {t("inventory.timeline.writtenOffDate", {
+              date: formatEventDateOnly(payload.writeOffDate, locale),
+            })}
+          </p>
+        </div>
+        <EventViewLink relatedItemId={payload.relatedItemId} t={t} />
+      </CardContent>
+    </Card>
+  )
+}
+
+function ReturnedToStockEventCard({
+  event,
+  payload,
+  locale,
+  t,
+}: {
+  event: AppEvent
+  payload: ReturnedToStockEventPayload
+  locale: string
+  t: ReturnType<typeof useTranslation>["t"]
+}) {
+  return (
+    <Card className="shadow-sm">
+      <CardContent className="space-y-3 p-3">
+        <EventCardHeader
+          icon={PackagePlus}
+          iconClassName="text-green-600 dark:text-green-500"
+          title={t("inventory.timeline.returnedToStock")}
+          createdAt={event.createdAt}
+          userEmail={event.userEmail}
+          locale={locale}
+        />
+        <p className="text-sm">
+          {t("inventory.timeline.returnedToStockQuantity", { quantity: payload.quantity })}
+        </p>
+        <EventViewLink relatedItemId={payload.relatedItemId} t={t} />
+      </CardContent>
+    </Card>
+  )
+}
+
+function MarkedForRepairEventCard({
+  event,
+  payload,
+  locale,
+  t,
+}: {
+  event: AppEvent
+  payload: MarkedForRepairEventPayload
+  locale: string
+  t: ReturnType<typeof useTranslation>["t"]
+}) {
+  return (
+    <Card className="shadow-sm">
+      <CardContent className="space-y-3 p-3">
+        <EventCardHeader
+          icon={Wrench}
+          iconClassName="text-amber-600 dark:text-amber-500"
+          title={t("inventory.timeline.markedForRepair")}
+          createdAt={event.createdAt}
+          userEmail={event.userEmail}
+          locale={locale}
+        />
+        <div className="space-y-1 text-sm">
+          <p>{t("inventory.timeline.markedForRepairQuantity", { quantity: payload.quantity })}</p>
+          <p>
+            {t("inventory.timeline.markedForRepairComment", {
+              comment: payload.repairComment || "—",
+            })}
+          </p>
+          <p>
+            {t("inventory.timeline.markedForRepairDate", {
+              date: formatEventDateOnly(payload.repairDate, locale),
+            })}
+          </p>
+        </div>
+        <EventViewLink relatedItemId={payload.relatedItemId} t={t} />
+      </CardContent>
+    </Card>
+  )
+}
+
+function RepairedEventCard({
+  event,
+  payload,
+  locale,
+  t,
+}: {
+  event: AppEvent
+  payload: RepairedEventPayload
+  locale: string
+  t: ReturnType<typeof useTranslation>["t"]
+}) {
+  return (
+    <Card className="shadow-sm">
+      <CardContent className="space-y-3 p-3">
+        <EventCardHeader
+          icon={CheckCircle2}
+          iconClassName="text-green-600 dark:text-green-500"
+          title={t("inventory.timeline.repaired")}
+          createdAt={event.createdAt}
+          userEmail={event.userEmail}
+          locale={locale}
+        />
+        <p className="text-sm">
+          {t("inventory.timeline.repairedQuantity", { quantity: payload.quantity })}
+        </p>
+        <EventViewLink relatedItemId={payload.relatedItemId} t={t} />
+      </CardContent>
+    </Card>
+  )
+}
+
+function CollapsibleEventCard({
+  event,
+  payload,
+  lookups,
+  locale,
+  t,
+}: {
+  event: AppEvent
+  payload: ParsedPayload | null
+  lookups: EventTaxonomyLookups
+  locale: string
+  t: ReturnType<typeof useTranslation>["t"]
+}) {
   const isArchivedUpdate = payload !== null && isUpdatedPayload(payload) && "archived" in payload
 
   const Icon = event.type === "created" ? PlusCircle : isArchivedUpdate ? Archive : Pencil
@@ -164,7 +421,7 @@ export function EventTimelineCard({ event, lookups }: EventTimelineCardProps) {
                 <div className="min-w-0 flex-1 space-y-0.5">
                   <p className="font-medium leading-none">{actionTitle}</p>
                   <p className="text-sm tabular-nums text-muted-foreground">
-                    {formatEventDateTime(event.createdAt, i18n.language)}
+                    {formatEventDateTime(event.createdAt, locale)}
                   </p>
                   <p className="truncate text-sm text-muted-foreground">{event.userEmail || "—"}</p>
                 </div>
@@ -181,14 +438,14 @@ export function EventTimelineCard({ event, lookups }: EventTimelineCardProps) {
                       payload={payload as CreatedEventPayload}
                       lookups={lookups}
                       t={t}
-                      locale={i18n.language}
+                      locale={locale}
                     />
                   ) : isUpdatedPayload(payload) ? (
                     <UpdatedPayloadDetails
                       payload={payload}
                       lookups={lookups}
                       t={t}
-                      locale={i18n.language}
+                      locale={locale}
                     />
                   ) : null}
                 </CollapsibleContent>
@@ -198,5 +455,71 @@ export function EventTimelineCard({ event, lookups }: EventTimelineCardProps) {
         </CardContent>
       </Collapsible>
     </Card>
+  )
+}
+
+export function EventTimelineCard({ event, lookups }: EventTimelineCardProps) {
+  const { t, i18n } = useTranslation()
+  const payload = useMemo(() => parseEventPayload(event.payload), [event.payload])
+
+  if (event.type === "written_off") {
+    const writtenOffPayload = payload ? parseWrittenOffPayload(payload) : null
+    if (writtenOffPayload) {
+      return (
+        <WrittenOffEventCard
+          event={event}
+          payload={writtenOffPayload}
+          locale={i18n.language}
+          t={t}
+        />
+      )
+    }
+  }
+
+  if (event.type === "returned_to_stock") {
+    const returnedPayload = payload ? parseReturnedToStockPayload(payload) : null
+    if (returnedPayload) {
+      return (
+        <ReturnedToStockEventCard
+          event={event}
+          payload={returnedPayload}
+          locale={i18n.language}
+          t={t}
+        />
+      )
+    }
+  }
+
+  if (event.type === "marked_for_repair") {
+    const repairPayload = payload ? parseMarkedForRepairPayload(payload) : null
+    if (repairPayload) {
+      return (
+        <MarkedForRepairEventCard
+          event={event}
+          payload={repairPayload}
+          locale={i18n.language}
+          t={t}
+        />
+      )
+    }
+  }
+
+  if (event.type === "repaired") {
+    const repairedPayload = payload ? parseRepairedPayload(payload) : null
+    if (repairedPayload) {
+      return (
+        <RepairedEventCard event={event} payload={repairedPayload} locale={i18n.language} t={t} />
+      )
+    }
+  }
+
+  return (
+    <CollapsibleEventCard
+      event={event}
+      payload={payload}
+      lookups={lookups}
+      locale={i18n.language}
+      t={t}
+    />
   )
 }
