@@ -354,6 +354,8 @@ export function InventoryPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const desktopSearchRef = useRef<HTMLInputElement>(null)
   const mobileSearchRef = useRef<HTMLInputElement>(null)
+  const filterHeaderSentinelRef = useRef<HTMLDivElement>(null)
+  const [filterHeaderScrolled, setFilterHeaderScrolled] = useState(false)
 
   useEffect(() => {
     const focusVisibleSearch = () => {
@@ -364,6 +366,25 @@ export function InventoryPage() {
     const frame = requestAnimationFrame(focusVisibleSearch)
     return () => cancelAnimationFrame(frame)
   }, [])
+
+  useEffect(() => {
+    const sentinel = filterHeaderSentinelRef.current
+    if (!sentinel) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry) {
+          setFilterHeaderScrolled(!entry.isIntersecting)
+        }
+      },
+      { threshold: 0 },
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [])
+
   const [createFormDirty, setCreateFormDirty] = useState(false)
   const [discardCreateOpen, setDiscardCreateOpen] = useState(false)
   const [archiveTarget, setArchiveTarget] = useState<InventoryItem | null>(null)
@@ -1003,7 +1024,17 @@ export function InventoryPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 bg-background px-[15px] py-[10px]">
-      <div className="flex flex-col gap-3">
+      <div
+        ref={filterHeaderSentinelRef}
+        className="pointer-events-none hidden h-px w-full shrink-0 md:block"
+        aria-hidden
+      />
+      <div
+        className={cn(
+          "flex flex-col gap-3 md:sticky md:top-0 md:z-10 md:bg-background md:pb-4 md:transition-shadow md:duration-200",
+          filterHeaderScrolled && "md:shadow-[0_6px_8px_-6px_hsl(var(--foreground)/0.08)]",
+        )}
+      >
         <div className="flex flex-wrap items-center justify-end gap-2 md:justify-between">
           <div className="hidden min-w-0 flex-1 md:block md:max-w-sm">
             <InventorySearchInput
