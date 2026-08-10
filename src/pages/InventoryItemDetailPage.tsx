@@ -725,18 +725,18 @@ export function InventoryItemDetailPage() {
             <div className="rounded-xl border bg-card">{isMdUp ? renderEditForm() : null}</div>
           </div>
 
+          <div className="min-w-0 space-y-4">
+            {renderRepairsTable()}
+            {renderWriteOffsTable()}
+            {renderQrCard()}
+          </div>
+
           <div className="min-w-0">
             <InventoryItemTimeline
               objectId={EVENT_OBJECT_TYPE.INVENTORY_ITEM}
               entityId={item.id}
               className="max-h-[900px]"
             />
-          </div>
-
-          <div className="min-w-0 space-y-4">
-            {renderRepairsTable()}
-            {renderWriteOffsTable()}
-            {renderQrCard()}
           </div>
         </div>
 
