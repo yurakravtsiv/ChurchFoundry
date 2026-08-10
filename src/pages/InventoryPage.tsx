@@ -289,6 +289,18 @@ function initialAvailabilityFilter(searchParams: URLSearchParams) {
   return value === "borrowed" || value === "in_church" ? value : "all"
 }
 
+function buildInventoryFilterSearch(availabilityFilter: string, conditionFilter: string): string {
+  const params = new URLSearchParams()
+  if (availabilityFilter === "borrowed" || availabilityFilter === "in_church") {
+    params.set("availability", availabilityFilter)
+  }
+  if (conditionFilter === "needs_repair" || conditionFilter === "good") {
+    params.set("condition", conditionFilter)
+  }
+  const serialized = params.toString()
+  return serialized ? `?${serialized}` : ""
+}
+
 export function InventoryPage() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
@@ -413,6 +425,32 @@ export function InventoryPage() {
     setConditionFilter(initialConditionFilter(params))
     setAvailabilityFilter(initialAvailabilityFilter(params))
   }, [locationSearch])
+
+  const syncInventoryFilterSearchToUrl = useCallback(
+    (availability: string, condition: string) => {
+      const nextSearch = buildInventoryFilterSearch(availability, condition)
+      if (nextSearch !== locationSearch) {
+        navigate({ pathname: "/inventory", search: nextSearch }, { replace: true })
+      }
+    },
+    [locationSearch, navigate],
+  )
+
+  const applyAvailabilityFilter = useCallback(
+    (value: string) => {
+      setAvailabilityFilter(value)
+      syncInventoryFilterSearchToUrl(value, conditionFilter)
+    },
+    [conditionFilter, syncInventoryFilterSearchToUrl],
+  )
+
+  const applyConditionFilter = useCallback(
+    (value: string) => {
+      setConditionFilter(value)
+      syncInventoryFilterSearchToUrl(availabilityFilter, value)
+    },
+    [availabilityFilter, syncInventoryFilterSearchToUrl],
+  )
 
   // Drop write-off column sort when the conditional columns are removed.
   useEffect(() => {
@@ -996,6 +1034,9 @@ export function InventoryPage() {
     setConditionFilter("all")
     setShowArchived(false)
     setShowWrittenOff(false)
+    if (locationSearch) {
+      navigate("/inventory", { replace: true })
+    }
   }
 
   const runExport = async (format: "xlsx" | "pdf") => {
@@ -1214,7 +1255,7 @@ export function InventoryPage() {
                 {t("inventory.filters.availability")}
               </Label>
               <div className="relative min-w-0">
-                <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+                <Select value={availabilityFilter} onValueChange={applyAvailabilityFilter}>
                   <SelectTrigger
                     id="inventory-filter-availability"
                     className={cn(
@@ -1236,7 +1277,7 @@ export function InventoryPage() {
                   visible={availabilityFilter !== "all"}
                   label={t("inventory.filters.clear")}
                   className="right-2"
-                  onClear={() => setAvailabilityFilter("all")}
+                  onClear={() => applyAvailabilityFilter("all")}
                 />
               </div>
             </div>
@@ -1287,7 +1328,7 @@ export function InventoryPage() {
                 {t("inventory.filters.condition")}
               </Label>
               <div className="relative min-w-0">
-                <Select value={conditionFilter} onValueChange={setConditionFilter}>
+                <Select value={conditionFilter} onValueChange={applyConditionFilter}>
                   <SelectTrigger
                     id="inventory-filter-condition"
                     className={cn(
@@ -1309,7 +1350,7 @@ export function InventoryPage() {
                   visible={conditionFilter !== "all"}
                   label={t("inventory.filters.clear")}
                   className="right-2"
-                  onClear={() => setConditionFilter("all")}
+                  onClear={() => applyConditionFilter("all")}
                 />
               </div>
             </div>
