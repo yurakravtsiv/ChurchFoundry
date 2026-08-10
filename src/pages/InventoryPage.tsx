@@ -332,7 +332,7 @@ export function InventoryPage() {
     void refetchLocations()
   }, [refetchCategories, refetchItems, refetchLocations, refetchSubcategories])
 
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }])
   const [search, setSearch] = useState("")
   const searchExampleWords = useMemo(
     () =>
@@ -540,6 +540,8 @@ export function InventoryPage() {
       },
       {
         accessorKey: "name",
+        sortingFn: (rowA, rowB) =>
+          compareLocaleText(rowA.original.name, rowB.original.name, i18n.language),
         header: ({ column }) => (
           <SortableColumnHeader label={t("inventory.columns.name")} column={column} />
         ),

@@ -5,6 +5,7 @@ import {
   Check,
   CheckCircle2,
   MoreVertical,
+  Package,
   PackageMinus,
   PackagePlus,
   PackageX,
@@ -161,6 +162,13 @@ export function InventoryItemDetailPage() {
         entry.removed !== true,
     )
   }, [item, items])
+
+  const avatarPhoto = useMemo(() => {
+    if (!item?.avatarPhotoId) {
+      return undefined
+    }
+    return item.photos.find((photo) => photo.id === item.avatarPhotoId)
+  }, [item])
 
   const [formDirty, setFormDirty] = useState(false)
   const [formBusy, setFormBusy] = useState(false)
@@ -516,8 +524,20 @@ export function InventoryItemDetailPage() {
             {t("inventory.detail.backToInventory")}
           </button>
           <div className="flex min-w-0 items-center gap-2">
-            <div className="flex min-w-0 flex-1 items-center gap-1.5">
-              <h1 className="min-w-0 truncate text-xl font-semibold leading-none tracking-tight sm:text-3xl sm:leading-none">
+            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground sm:size-12">
+                {avatarPhoto ? (
+                  <img
+                    src={avatarPhoto.dataUrl}
+                    alt=""
+                    className="size-full object-cover"
+                    draggable={false}
+                  />
+                ) : (
+                  <Package className="size-5 sm:size-6" aria-hidden />
+                )}
+              </div>
+              <h1 className="min-w-0 flex-1 truncate text-xl font-semibold leading-none tracking-tight sm:text-3xl sm:leading-none">
                 {item.name}
               </h1>
               <DropdownMenu>
