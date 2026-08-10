@@ -65,7 +65,7 @@ export function InventoryItemTimeline({
         ) : events.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("inventory.timeline.empty")}</p>
         ) : (
-          <div className="space-y-3 pr-1">
+          <div className="space-y-3">
             {events.map((event) => (
               <EventTimelineCard key={event.id} event={event} lookups={lookups} />
             ))}
