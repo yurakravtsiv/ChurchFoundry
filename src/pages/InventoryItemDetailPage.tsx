@@ -59,14 +59,15 @@ import {
   useUpdateInventoryItemMutation,
 } from "@/hooks/queries/useInventoryQueries"
 import { useAuth } from "@/hooks/useAuth"
-import { cn } from "@/lib/utils"
 import { EVENT_OBJECT_TYPE } from "@/types/events"
 
 const EDIT_FORM_ID = "inventory-item-edit-form"
 
-/** App Header (`h-14` / 3.5rem) + safe-area — sticky Timeline top offset and max height. */
-const STICKY_PANEL_TOP_CLASS = "top-[calc(3.5rem+env(safe-area-inset-top,0px))]"
-const STICKY_PANEL_MAX_HEIGHT_CLASS = "max-h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px))]"
+/** Unified padding: headers px-4 py-4, body below header px-4 pb-4 pt-0. */
+const DETAIL_CARD_PADDING = "px-4 py-4"
+const DETAIL_CARD_BODY_PADDING = "px-4 pb-4 pt-0"
+const DETAIL_TABLE_EDGE_CLASS =
+  "[&_th:first-child]:pl-4 [&_td:first-child]:pl-4 [&_th:last-child]:pr-4 [&_td:last-child]:pr-4"
 
 function subscribeMdUp(onStoreChange: () => void) {
   const mediaQuery = window.matchMedia("(min-width: 768px)")
@@ -412,11 +413,11 @@ export function InventoryItemDetailPage() {
   const renderRepairsTable = () =>
     relatedRepairs.length > 0 ? (
       <Card className="min-w-0 overflow-hidden">
-        <CardHeader className="px-2 py-4">
+        <CardHeader className={DETAIL_CARD_PADDING}>
           <CardTitle>{t("inventory.detail.repairBatchesTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="min-w-0 overflow-x-auto p-0">
-          <Table>
+          <Table className={DETAIL_TABLE_EDGE_CLASS}>
             <TableHeader>
               <TableRow>
                 <TableHead>{t("inventory.columns.quantity")}</TableHead>
@@ -449,11 +450,11 @@ export function InventoryItemDetailPage() {
   const renderWriteOffsTable = () =>
     relatedWriteOffs.length > 0 ? (
       <Card className="min-w-0 overflow-hidden">
-        <CardHeader className="px-2 py-4">
+        <CardHeader className={DETAIL_CARD_PADDING}>
           <CardTitle>{t("inventory.detail.writeOffBatchesTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="min-w-0 overflow-x-auto p-0">
-          <Table>
+          <Table className={DETAIL_TABLE_EDGE_CLASS}>
             <TableHeader>
               <TableRow>
                 <TableHead>{t("inventory.columns.quantity")}</TableHead>
@@ -485,10 +486,12 @@ export function InventoryItemDetailPage() {
 
   const renderQrCard = () => (
     <Card className="min-w-0 overflow-hidden">
-      <CardHeader>
+      <CardHeader className={DETAIL_CARD_PADDING}>
         <CardTitle>{t("inventory.detail.qrTitle")}</CardTitle>
       </CardHeader>
-      <CardContent className="flex min-w-0 flex-col items-center gap-3">
+      <CardContent
+        className={`flex min-w-0 flex-col items-center gap-3 ${DETAIL_CARD_BODY_PADDING}`}
+      >
         <ItemQrCode
           value={item.qrCodeValue}
           itemName={item.name}
@@ -502,7 +505,7 @@ export function InventoryItemDetailPage() {
 
   return (
     <main className="bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-6 md:static md:z-auto">
+      <header className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-6">
         <div className="mx-auto w-full max-w-[1400px] space-y-3">
           <button
             type="button"
@@ -717,29 +720,27 @@ export function InventoryItemDetailPage() {
       </header>
 
       <div className="mx-auto w-full max-w-[1400px] px-[15px] pb-[20px] pt-[10px]">
-        <div className="hidden md:grid md:grid-cols-[2fr_1fr_1fr] md:items-start gap-6">
+        <div className="hidden md:grid md:grid-cols-[2fr_1fr_1fr] md:items-start gap-4">
           <div className="min-w-0">
             <div className="rounded-xl border bg-card">{isMdUp ? renderEditForm() : null}</div>
           </div>
 
-          <div
-            className={cn(
-              "sticky flex min-h-0 min-w-0 flex-col overflow-hidden",
-              STICKY_PANEL_TOP_CLASS,
-              STICKY_PANEL_MAX_HEIGHT_CLASS,
-            )}
-          >
-            <InventoryItemTimeline objectId={EVENT_OBJECT_TYPE.INVENTORY_ITEM} entityId={item.id} />
+          <div className="min-w-0">
+            <InventoryItemTimeline
+              objectId={EVENT_OBJECT_TYPE.INVENTORY_ITEM}
+              entityId={item.id}
+              className="max-h-[900px]"
+            />
           </div>
 
-          <div className="min-w-0 space-y-6">
+          <div className="min-w-0 space-y-4">
             {renderRepairsTable()}
             {renderWriteOffsTable()}
             {renderQrCard()}
           </div>
         </div>
 
-        <div className="grid gap-6 md:hidden">
+        <div className="grid gap-4 md:hidden">
           <div className="min-w-0 rounded-xl border bg-card">
             {isMdUp ? null : renderEditForm()}
           </div>

@@ -516,7 +516,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           {/* Scroll on a div — fieldset as flex/overflow container is unreliable in browsers. */}
           <div
             className={cn(
-              "min-w-0 px-6 py-4",
+              "min-w-0 px-4 py-4",
               isPageLayout ? "space-y-4" : "min-h-0 flex-1 overflow-y-auto overscroll-contain",
             )}
           >

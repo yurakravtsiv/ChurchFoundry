@@ -55,7 +55,7 @@ export function InventoryItemTimeline({
   )
 
   return (
-    <Card className={cn("flex h-full max-h-full min-w-0 flex-col", className)}>
+    <Card className={cn("flex h-full max-h-full min-w-0 flex-col overflow-hidden", className)}>
       <CardHeader className="shrink-0 px-4 py-4">
         <CardTitle>{t("inventory.timeline.title")}</CardTitle>
       </CardHeader>
