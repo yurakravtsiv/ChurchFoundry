@@ -306,7 +306,6 @@ function ReturnedToStockEventCard({
         <p className="text-sm">
           {t("inventory.timeline.returnedToStockQuantity", { quantity: payload.quantity })}
         </p>
-        <EventViewLink relatedItemId={payload.relatedItemId} t={t} />
       </CardContent>
     </Card>
   )
@@ -378,7 +377,6 @@ function RepairedEventCard({
         <p className="text-sm">
           {t("inventory.timeline.repairedQuantity", { quantity: payload.quantity })}
         </p>
-        <EventViewLink relatedItemId={payload.relatedItemId} t={t} />
       </CardContent>
     </Card>
   )
