@@ -3,7 +3,6 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link, useLocation } from "react-router"
 
-import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { LogoutButton } from "@/components/LogoutButton"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { Button } from "@/components/ui/button"
@@ -95,7 +94,6 @@ export function Header({ onOpenSidebar }: HeaderProps) {
           ) : null}
 
           <div className="ml-auto hidden items-center gap-3 md:flex">
-            <LanguageSwitcher showLabel={false} />
             <ThemeToggle />
             <LogoutButton />
           </div>

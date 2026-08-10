@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router"
 
 import { GenerateDataDialog } from "@/components/dev/GenerateDataDialog"
-import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { LogoutButton } from "@/components/LogoutButton"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import {
@@ -154,7 +153,6 @@ function SidebarPanel({
           <div className="border-t border-border pt-3 md:hidden">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <LanguageSwitcher showLabel={false} onLanguageChange={onNavigate} />
                 <ThemeToggle onToggle={onNavigate} />
               </div>
               <LogoutButton onPress={onNavigate} onSignedOut={onNavigate} />
