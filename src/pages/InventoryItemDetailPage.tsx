@@ -670,21 +670,21 @@ export function InventoryItemDetailPage() {
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
+                {isWrittenOff ? (
+                  <Badge variant="secondary" className="shrink-0">
+                    {t("inventory.detail.writtenOffBadge")}
+                  </Badge>
+                ) : isNeedsRepair ? (
+                  <Badge className="shrink-0 whitespace-pre-line border-transparent bg-red-100 text-center leading-tight text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                    {t("inventory.detail.needsRepairBadge")}
+                  </Badge>
+                ) : null}
+                {item.archived ? (
+                  <Badge variant="secondary" className="shrink-0">
+                    {t("inventory.detail.archivedBadge")}
+                  </Badge>
+                ) : null}
               </div>
-              {isWrittenOff ? (
-                <Badge variant="secondary" className="shrink-0">
-                  {t("inventory.detail.writtenOffBadge")}
-                </Badge>
-              ) : isNeedsRepair ? (
-                <Badge className="shrink-0 whitespace-pre-line border-transparent bg-red-100 text-center leading-tight text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                  {t("inventory.detail.needsRepairBadge")}
-                </Badge>
-              ) : null}
-              {item.archived ? (
-                <Badge variant="secondary" className="shrink-0">
-                  {t("inventory.detail.archivedBadge")}
-                </Badge>
-              ) : null}
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {isReadOnly ? (
