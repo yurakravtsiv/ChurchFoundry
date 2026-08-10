@@ -26,6 +26,8 @@ export function getInventoryItemSearchableValues(
     item.supplier,
     item.serialNumber,
     item.comment,
+    item.writeOffReason ?? "",
+    item.repairComment ?? "",
     item.warrantyUntil ?? "",
     item.qrCodeValue,
     item.createdAt,
