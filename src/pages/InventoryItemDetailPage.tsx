@@ -537,138 +537,140 @@ export function InventoryItemDetailPage() {
                   <Package className="size-5 sm:size-6" aria-hidden />
                 )}
               </div>
-              <h1 className="min-w-0 flex-1 truncate text-xl font-semibold leading-none tracking-tight sm:text-3xl sm:leading-none">
-                {item.name}
-              </h1>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-8 shrink-0"
-                    aria-label={t("inventory.actions.menu")}
-                  >
-                    <MoreVertical className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {isWrittenOff ? (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <DropdownMenuItem disabled>
-                              <Wrench />
-                              {t("inventory.actions.needsRepair")}
-                            </DropdownMenuItem>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {t("inventory.actions.needsRepairWrittenOffHint")}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : isNeedsRepair ? (
-                    <DropdownMenuItem onClick={() => setRepairedConfirmOpen(true)}>
-                      <CheckCircle2 />
-                      {t("inventory.actions.markRepaired")}
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={() => setNeedsRepairOpen(true)}>
-                      <Wrench />
-                      {t("inventory.actions.needsRepair")}
-                    </DropdownMenuItem>
-                  )}
-                  {isWrittenOff ? (
-                    <DropdownMenuItem onClick={() => setReturnToStockOpen(true)}>
-                      <PackagePlus />
-                      {t("inventory.actions.returnToStock")}
-                    </DropdownMenuItem>
-                  ) : item.archived ? (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <DropdownMenuItem disabled>
-                              <PackageMinus />
-                              {t("inventory.actions.writeOff")}
-                            </DropdownMenuItem>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {t("inventory.actions.writeOffArchivedHint")}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : isNeedsRepair ? (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <DropdownMenuItem disabled>
-                              <PackageMinus />
-                              {t("inventory.actions.writeOff")}
-                            </DropdownMenuItem>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {t("inventory.actions.writeOffNeedsRepairHint")}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : (
-                    <DropdownMenuItem onClick={() => setWriteOffOpen(true)}>
-                      <PackageMinus />
-                      {t("inventory.actions.writeOff")}
-                    </DropdownMenuItem>
-                  )}
-                  {isWrittenOff ? (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <DropdownMenuItem disabled>
-                              <Archive />
-                              {t("inventory.actions.archive")}
-                            </DropdownMenuItem>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {t("inventory.actions.archiveWrittenOffHint")}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : isNeedsRepair ? (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <DropdownMenuItem disabled>
-                              <Archive />
-                              {t("inventory.actions.archive")}
-                            </DropdownMenuItem>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {t("inventory.actions.archiveNeedsRepairHint")}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : (
-                    <DropdownMenuItem
-                      onClick={() => {
-                        void requestArchiveConfirm()
-                      }}
+              <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                <h1 className="min-w-0 truncate text-xl font-semibold leading-none tracking-tight sm:text-3xl sm:leading-none">
+                  {item.name}
+                </h1>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 shrink-0"
+                      aria-label={t("inventory.actions.menu")}
                     >
-                      {item.archived ? <ArchiveRestore /> : <Archive />}
-                      {item.archived
-                        ? t("inventory.actions.unarchive")
-                        : t("inventory.actions.archive")}
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      <MoreVertical className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {isWrittenOff ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Wrench />
+                                {t("inventory.actions.needsRepair")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.needsRepairWrittenOffHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : isNeedsRepair ? (
+                      <DropdownMenuItem onClick={() => setRepairedConfirmOpen(true)}>
+                        <CheckCircle2 />
+                        {t("inventory.actions.markRepaired")}
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onClick={() => setNeedsRepairOpen(true)}>
+                        <Wrench />
+                        {t("inventory.actions.needsRepair")}
+                      </DropdownMenuItem>
+                    )}
+                    {isWrittenOff ? (
+                      <DropdownMenuItem onClick={() => setReturnToStockOpen(true)}>
+                        <PackagePlus />
+                        {t("inventory.actions.returnToStock")}
+                      </DropdownMenuItem>
+                    ) : item.archived ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <PackageMinus />
+                                {t("inventory.actions.writeOff")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.writeOffArchivedHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : isNeedsRepair ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <PackageMinus />
+                                {t("inventory.actions.writeOff")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.writeOffNeedsRepairHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <DropdownMenuItem onClick={() => setWriteOffOpen(true)}>
+                        <PackageMinus />
+                        {t("inventory.actions.writeOff")}
+                      </DropdownMenuItem>
+                    )}
+                    {isWrittenOff ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Archive />
+                                {t("inventory.actions.archive")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.archiveWrittenOffHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : isNeedsRepair ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Archive />
+                                {t("inventory.actions.archive")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.archiveNeedsRepairHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void requestArchiveConfirm()
+                        }}
+                      >
+                        {item.archived ? <ArchiveRestore /> : <Archive />}
+                        {item.archived
+                          ? t("inventory.actions.unarchive")
+                          : t("inventory.actions.archive")}
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               {isWrittenOff ? (
                 <Badge variant="secondary" className="shrink-0">
                   {t("inventory.detail.writtenOffBadge")}
