@@ -204,7 +204,7 @@
       "title": "Needs repair “{{name}}”",
       "description": "Available quantity: {{quantity}}",
       "quantity": "Quantity needing repair",
-      "date": "Date",
+      "date": "Fault date",
       "comment": "Fault comment",
       "validation": {
         "quantityInvalid": "Enter a whole number",
@@ -259,7 +259,7 @@
       "commentPlaceholder": "Additional notes",
       "writeOffDate": "Write-off date",
       "writeOffReason": "Write-off reason",
-      "repairDate": "Date",
+      "repairDate": "Fault date",
       "repairComment": "Fault comment",
       "photos": "Photos",
       "photosCompressing": "Compressing photos…",

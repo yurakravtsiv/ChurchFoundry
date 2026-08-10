@@ -204,7 +204,7 @@
       "title": "Потребує ремонту «{{name}}»",
       "description": "Наявна кількість: {{quantity}}",
       "quantity": "Кількість, що потребує ремонту",
-      "date": "Дата",
+      "date": "Дата несправності",
       "comment": "Коментар про несправність",
       "validation": {
         "quantityInvalid": "Вкажіть ціле число",
@@ -259,7 +259,7 @@
       "commentPlaceholder": "Додаткові нотатки",
       "writeOffDate": "Дата списання",
       "writeOffReason": "Причина списання",
-      "repairDate": "Дата",
+      "repairDate": "Дата несправності",
       "repairComment": "Коментар про несправність",
       "photos": "Фото",
       "photosCompressing": "Стиснення фото…",
