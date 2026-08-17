@@ -23,6 +23,7 @@ export function getInventoryItemSearchableValues(
     String(item.quantity),
     item.price != null ? String(item.price) : "",
     item.availabilityComment,
+    item.borrowDate ?? "",
     item.supplier,
     item.serialNumber,
     item.comment,

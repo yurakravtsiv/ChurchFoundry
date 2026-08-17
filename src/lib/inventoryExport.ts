@@ -19,6 +19,7 @@ export type InventoryExportRow = {
   writeOffReason?: string
   location: string
   availability: string
+  borrowDate: string
   availabilityComment: string
   supplier: string
   price: number | ""
@@ -44,6 +45,7 @@ const BASE_EXPORT_ROW_KEYS = [
   "repairComment",
   "location",
   "availability",
+  "borrowDate",
   "availabilityComment",
   "supplier",
   "price",
@@ -110,6 +112,7 @@ export function getExportColumnHeaders(t: TFunction): Record<ExportRowKey, strin
     writeOffReason: t("export.columns.writeOffReason"),
     location: t("export.columns.location"),
     availability: t("export.columns.availability"),
+    borrowDate: t("export.columns.borrowDate"),
     availabilityComment: t("export.columns.availabilityComment"),
     supplier: t("export.columns.supplier"),
     price: t("export.columns.price"),
@@ -214,6 +217,8 @@ export function prepareExportData(
         repairComment: item.condition === "needs_repair" ? (item.repairComment ?? "") : "",
         location: locations.find((location) => location.id === item.locationId)?.name ?? "",
         availability: availabilityLabel(item.availability, t),
+        borrowDate:
+          item.availability === "borrowed" ? formatWriteOffDateForExport(item.borrowDate) : "",
         availabilityComment: item.availabilityComment,
         supplier: item.supplier,
         price: item.price ?? "",

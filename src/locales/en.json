@@ -21,6 +21,7 @@
       "writeOffReason": "Write-off reason",
       "location": "Location",
       "availability": "Availability",
+      "borrowDate": "Borrow date",
       "availabilityComment": "Availability comment",
       "supplier": "Supplier",
       "price": "Price",
@@ -90,10 +91,13 @@
       "archivedBadge": "Archived",
       "writtenOffBadge": "Written off",
       "needsRepairBadge": "Needs\nrepair",
+      "borrowedBadge": "Borrowed",
       "writeOffBatchesTitle": "Written-off items",
       "repairBatchesTitle": "Needs repair",
+      "borrowBatchesTitle": "Borrowed items",
       "readOnlyWrittenOffWarning": "Written-off items cannot be edited",
       "readOnlyNeedsRepairWarning": "Items needing repair cannot be edited",
+      "readOnlyBorrowedWarning": "Borrowed items cannot be edited",
       "writeOffDate": "Write-off date",
       "writeOffReason": "Write-off reason",
       "qrTitle": "Item QR code",
@@ -116,7 +120,13 @@
       "markedForRepairComment": "Issue: {{comment}}",
       "markedForRepairDate": "Date: {{date}}",
       "repaired": "Repaired",
-      "repairedQuantity": "Repaired and returned {{quantity}} item(s) to stock"
+      "repairedQuantity": "Repaired and returned {{quantity}} item(s) to stock",
+      "markedAsBorrowed": "Borrowed",
+      "markedAsBorrowedQuantity": "Borrowed {{quantity}} item(s)",
+      "markedAsBorrowedComment": "Comment: {{comment}}",
+      "markedAsBorrowedDate": "Date: {{date}}",
+      "returnedFromBorrow": "Returned from borrow",
+      "returnedFromBorrowQuantity": "Returned {{quantity}} borrowed item(s) to stock"
     },
     "archiveConfirmTitle": "Archive “{{name}}”?",
     "archiveConfirmDescription": "Archived items can be shown again with the archive toggle.",
@@ -159,6 +169,7 @@
       "repairComment": "Fault",
       "availability": "Availability",
       "availabilityComment": "Availability comment",
+      "borrowDate": "Borrow date",
       "comment": "Comment",
       "writeOffDate": "Write-off date",
       "writeOffReason": "Write-off reason"
@@ -174,12 +185,21 @@
       "needsRepair": "Needs repair",
       "markRepaired": "Repaired",
       "markNeedsRepair": "Mark",
+      "borrow": "Borrow",
+      "returnBorrowed": "Return borrowed",
+      "markBorrowed": "Borrow",
       "confirm": "Confirm",
       "archiveWrittenOffHint": "Written-off items cannot be archived",
       "archiveNeedsRepairHint": "Items needing repair cannot be archived",
+      "archiveBorrowedHint": "Borrowed items cannot be archived",
       "writeOffArchivedHint": "Archived items cannot be written off",
       "writeOffNeedsRepairHint": "Items needing repair cannot be written off",
-      "needsRepairWrittenOffHint": "Written-off items cannot be marked as needing repair"
+      "writeOffBorrowedHint": "Borrowed items cannot be written off",
+      "needsRepairWrittenOffHint": "Written-off items cannot be marked as needing repair",
+      "needsRepairBorrowedHint": "Borrowed items cannot be marked as needing repair",
+      "borrowWrittenOffHint": "Written-off items cannot be borrowed",
+      "borrowNeedsRepairHint": "Items needing repair cannot be borrowed",
+      "borrowArchivedHint": "Archived items cannot be borrowed"
     },
     "writeOff": {
       "title": "Write off “{{name}}”",
@@ -218,6 +238,25 @@
       "title": "Mark as repaired?",
       "description": "Mark {{quantity}} pcs of “{{name}}” as repaired and return them to the original item’s stock?"
     },
+    "borrow": {
+      "title": "Borrow “{{name}}”",
+      "description": "Available quantity: {{quantity}}",
+      "quantity": "Quantity to borrow",
+      "date": "Borrow date",
+      "comment": "Availability comment",
+      "commentPlaceholder": "Information about the item, borrower, and return date",
+      "validation": {
+        "quantityInvalid": "Enter a whole number",
+        "quantityMin": "Minimum is 1",
+        "quantityMax": "Cannot exceed available quantity ({{quantity}})",
+        "dateRequired": "Date is required",
+        "commentRequired": "Comment is required"
+      }
+    },
+    "returnBorrowed": {
+      "title": "Return borrowed items?",
+      "description": "Return {{quantity}} pcs of “{{name}}” to the original item’s stock?"
+    },
     "form": {
       "createDescription": "Fill in the inventory item details",
       "name": "Name",
@@ -245,7 +284,8 @@
       "createLocationTitle": "New location",
       "availability": "Availability",
       "availabilityComment": "Availability comment",
-      "availabilityCommentPlaceholder": "Who borrowed it / until when",
+      "availabilityCommentPlaceholder": "Information about the item, borrower, and return date",
+      "borrowDate": "Borrow date",
       "condition": "Condition",
       "supplier": "Supplier",
       "supplierPlaceholder": "Supplier name",

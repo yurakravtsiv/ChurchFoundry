@@ -7,12 +7,12 @@ import {
   getInventoryItemById,
   getLocations,
   getSubcategories,
+  markAsBorrowed,
   markAsNeedsRepair,
   updateInventoryItem,
   writeOffItem,
 } from "@/lib/inventoryStorage"
 import type {
-  AvailabilityStatus,
   Category,
   CreateInventoryItemInput,
   InventoryItem,
@@ -24,8 +24,10 @@ import type {
 const SEED_ITEM_COUNT = 20
 /** ~15% of seed items — disjoint from repair batch candidates. */
 const WRITE_OFF_BATCH_COUNT = 3
-/** ~15% of seed items — disjoint from write-off batch candidates. */
+/** ~15% of seed items — disjoint from write-off/repair batch candidates. */
 const REPAIR_BATCH_COUNT = 3
+/** ~15% of seed items — disjoint from write-off/repair batch candidates. */
+const BORROW_BATCH_COUNT = 3
 /** Share of created items that get a follow-up edit (excluding write-off/repair picks). */
 const SEED_UPDATE_RATIO = 0.3
 
@@ -236,7 +238,6 @@ function buildItemInput(
   const name = sampleNames[index % sampleNames.length]!
   const pair = pickOne(pairs, index + 11)
   const location = pickOne(locations, index + 23)
-  const availability: AvailabilityStatus = index % 10 < 7 ? "in_church" : "borrowed"
   const supplier = pickOne(suppliers, index + 5)
   const hasPrice = index % 3 !== 0
   const price = hasPrice ? 50 + pickIndex(4951, index + 41) : null
@@ -247,8 +248,8 @@ function buildItemInput(
     subcategoryId: pair.subcategory.id,
     quantity: 1 + pickIndex(15, index + 3),
     locationId: location.id,
-    availability,
-    availabilityComment: availability === "borrowed" ? pickOne(borrowedComments, index + 19) : "",
+    availability: "in_church",
+    availabilityComment: "",
     supplier,
     price,
     serialNumber: buildSerialNumber(index, pair.category.name),
@@ -334,6 +335,28 @@ function generateWriteOffBatches(candidates: readonly InventoryItem[], userEmail
   }
 }
 
+function generateBorrowBatches(candidates: readonly InventoryItem[], userEmail: string): void {
+  for (const [batchIndex, seedItem] of candidates.entries()) {
+    const current = getInventoryItemById(seedItem.id)
+    if (!current || current.quantity <= 0) {
+      continue
+    }
+
+    const quantityToBorrow = pickSplitQuantity(current.quantity, batchIndex + 1101)
+    if (quantityToBorrow <= 0) {
+      continue
+    }
+
+    markAsBorrowed(
+      current.id,
+      quantityToBorrow,
+      buildRecentIsoDate(batchIndex + 1201, 7, 30),
+      pickOne(borrowedComments, batchIndex + 1301),
+      userEmail,
+    )
+  }
+}
+
 function generateRepairBatches(candidates: readonly InventoryItem[], userEmail: string): void {
   for (const [batchIndex, seedItem] of candidates.entries()) {
     const current = getInventoryItemById(seedItem.id)
@@ -375,15 +398,25 @@ function generateSeedData(userEmail: string): void {
     WRITE_OFF_BATCH_COUNT,
     WRITE_OFF_BATCH_COUNT + REPAIR_BATCH_COUNT,
   )
-  const excludedIndices = new Set([...writeOffItemIndices, ...repairItemIndices])
+  const borrowItemIndices = shuffled.slice(
+    WRITE_OFF_BATCH_COUNT + REPAIR_BATCH_COUNT,
+    WRITE_OFF_BATCH_COUNT + REPAIR_BATCH_COUNT + BORROW_BATCH_COUNT,
+  )
+  const excludedIndices = new Set([
+    ...writeOffItemIndices,
+    ...repairItemIndices,
+    ...borrowItemIndices,
+  ])
 
   generateSeedUpdates(createdItems, excludedIndices, userEmail)
 
   const writeOffCandidates = writeOffItemIndices.map((index) => createdItems[index]!)
   const repairCandidates = repairItemIndices.map((index) => createdItems[index]!)
+  const borrowCandidates = borrowItemIndices.map((index) => createdItems[index]!)
 
   generateWriteOffBatches(writeOffCandidates, userEmail)
   generateRepairBatches(repairCandidates, userEmail)
+  generateBorrowBatches(borrowCandidates, userEmail)
 }
 
 export { generateSeedData, SEED_ITEM_COUNT }

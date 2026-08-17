@@ -10,8 +10,10 @@ import {
   getInventoryItems,
   getLocations,
   getSubcategories,
+  markAsBorrowed,
   markAsNeedsRepair,
   markAsRepaired,
+  returnBorrowed,
   returnToStock,
   unarchiveInventoryItem,
   updateInventoryItem,
@@ -200,6 +202,44 @@ export function useMarkAsRepairedMutation() {
   return useMutation({
     mutationFn: async ({ repairItemId, userEmail }: { repairItemId: string; userEmail: string }) =>
       markAsRepaired(repairItemId, userEmail),
+    onSuccess: async () => {
+      await invalidateInventoryQueries(queryClient)
+    },
+  })
+}
+
+export function useMarkAsBorrowedMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      quantity,
+      borrowDate,
+      availabilityComment,
+      userEmail,
+    }: {
+      id: string
+      quantity: number
+      borrowDate: string
+      availabilityComment: string
+      userEmail: string
+    }) => markAsBorrowed(id, quantity, borrowDate, availabilityComment, userEmail),
+    onSuccess: async () => {
+      await invalidateInventoryQueries(queryClient)
+    },
+  })
+}
+
+export function useReturnBorrowedMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      borrowedItemId,
+      userEmail,
+    }: {
+      borrowedItemId: string
+      userEmail: string
+    }) => returnBorrowed(borrowedItemId, userEmail),
     onSuccess: async () => {
       await invalidateInventoryQueries(queryClient)
     },

@@ -4,8 +4,10 @@ import { createEvent } from "@/lib/eventsStorage"
 import { buildCreatedPayload, buildUpdatedPayloadExcluding } from "@/lib/inventoryEventDiff"
 import { filterVisible, isVisible } from "@/lib/removedEntity"
 import type {
+  MarkedAsBorrowedEventPayload,
   MarkedForRepairEventPayload,
   RepairedEventPayload,
+  ReturnedFromBorrowEventPayload,
   ReturnedToStockEventPayload,
   UpdatedEventPayload,
   WrittenOffEventPayload,
@@ -133,6 +135,34 @@ function recordRepaired(
     objectId: EVENT_OBJECT_TYPE.INVENTORY_ITEM,
     entityId: originalItemId,
     type: "repaired",
+    userEmail,
+    payload,
+  })
+}
+
+function recordMarkedAsBorrowed(
+  originalItemId: string,
+  userEmail: string,
+  payload: MarkedAsBorrowedEventPayload,
+): void {
+  createEvent({
+    objectId: EVENT_OBJECT_TYPE.INVENTORY_ITEM,
+    entityId: originalItemId,
+    type: "marked_as_borrowed",
+    userEmail,
+    payload,
+  })
+}
+
+function recordReturnedFromBorrow(
+  originalItemId: string,
+  userEmail: string,
+  payload: ReturnedFromBorrowEventPayload,
+): void {
+  createEvent({
+    objectId: EVENT_OBJECT_TYPE.INVENTORY_ITEM,
+    entityId: originalItemId,
+    type: "returned_from_borrow",
     userEmail,
     payload,
   })
@@ -338,6 +368,9 @@ function normalizeInventoryItem(item: InventoryItem): InventoryItem {
   if (typeof next.repairComment !== "string" && next.repairComment !== null) {
     next = { ...next, repairComment: null }
   }
+  if (typeof next.borrowDate !== "string" && next.borrowDate !== null) {
+    next = { ...next, borrowDate: null }
+  }
   return next
 }
 
@@ -430,6 +463,7 @@ export function createInventoryItem(
     originalItemId: null,
     repairDate: null,
     repairComment: null,
+    borrowDate: null,
     createdAt: timestamp,
     updatedAt: timestamp,
   }
@@ -557,6 +591,11 @@ export function writeOffItem(
       `[inventoryStorage] writeOffItem: item needing repair cannot be written off (${originalItemId})`,
     )
   }
+  if (original.availability === "borrowed") {
+    throw new Error(
+      `[inventoryStorage] writeOffItem: borrowed item cannot be written off (${originalItemId})`,
+    )
+  }
   if (!Number.isFinite(quantityToWriteOff) || quantityToWriteOff <= 0) {
     throw new Error("[inventoryStorage] writeOffItem: quantityToWriteOff must be > 0")
   }
@@ -587,6 +626,7 @@ export function writeOffItem(
     originalItemId: original.id,
     repairDate: null,
     repairComment: null,
+    borrowDate: null,
     qrCodeValue: `${origin}/inventory/${newIdValue}`,
     removed: false,
     archived: false,
@@ -693,6 +733,11 @@ export function markAsNeedsRepair(
       `[inventoryStorage] markAsNeedsRepair: written-off item cannot be marked for repair (${originalItemId})`,
     )
   }
+  if (original.availability === "borrowed") {
+    throw new Error(
+      `[inventoryStorage] markAsNeedsRepair: borrowed item cannot be marked for repair (${originalItemId})`,
+    )
+  }
   if (!Number.isFinite(quantityNeedingRepair) || quantityNeedingRepair <= 0) {
     throw new Error("[inventoryStorage] markAsNeedsRepair: quantityNeedingRepair must be > 0")
   }
@@ -723,6 +768,7 @@ export function markAsNeedsRepair(
     originalItemId: original.id,
     writeOffDate: null,
     writeOffReason: null,
+    borrowDate: null,
     qrCodeValue: `${origin}/inventory/${newIdValue}`,
     removed: false,
     archived: false,
@@ -804,6 +850,181 @@ export function markAsRepaired(
   })
 
   return { updatedOriginal, removedRepairItem }
+}
+
+/**
+ * Splits quantity from an active item into a new borrowed item.
+ * If the original quantity becomes 0, the original is soft-deleted (`removed: true`).
+ */
+export function markAsBorrowed(
+  originalItemId: string,
+  quantityToBorrow: number,
+  borrowDate: string,
+  availabilityComment: string,
+  userEmail: string,
+): { updatedOriginal: InventoryItem; newBorrowedItem: InventoryItem } {
+  const items = getAllInventoryItemsRaw()
+  const originalIndex = items.findIndex((item) => item.id === originalItemId)
+  if (originalIndex === -1) {
+    throw new Error(`[inventoryStorage] markAsBorrowed: item not found (${originalItemId})`)
+  }
+
+  const original = items[originalIndex]
+  if (original.archived) {
+    throw new Error(
+      `[inventoryStorage] markAsBorrowed: archived item cannot be borrowed (${originalItemId})`,
+    )
+  }
+  if (original.condition === "written_off") {
+    throw new Error(
+      `[inventoryStorage] markAsBorrowed: written-off item cannot be borrowed (${originalItemId})`,
+    )
+  }
+  if (original.condition === "needs_repair") {
+    throw new Error(
+      `[inventoryStorage] markAsBorrowed: item needing repair cannot be borrowed (${originalItemId})`,
+    )
+  }
+  if (original.availability === "borrowed") {
+    throw new Error(
+      `[inventoryStorage] markAsBorrowed: item is already borrowed (${originalItemId})`,
+    )
+  }
+  if (!Number.isFinite(quantityToBorrow) || quantityToBorrow <= 0) {
+    throw new Error("[inventoryStorage] markAsBorrowed: quantityToBorrow must be > 0")
+  }
+  if (quantityToBorrow > original.quantity) {
+    throw new Error(
+      `[inventoryStorage] markAsBorrowed: quantityToBorrow (${quantityToBorrow}) exceeds available quantity (${original.quantity})`,
+    )
+  }
+
+  const timestamp = nowIso()
+  const newQuantity = original.quantity - quantityToBorrow
+  const updatedOriginal: InventoryItem = {
+    ...original,
+    quantity: newQuantity,
+    removed: newQuantity === 0 ? true : original.removed,
+    updatedAt: timestamp,
+  }
+
+  const newIdValue = newId()
+  const origin = typeof window !== "undefined" ? window.location.origin : ""
+  const newBorrowedItem: InventoryItem = {
+    ...original,
+    id: newIdValue,
+    quantity: quantityToBorrow,
+    availability: "borrowed",
+    availabilityComment,
+    borrowDate,
+    originalItemId: original.id,
+    writeOffDate: null,
+    writeOffReason: null,
+    repairDate: null,
+    repairComment: null,
+    qrCodeValue: `${origin}/inventory/${newIdValue}`,
+    removed: false,
+    archived: false,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  }
+
+  const next = [...items]
+  next[originalIndex] = updatedOriginal
+  next.push(newBorrowedItem)
+  saveInventoryItems(next)
+
+  recordInventoryUpdatedExcludingQuantity(original, updatedOriginal, userEmail)
+  recordMarkedAsBorrowed(original.id, userEmail, {
+    quantity: quantityToBorrow,
+    borrowDate,
+    availabilityComment,
+    relatedItemId: newBorrowedItem.id,
+  })
+  recordInventoryCreated(newBorrowedItem, userEmail)
+
+  return { updatedOriginal, newBorrowedItem }
+}
+
+/**
+ * Returns a borrowed item back into its original stock.
+ * Split rows are soft-deleted; legacy whole-item borrowed rows are updated in place.
+ */
+export function returnBorrowed(
+  borrowedItemId: string,
+  userEmail: string,
+): {
+  updatedOriginal: InventoryItem
+  removedBorrowedItem: InventoryItem | null
+} {
+  const items = getAllInventoryItemsRaw()
+  const borrowedIndex = items.findIndex((item) => item.id === borrowedItemId)
+  if (borrowedIndex === -1) {
+    throw new Error(`[inventoryStorage] returnBorrowed: item not found (${borrowedItemId})`)
+  }
+
+  const borrowedItem = items[borrowedIndex]
+  if (borrowedItem.availability !== "borrowed") {
+    throw new Error(`[inventoryStorage] returnBorrowed: item is not borrowed (${borrowedItemId})`)
+  }
+
+  const timestamp = nowIso()
+
+  if (!borrowedItem.originalItemId) {
+    const updatedOriginal: InventoryItem = {
+      ...borrowedItem,
+      availability: "in_church",
+      availabilityComment: "",
+      borrowDate: null,
+      updatedAt: timestamp,
+    }
+    const next = [...items]
+    next[borrowedIndex] = updatedOriginal
+    saveInventoryItems(next)
+
+    recordReturnedFromBorrow(updatedOriginal.id, userEmail, {
+      quantity: updatedOriginal.quantity,
+      relatedItemId: borrowedItemId,
+    })
+
+    return { updatedOriginal, removedBorrowedItem: null }
+  }
+
+  const originalIndex = items.findIndex((item) => item.id === borrowedItem.originalItemId)
+  if (originalIndex === -1) {
+    throw new Error(
+      `[inventoryStorage] returnBorrowed: original item not found (${borrowedItem.originalItemId})`,
+    )
+  }
+
+  const original = items[originalIndex]
+  const updatedOriginal: InventoryItem = {
+    ...original,
+    quantity: original.quantity + borrowedItem.quantity,
+    removed: false,
+    updatedAt: timestamp,
+  }
+  const removedBorrowedItem: InventoryItem = {
+    ...borrowedItem,
+    availability: "in_church",
+    availabilityComment: "",
+    borrowDate: null,
+    removed: true,
+    updatedAt: timestamp,
+  }
+
+  const next = [...items]
+  next[originalIndex] = updatedOriginal
+  next[borrowedIndex] = removedBorrowedItem
+  saveInventoryItems(next)
+
+  recordInventoryUpdatedExcludingQuantity(original, updatedOriginal, userEmail)
+  recordReturnedFromBorrow(original.id, userEmail, {
+    quantity: borrowedItem.quantity,
+    relatedItemId: borrowedItemId,
+  })
+
+  return { updatedOriginal, removedBorrowedItem }
 }
 
 /**

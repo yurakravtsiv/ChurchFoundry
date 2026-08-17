@@ -21,6 +21,7 @@
       "writeOffReason": "Причина списання",
       "location": "Локація",
       "availability": "Наявність",
+      "borrowDate": "Дата позичання",
       "availabilityComment": "Коментар наявності",
       "supplier": "Постачальник",
       "price": "Ціна",
@@ -90,10 +91,13 @@
       "archivedBadge": "Архів",
       "writtenOffBadge": "Списано",
       "needsRepairBadge": "Потребує\nремонту",
+      "borrowedBadge": "Позичено",
       "writeOffBatchesTitle": "Списані предмети",
       "repairBatchesTitle": "Потребують ремонту",
+      "borrowBatchesTitle": "Позичені предмети",
       "readOnlyWrittenOffWarning": "Списаний предмет не можна редагувати",
       "readOnlyNeedsRepairWarning": "Предмет, що потребує ремонту, не можна редагувати",
+      "readOnlyBorrowedWarning": "Позичений предмет не можна редагувати",
       "writeOffDate": "Дата списання",
       "writeOffReason": "Причина списання",
       "qrTitle": "QR-код предмету",
@@ -116,7 +120,13 @@
       "markedForRepairComment": "Несправність: {{comment}}",
       "markedForRepairDate": "Дата: {{date}}",
       "repaired": "Відремонтовано",
-      "repairedQuantity": "Відремонтовано і повернено {{quantity}} шт. в наявність"
+      "repairedQuantity": "Відремонтовано і повернено {{quantity}} шт. в наявність",
+      "markedAsBorrowed": "Позичено",
+      "markedAsBorrowedQuantity": "Позичено {{quantity}} шт.",
+      "markedAsBorrowedComment": "Коментар: {{comment}}",
+      "markedAsBorrowedDate": "Дата: {{date}}",
+      "returnedFromBorrow": "Повернено позичене",
+      "returnedFromBorrowQuantity": "Повернено {{quantity}} шт. позиченого в наявність"
     },
     "archiveConfirmTitle": "Архівувати «{{name}}»?",
     "archiveConfirmDescription": "Архівовані предмети можна знову показати через перемикач архіву.",
@@ -159,6 +169,7 @@
       "repairComment": "Несправність",
       "availability": "Наявність",
       "availabilityComment": "Коментар наявності",
+      "borrowDate": "Дата позичання",
       "comment": "Коментар",
       "writeOffDate": "Дата списання",
       "writeOffReason": "Причина списання"
@@ -174,12 +185,21 @@
       "needsRepair": "Потребує ремонту",
       "markRepaired": "Відремонтовано",
       "markNeedsRepair": "Позначити",
+      "borrow": "Позичити",
+      "returnBorrowed": "Повернути позичене",
+      "markBorrowed": "Позичити",
       "confirm": "Підтвердити",
       "archiveWrittenOffHint": "Списаний предмет не можна архівувати",
       "archiveNeedsRepairHint": "Предмет, що потребує ремонту, не можна архівувати",
+      "archiveBorrowedHint": "Позичений предмет не можна архівувати",
       "writeOffArchivedHint": "Архівований предмет не можна списати",
       "writeOffNeedsRepairHint": "Предмет, що потребує ремонту, не можна списати",
-      "needsRepairWrittenOffHint": "Списаний предмет не може потребувати ремонту"
+      "writeOffBorrowedHint": "Позичений предмет не можна списати",
+      "needsRepairWrittenOffHint": "Списаний предмет не може потребувати ремонту",
+      "needsRepairBorrowedHint": "Позичений предмет не може потребувати ремонту",
+      "borrowWrittenOffHint": "Списаний предмет не можна позичити",
+      "borrowNeedsRepairHint": "Предмет, що потребує ремонту, не можна позичити",
+      "borrowArchivedHint": "Архівований предмет не можна позичити"
     },
     "writeOff": {
       "title": "Списати «{{name}}»",
@@ -218,6 +238,25 @@
       "title": "Відремонтовано?",
       "description": "Позначити {{quantity}} шт. предмета «{{name}}» як відремонтовані і повернути в наявність оригінального предмету?"
     },
+    "borrow": {
+      "title": "Позичити «{{name}}»",
+      "description": "Наявна кількість: {{quantity}}",
+      "quantity": "Кількість до позичання",
+      "date": "Дата позичання",
+      "comment": "Коментар наявності",
+      "commentPlaceholder": "Інформація про предмет, позичальника, дату повернення",
+      "validation": {
+        "quantityInvalid": "Вкажіть ціле число",
+        "quantityMin": "Мінімум 1",
+        "quantityMax": "Не може перевищувати наявну кількість ({{quantity}})",
+        "dateRequired": "Вкажіть дату",
+        "commentRequired": "Вкажіть коментар"
+      }
+    },
+    "returnBorrowed": {
+      "title": "Повернути позичене?",
+      "description": "Повернути {{quantity}} шт. предмета «{{name}}» в наявність оригінального предмету?"
+    },
     "form": {
       "createDescription": "Заповніть дані предмета інвентарю",
       "name": "Назва",
@@ -245,7 +284,8 @@
       "createLocationTitle": "Нова локація",
       "availability": "Наявність",
       "availabilityComment": "Коментар наявності",
-      "availabilityCommentPlaceholder": "Кому позичено / до коли",
+      "availabilityCommentPlaceholder": "Інформація про предмет, позичальника, дату повернення",
+      "borrowDate": "Дата позичання",
       "condition": "Стан",
       "supplier": "Постачальник",
       "supplierPlaceholder": "Назва постачальника",

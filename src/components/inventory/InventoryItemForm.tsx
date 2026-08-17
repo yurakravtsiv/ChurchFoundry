@@ -130,12 +130,15 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
     const isPageLayout = layout === "page"
     const isWrittenOff = initialData?.condition === "written_off"
     const isNeedsRepair = initialData?.condition === "needs_repair"
+    const isBorrowed = initialData?.availability === "borrowed"
     const { t } = useTranslation()
     const readOnlyWarningMessage = isWrittenOff
       ? t("inventory.detail.readOnlyWrittenOffWarning")
       : isNeedsRepair
         ? t("inventory.detail.readOnlyNeedsRepairWarning")
-        : t("inventory.detail.readOnlyWrittenOffWarning")
+        : isBorrowed
+          ? t("inventory.detail.readOnlyBorrowedWarning")
+          : t("inventory.detail.readOnlyWrittenOffWarning")
     const {
       data: categories = [],
       isLoading: categoriesLoading,
@@ -173,116 +176,106 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
 
     const schema = useMemo(
       () =>
-        z
-          .object({
-            name: z
-              .string()
-              .trim()
-              .min(1, t("inventory.form.validation.nameRequired"))
+        z.object({
+          name: z
+            .string()
+            .trim()
+            .min(1, t("inventory.form.validation.nameRequired"))
+            .max(
+              INVENTORY_FIELD_LIMITS.name,
+              t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.name }),
+            ),
+          categoryId: z.string().min(1, t("inventory.form.validation.categoryRequired")),
+          subcategoryId: z.string().min(1, t("inventory.form.validation.subcategoryRequired")),
+          quantity: z.preprocess(
+            (value) => {
+              if (value === "" || value === null || value === undefined) {
+                return undefined
+              }
+              const parsed = typeof value === "number" ? value : Number(value)
+              return Number.isFinite(parsed) ? parsed : undefined
+            },
+            z
+              .number({ error: t("inventory.form.validation.quantityRequired") })
+              .int(t("inventory.form.validation.quantityInteger"))
+              .min(INVENTORY_FIELD_LIMITS.quantityMin, t("inventory.form.validation.quantityMin"))
               .max(
-                INVENTORY_FIELD_LIMITS.name,
-                t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.name }),
+                INVENTORY_FIELD_LIMITS.quantityMax,
+                t("inventory.form.validation.quantityMax", {
+                  max: INVENTORY_FIELD_LIMITS.quantityMax,
+                }),
               ),
-            categoryId: z.string().min(1, t("inventory.form.validation.categoryRequired")),
-            subcategoryId: z.string().min(1, t("inventory.form.validation.subcategoryRequired")),
-            quantity: z.preprocess(
-              (value) => {
-                if (value === "" || value === null || value === undefined) {
-                  return undefined
-                }
-                const parsed = typeof value === "number" ? value : Number(value)
-                return Number.isFinite(parsed) ? parsed : undefined
-              },
-              z
-                .number({ error: t("inventory.form.validation.quantityRequired") })
-                .int(t("inventory.form.validation.quantityInteger"))
-                .min(INVENTORY_FIELD_LIMITS.quantityMin, t("inventory.form.validation.quantityMin"))
-                .max(
-                  INVENTORY_FIELD_LIMITS.quantityMax,
-                  t("inventory.form.validation.quantityMax", {
-                    max: INVENTORY_FIELD_LIMITS.quantityMax,
-                  }),
-                ),
-            ),
-            locationId: z.string().min(1, t("inventory.form.validation.locationRequired")),
-            availability: z.enum(["in_church", "borrowed"]),
-            availabilityComment: z
-              .string()
+          ),
+          locationId: z.string().min(1, t("inventory.form.validation.locationRequired")),
+          availability: z.literal("in_church"),
+          availabilityComment: z
+            .string()
+            .max(
+              INVENTORY_FIELD_LIMITS.availabilityComment,
+              t("inventory.form.validation.stringMax", {
+                max: INVENTORY_FIELD_LIMITS.availabilityComment,
+              }),
+            )
+            .optional()
+            .default(""),
+          supplier: z
+            .string()
+            .max(
+              INVENTORY_FIELD_LIMITS.supplier,
+              t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.supplier }),
+            )
+            .optional()
+            .default(""),
+          price: z.preprocess(
+            (value) => {
+              if (value === "" || value === null || value === undefined) {
+                return null
+              }
+              if (typeof value === "number" && Number.isNaN(value)) {
+                return null
+              }
+              const parsed = typeof value === "number" ? value : Number(value)
+              return Number.isFinite(parsed) ? parsed : null
+            },
+            z
+              .number()
+              .min(INVENTORY_FIELD_LIMITS.priceMin, t("inventory.form.validation.priceMin"))
               .max(
-                INVENTORY_FIELD_LIMITS.availabilityComment,
-                t("inventory.form.validation.stringMax", {
-                  max: INVENTORY_FIELD_LIMITS.availabilityComment,
-                }),
+                INVENTORY_FIELD_LIMITS.priceMax,
+                t("inventory.form.validation.priceMax", { max: INVENTORY_FIELD_LIMITS.priceMax }),
               )
-              .optional()
-              .default(""),
-            supplier: z
-              .string()
-              .max(
-                INVENTORY_FIELD_LIMITS.supplier,
-                t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.supplier }),
-              )
-              .optional()
-              .default(""),
-            price: z.preprocess(
-              (value) => {
-                if (value === "" || value === null || value === undefined) {
-                  return null
-                }
-                if (typeof value === "number" && Number.isNaN(value)) {
-                  return null
-                }
-                const parsed = typeof value === "number" ? value : Number(value)
-                return Number.isFinite(parsed) ? parsed : null
-              },
-              z
-                .number()
-                .min(INVENTORY_FIELD_LIMITS.priceMin, t("inventory.form.validation.priceMin"))
-                .max(
-                  INVENTORY_FIELD_LIMITS.priceMax,
-                  t("inventory.form.validation.priceMax", { max: INVENTORY_FIELD_LIMITS.priceMax }),
-                )
-                .nullable(),
-            ),
-            serialNumber: z
-              .string()
-              .max(
-                INVENTORY_FIELD_LIMITS.serialNumber,
-                t("inventory.form.validation.stringMax", {
-                  max: INVENTORY_FIELD_LIMITS.serialNumber,
-                }),
-              )
-              .optional()
-              .default(""),
-            warrantyUntil: z.string().nullable().optional(),
-            comment: z
-              .string()
-              .max(
-                INVENTORY_FIELD_LIMITS.comment,
-                t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.comment }),
-              )
-              .optional()
-              .default(""),
-            photos: z
-              .array(
-                z.object({
-                  id: z.string(),
-                  dataUrl: z.string(),
-                }),
-              )
-              .optional()
-              .default([]),
-            avatarPhotoId: z.string().nullable().optional().default(null),
-          })
-          .superRefine((data, ctx) => {
-            if (data.availability === "borrowed" && !data.availabilityComment.trim()) {
-              ctx.addIssue({
-                code: "custom",
-                path: ["availabilityComment"],
-                message: t("inventory.form.validation.availabilityCommentRequired"),
-              })
-            }
-          }),
+              .nullable(),
+          ),
+          serialNumber: z
+            .string()
+            .max(
+              INVENTORY_FIELD_LIMITS.serialNumber,
+              t("inventory.form.validation.stringMax", {
+                max: INVENTORY_FIELD_LIMITS.serialNumber,
+              }),
+            )
+            .optional()
+            .default(""),
+          warrantyUntil: z.string().nullable().optional(),
+          comment: z
+            .string()
+            .max(
+              INVENTORY_FIELD_LIMITS.comment,
+              t("inventory.form.validation.stringMax", { max: INVENTORY_FIELD_LIMITS.comment }),
+            )
+            .optional()
+            .default(""),
+          photos: z
+            .array(
+              z.object({
+                id: z.string(),
+                dataUrl: z.string(),
+              }),
+            )
+            .optional()
+            .default([]),
+          avatarPhotoId: z.string().nullable().optional().default(null),
+        }),
       [t],
     )
 
@@ -299,8 +292,8 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
         subcategoryId: initialData?.subcategoryId ?? "",
         quantity: initialData?.quantity ?? 1,
         locationId: initialData?.locationId ?? "",
-        availability: initialData?.availability ?? ("in_church" as const),
-        availabilityComment: initialData?.availabilityComment ?? "",
+        availability: "in_church" as const,
+        availabilityComment: "",
         supplier: initialData?.supplier ?? "",
         price: initialData?.price ?? null,
         serialNumber: initialData?.serialNumber ?? "",
@@ -352,7 +345,6 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
     }, [isDirty, onDirtyChange])
 
     const categoryId = watch("categoryId")
-    const availability = watch("availability")
     const photos = watch("photos") ?? []
     const avatarPhotoId = watch("avatarPhotoId")
 
@@ -452,9 +444,8 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           subcategoryId: values.subcategoryId,
           quantity: values.quantity,
           locationId: values.locationId,
-          availability: values.availability,
-          availabilityComment:
-            values.availability === "borrowed" ? (values.availabilityComment?.trim() ?? "") : "",
+          availability: "in_church",
+          availabilityComment: "",
           supplier: values.supplier?.trim() ?? "",
           price: values.price ?? null,
           serialNumber: values.serialNumber?.trim() ?? "",
@@ -726,6 +717,25 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                 </>
               ) : null}
 
+              {isBorrowed ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>{t("inventory.form.borrowDate")}</Label>
+                    <Input value={toDateInputValue(initialData?.borrowDate)} readOnly disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("inventory.form.availabilityComment")}</Label>
+                    <Textarea
+                      value={initialData?.availabilityComment ?? ""}
+                      rows={4}
+                      readOnly
+                      disabled
+                      className="min-h-0 resize-none"
+                    />
+                  </div>
+                </>
+              ) : null}
+
               <div className="space-y-2">
                 <Label>{t("inventory.form.location")} *</Label>
                 <Controller
@@ -770,47 +780,6 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                   <p className="text-sm text-destructive" data-field-error>
                     {errors.locationId.message}
                   </p>
-                ) : null}
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t("inventory.form.availability")} *</Label>
-                <Controller
-                  control={control}
-                  name="availability"
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange} disabled={readOnly}>
-                      <SelectTrigger aria-label={t("inventory.form.availability")}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="in_church">
-                          {t("inventory.availability.inChurch")}
-                        </SelectItem>
-                        <SelectItem value="borrowed">
-                          {t("inventory.availability.borrowed")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {availability === "borrowed" ? (
-                  <>
-                    <Label htmlFor="inventory-item-availability-comment">
-                      {t("inventory.form.availabilityComment")} *
-                    </Label>
-                    <Input
-                      id="inventory-item-availability-comment"
-                      {...register("availabilityComment")}
-                      maxLength={INVENTORY_FIELD_LIMITS.availabilityComment}
-                      placeholder={t("inventory.form.availabilityCommentPlaceholder")}
-                    />
-                    {errors.availabilityComment ? (
-                      <p className="text-sm text-destructive" data-field-error>
-                        {errors.availabilityComment.message}
-                      </p>
-                    ) : null}
-                  </>
                 ) : null}
               </div>
 

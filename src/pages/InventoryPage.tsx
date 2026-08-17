@@ -17,6 +17,7 @@ import {
   FileSpreadsheet,
   FileText,
   FilterX,
+  Handshake,
   MoreVertical,
   Package,
   PackageMinus,
@@ -24,6 +25,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Undo2,
   Wrench,
   X,
 } from "lucide-react"
@@ -31,9 +33,11 @@ import { motion } from "motion/react"
 import { type Ref, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
+import { BorrowDialog } from "@/components/inventory/BorrowDialog"
 import { InventoryItemForm } from "@/components/inventory/InventoryItemForm"
 import { NeedsRepairDialog } from "@/components/inventory/NeedsRepairDialog"
 import { RepairedConfirmDialog } from "@/components/inventory/RepairedConfirmDialog"
+import { ReturnBorrowedDialog } from "@/components/inventory/ReturnBorrowedDialog"
 import { ReturnToStockDialog } from "@/components/inventory/ReturnToStockDialog"
 import { WriteOffDialog } from "@/components/inventory/WriteOffDialog"
 import { Badge } from "@/components/ui/badge"
@@ -404,6 +408,8 @@ export function InventoryPage() {
   const [returnToStockTarget, setReturnToStockTarget] = useState<InventoryItem | null>(null)
   const [needsRepairTarget, setNeedsRepairTarget] = useState<InventoryItem | null>(null)
   const [repairedConfirmTarget, setRepairedConfirmTarget] = useState<InventoryItem | null>(null)
+  const [borrowTarget, setBorrowTarget] = useState<InventoryItem | null>(null)
+  const [returnBorrowedTarget, setReturnBorrowedTarget] = useState<InventoryItem | null>(null)
 
   const formatWriteOffDate = useCallback(
     (value: string | null) => {
@@ -559,6 +565,10 @@ export function InventoryPage() {
     () => filteredItems.some((item) => item.condition === "needs_repair"),
     [filteredItems],
   )
+  const hasBorrowedItems = useMemo(
+    () => filteredItems.some((item) => item.availability === "borrowed"),
+    [filteredItems],
+  )
 
   // Drop repair column sort when the conditional columns are removed.
   useEffect(() => {
@@ -569,6 +579,13 @@ export function InventoryPage() {
       prev.filter((entry) => entry.id !== "repairDate" && entry.id !== "repairComment"),
     )
   }, [hasRepairItems])
+
+  useEffect(() => {
+    if (hasBorrowedItems) {
+      return
+    }
+    setSorting((prev) => prev.filter((entry) => entry.id !== "borrowDate"))
+  }, [hasBorrowedItems])
 
   const columns = useMemo<ColumnDef<InventoryItem>[]>(() => {
     const baseColumns: ColumnDef<InventoryItem>[] = [
@@ -746,6 +763,30 @@ export function InventoryPage() {
       },
     })
 
+    if (hasBorrowedItems) {
+      baseColumns.push({
+        id: "borrowDate",
+        accessorFn: (row) => (row.availability === "borrowed" ? (row.borrowDate ?? null) : null),
+        sortingFn: createNullableDateSortingFn((item) =>
+          item.availability === "borrowed" ? parseDateMs(item.borrowDate) : null,
+        ),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.borrowDate")} column={column} />
+        ),
+        cell: ({ row }) => {
+          const item = row.original
+          if (item.availability !== "borrowed") {
+            return <span className="text-muted-foreground">—</span>
+          }
+          return (
+            <span className="whitespace-nowrap tabular-nums">
+              {formatWriteOffDate(item.borrowDate)}
+            </span>
+          )
+        },
+      })
+    }
+
     if (showWrittenOff) {
       baseColumns.push(
         {
@@ -794,6 +835,7 @@ export function InventoryPage() {
           const item = row.original
           const isWrittenOff = item.condition === "written_off"
           const isNeedsRepair = item.condition === "needs_repair"
+          const isBorrowed = item.availability === "borrowed"
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -817,6 +859,67 @@ export function InventoryPage() {
                     </DropdownMenuItem>
                   </motion.div>
                   <motion.div variants={rowMenuItemVariants}>
+                    {isBorrowed ? (
+                      <DropdownMenuItem onClick={() => setReturnBorrowedTarget(item)}>
+                        <Undo2 />
+                        {t("inventory.actions.returnBorrowed")}
+                      </DropdownMenuItem>
+                    ) : isWrittenOff ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Handshake />
+                                {t("inventory.actions.borrow")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.borrowWrittenOffHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : isNeedsRepair ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Handshake />
+                                {t("inventory.actions.borrow")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.borrowNeedsRepairHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : item.archived ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Handshake />
+                                {t("inventory.actions.borrow")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.borrowArchivedHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <DropdownMenuItem onClick={() => setBorrowTarget(item)}>
+                        <Handshake />
+                        {t("inventory.actions.borrow")}
+                      </DropdownMenuItem>
+                    )}
+                  </motion.div>
+                  <motion.div variants={rowMenuItemVariants}>
                     {isWrittenOff ? (
                       <TooltipProvider delayDuration={200}>
                         <Tooltip>
@@ -830,6 +933,22 @@ export function InventoryPage() {
                           </TooltipTrigger>
                           <TooltipContent>
                             {t("inventory.actions.needsRepairWrittenOffHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : isBorrowed ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Wrench />
+                                {t("inventory.actions.needsRepair")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.needsRepairBorrowedHint")}
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -883,6 +1002,22 @@ export function InventoryPage() {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                    ) : isBorrowed ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <PackageMinus />
+                                {t("inventory.actions.writeOff")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.writeOffBorrowedHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     ) : (
                       <DropdownMenuItem onClick={() => setWriteOffTarget(item)}>
                         <PackageMinus />
@@ -923,6 +1058,22 @@ export function InventoryPage() {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                    ) : isBorrowed ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Archive />
+                                {t("inventory.actions.archive")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.archiveBorrowedHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     ) : (
                       <DropdownMenuItem onClick={() => setArchiveTarget(item)}>
                         {item.archived ? <ArchiveRestore /> : <Archive />}
@@ -945,6 +1096,7 @@ export function InventoryPage() {
   }, [
     categoryNameById,
     formatWriteOffDate,
+    hasBorrowedItems,
     hasRepairItems,
     i18n.language,
     locationNameById,
@@ -978,7 +1130,8 @@ export function InventoryPage() {
     )
   }
 
-  const skeletonColumnCount = 11 + (hasRepairItems ? 2 : 0) + (showWrittenOff ? 2 : 0)
+  const skeletonColumnCount =
+    11 + (hasRepairItems ? 2 : 0) + (hasBorrowedItems ? 1 : 0) + (showWrittenOff ? 2 : 0)
   const skeletonColumnClassNames = showWrittenOff
     ? [
         "size-10",
@@ -1727,6 +1880,32 @@ export function InventoryPage() {
         }}
         onConfirm={() => {
           setRepairedConfirmTarget(null)
+        }}
+      />
+
+      <BorrowDialog
+        item={borrowTarget}
+        open={borrowTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setBorrowTarget(null)
+          }
+        }}
+        onConfirm={() => {
+          setBorrowTarget(null)
+        }}
+      />
+
+      <ReturnBorrowedDialog
+        item={returnBorrowedTarget}
+        open={returnBorrowedTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReturnBorrowedTarget(null)
+          }
+        }}
+        onConfirm={() => {
+          setReturnBorrowedTarget(null)
         }}
       />
     </main>

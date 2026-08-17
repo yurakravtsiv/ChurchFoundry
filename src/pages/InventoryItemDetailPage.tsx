@@ -4,11 +4,13 @@ import {
   ArrowLeft,
   Check,
   CheckCircle2,
+  Handshake,
   MoreVertical,
   Package,
   PackageMinus,
   PackagePlus,
   PackageX,
+  Undo2,
   Wrench,
   X,
 } from "lucide-react"
@@ -16,6 +18,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { useTranslation } from "react-i18next"
 import { useBlocker, useNavigate, useParams } from "react-router"
 
+import { BorrowDialog } from "@/components/inventory/BorrowDialog"
 import {
   InventoryItemForm,
   type InventoryItemFormHandle,
@@ -24,6 +27,7 @@ import { InventoryItemTimeline } from "@/components/inventory/InventoryItemTimel
 import { ItemQrCode } from "@/components/inventory/ItemQrCode"
 import { NeedsRepairDialog } from "@/components/inventory/NeedsRepairDialog"
 import { RepairedConfirmDialog } from "@/components/inventory/RepairedConfirmDialog"
+import { ReturnBorrowedDialog } from "@/components/inventory/ReturnBorrowedDialog"
 import { ReturnToStockDialog } from "@/components/inventory/ReturnToStockDialog"
 import { WriteOffDialog } from "@/components/inventory/WriteOffDialog"
 import { Badge } from "@/components/ui/badge"
@@ -162,6 +166,17 @@ export function InventoryItemDetailPage() {
         entry.removed !== true,
     )
   }, [item, items])
+  const relatedBorrows = useMemo(() => {
+    if (!item || item.availability === "borrowed") {
+      return []
+    }
+    return items.filter(
+      (entry) =>
+        entry.originalItemId === item.id &&
+        entry.availability === "borrowed" &&
+        entry.removed !== true,
+    )
+  }, [item, items])
 
   const avatarPhoto = useMemo(() => {
     if (!item?.avatarPhotoId) {
@@ -178,9 +193,12 @@ export function InventoryItemDetailPage() {
   const [returnToStockOpen, setReturnToStockOpen] = useState(false)
   const [needsRepairOpen, setNeedsRepairOpen] = useState(false)
   const [repairedConfirmOpen, setRepairedConfirmOpen] = useState(false)
+  const [borrowOpen, setBorrowOpen] = useState(false)
+  const [returnBorrowedOpen, setReturnBorrowedOpen] = useState(false)
   const isWrittenOff = item?.condition === "written_off"
   const isNeedsRepair = item?.condition === "needs_repair"
-  const isReadOnly = isWrittenOff || isNeedsRepair
+  const isBorrowed = item?.availability === "borrowed"
+  const isReadOnly = isWrittenOff || isNeedsRepair || isBorrowed
 
   const formatWriteOffDate = (value: string | null) => {
     if (!value) {
@@ -193,6 +211,7 @@ export function InventoryItemDetailPage() {
     return date.toLocaleDateString(i18n.language)
   }
   const formatRepairDate = formatWriteOffDate
+  const formatBorrowDate = formatWriteOffDate
   const formRef = useRef<InventoryItemFormHandle>(null)
   const isMdUp = useSyncExternalStore(subscribeMdUp, getMdUpSnapshot, getMdUpServerSnapshot)
   const allowLeaveRef = useRef(false)
@@ -492,6 +511,43 @@ export function InventoryItemDetailPage() {
       </Card>
     ) : null
 
+  const renderBorrowsTable = () =>
+    relatedBorrows.length > 0 ? (
+      <Card className="min-w-0 overflow-hidden">
+        <CardHeader className={DETAIL_CARD_PADDING}>
+          <CardTitle>{t("inventory.detail.borrowBatchesTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent className="min-w-0 overflow-x-auto p-0">
+          <Table className={DETAIL_TABLE_EDGE_CLASS}>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("inventory.columns.quantity")}</TableHead>
+                <TableHead>{t("inventory.columns.borrowDate")}</TableHead>
+                <TableHead>{t("inventory.columns.availabilityComment")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {relatedBorrows.map((batch) => (
+                <TableRow
+                  key={batch.id}
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/inventory/${batch.id}`)}
+                >
+                  <TableCell className="tabular-nums">{batch.quantity}</TableCell>
+                  <TableCell className="whitespace-nowrap tabular-nums">
+                    {formatBorrowDate(batch.borrowDate)}
+                  </TableCell>
+                  <TableCell className="max-w-[10rem] truncate">
+                    {batch.availabilityComment || "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    ) : null
+
   const renderQrCard = () => (
     <Card className="min-w-0 overflow-hidden">
       <CardHeader className={DETAIL_CARD_PADDING}>
@@ -554,6 +610,65 @@ export function InventoryItemDetailPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
+                    {isBorrowed ? (
+                      <DropdownMenuItem onClick={() => setReturnBorrowedOpen(true)}>
+                        <Undo2 />
+                        {t("inventory.actions.returnBorrowed")}
+                      </DropdownMenuItem>
+                    ) : isWrittenOff ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Handshake />
+                                {t("inventory.actions.borrow")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.borrowWrittenOffHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : isNeedsRepair ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Handshake />
+                                {t("inventory.actions.borrow")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.borrowNeedsRepairHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : item.archived ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Handshake />
+                                {t("inventory.actions.borrow")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.borrowArchivedHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <DropdownMenuItem onClick={() => setBorrowOpen(true)}>
+                        <Handshake />
+                        {t("inventory.actions.borrow")}
+                      </DropdownMenuItem>
+                    )}
                     {isWrittenOff ? (
                       <TooltipProvider delayDuration={200}>
                         <Tooltip>
@@ -567,6 +682,22 @@ export function InventoryItemDetailPage() {
                           </TooltipTrigger>
                           <TooltipContent>
                             {t("inventory.actions.needsRepairWrittenOffHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : isBorrowed ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Wrench />
+                                {t("inventory.actions.needsRepair")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.needsRepairBorrowedHint")}
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -618,6 +749,22 @@ export function InventoryItemDetailPage() {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                    ) : isBorrowed ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <PackageMinus />
+                                {t("inventory.actions.writeOff")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.writeOffBorrowedHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     ) : (
                       <DropdownMenuItem onClick={() => setWriteOffOpen(true)}>
                         <PackageMinus />
@@ -656,6 +803,22 @@ export function InventoryItemDetailPage() {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                    ) : isBorrowed ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem disabled>
+                                <Archive />
+                                {t("inventory.actions.archive")}
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("inventory.actions.archiveBorrowedHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     ) : (
                       <DropdownMenuItem
                         onClick={() => {
@@ -677,6 +840,10 @@ export function InventoryItemDetailPage() {
                 ) : isNeedsRepair ? (
                   <Badge className="shrink-0 whitespace-pre-line border-transparent bg-red-100 text-center leading-tight text-red-800 dark:bg-red-900/30 dark:text-red-400">
                     {t("inventory.detail.needsRepairBadge")}
+                  </Badge>
+                ) : isBorrowed ? (
+                  <Badge variant="warning" className="shrink-0">
+                    {t("inventory.detail.borrowedBadge")}
                   </Badge>
                 ) : null}
                 {item.archived ? (
@@ -748,6 +915,7 @@ export function InventoryItemDetailPage() {
           </div>
 
           <div className="min-w-0 space-y-4">
+            {renderBorrowsTable()}
             {renderRepairsTable()}
             {renderWriteOffsTable()}
             {renderQrCard()}
@@ -769,6 +937,7 @@ export function InventoryItemDetailPage() {
 
           <InventoryItemTimeline objectId={EVENT_OBJECT_TYPE.INVENTORY_ITEM} entityId={item.id} />
 
+          {renderBorrowsTable()}
           {renderRepairsTable()}
           {renderWriteOffsTable()}
           {renderQrCard()}
@@ -885,6 +1054,36 @@ export function InventoryItemDetailPage() {
         onOpenChange={setRepairedConfirmOpen}
         onConfirm={() => {
           navigateBackOrInventory()
+        }}
+      />
+
+      <BorrowDialog
+        item={item}
+        open={borrowOpen}
+        onOpenChange={setBorrowOpen}
+        onConfirm={() => {
+          setFormDirty(false)
+          void refetch().then((result) => {
+            const refreshed = result.data?.find((entry) => entry.id === id)
+            if (!refreshed) {
+              navigateBackOrInventory()
+            }
+          })
+        }}
+      />
+
+      <ReturnBorrowedDialog
+        item={item}
+        open={returnBorrowedOpen}
+        onOpenChange={setReturnBorrowedOpen}
+        onConfirm={() => {
+          setFormDirty(false)
+          void refetch().then((result) => {
+            const refreshed = result.data?.find((entry) => entry.id === id)
+            if (!refreshed) {
+              navigateBackOrInventory()
+            }
+          })
         }}
       />
     </main>

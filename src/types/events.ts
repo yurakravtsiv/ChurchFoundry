@@ -12,6 +12,8 @@ export type EventType =
   | "returned_to_stock"
   | "marked_for_repair"
   | "repaired"
+  | "marked_as_borrowed"
+  | "returned_from_borrow"
 
 export type CreatedEventPayload = Record<string, unknown>
 export type UpdatedEventPayload = Record<string, { old: unknown; new: unknown }>
@@ -40,6 +42,18 @@ export type RepairedEventPayload = {
   relatedItemId: string
 }
 
+export type MarkedAsBorrowedEventPayload = {
+  quantity: number
+  borrowDate: string
+  availabilityComment: string
+  relatedItemId: string
+}
+
+export type ReturnedFromBorrowEventPayload = {
+  quantity: number
+  relatedItemId: string
+}
+
 export type EventPayload =
   | CreatedEventPayload
   | UpdatedEventPayload
@@ -47,6 +61,8 @@ export type EventPayload =
   | ReturnedToStockEventPayload
   | MarkedForRepairEventPayload
   | RepairedEventPayload
+  | MarkedAsBorrowedEventPayload
+  | ReturnedFromBorrowEventPayload
 
 export type AppEvent = {
   id: string

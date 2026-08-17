@@ -2,10 +2,12 @@ import {
   Archive,
   CheckCircle2,
   ChevronDown,
+  Handshake,
   PackageMinus,
   PackagePlus,
   Pencil,
   PlusCircle,
+  Undo2,
   Wrench,
 } from "lucide-react"
 import { useMemo } from "react"
@@ -26,8 +28,10 @@ import { cn } from "@/lib/utils"
 import type {
   AppEvent,
   CreatedEventPayload,
+  MarkedAsBorrowedEventPayload,
   MarkedForRepairEventPayload,
   RepairedEventPayload,
+  ReturnedFromBorrowEventPayload,
   ReturnedToStockEventPayload,
   UpdatedEventPayload,
   WrittenOffEventPayload,
@@ -101,6 +105,27 @@ function parseMarkedForRepairPayload(payload: ParsedPayload): MarkedForRepairEve
 function parseRepairedPayload(payload: ParsedPayload): RepairedEventPayload | null {
   if (typeof payload.quantity === "number" && typeof payload.relatedItemId === "string") {
     return payload as RepairedEventPayload
+  }
+  return null
+}
+
+function parseMarkedAsBorrowedPayload(payload: ParsedPayload): MarkedAsBorrowedEventPayload | null {
+  if (
+    typeof payload.quantity === "number" &&
+    typeof payload.borrowDate === "string" &&
+    typeof payload.availabilityComment === "string" &&
+    typeof payload.relatedItemId === "string"
+  ) {
+    return payload as MarkedAsBorrowedEventPayload
+  }
+  return null
+}
+
+function parseReturnedFromBorrowPayload(
+  payload: ParsedPayload,
+): ReturnedFromBorrowEventPayload | null {
+  if (typeof payload.quantity === "number" && typeof payload.relatedItemId === "string") {
+    return payload as ReturnedFromBorrowEventPayload
   }
   return null
 }
@@ -382,6 +407,77 @@ function RepairedEventCard({
   )
 }
 
+function MarkedAsBorrowedEventCard({
+  event,
+  payload,
+  locale,
+  t,
+}: {
+  event: AppEvent
+  payload: MarkedAsBorrowedEventPayload
+  locale: string
+  t: ReturnType<typeof useTranslation>["t"]
+}) {
+  return (
+    <Card className="shadow-sm">
+      <CardContent className="space-y-3 p-3">
+        <EventCardHeader
+          icon={Handshake}
+          iconClassName="text-amber-600 dark:text-amber-500"
+          title={t("inventory.timeline.markedAsBorrowed")}
+          createdAt={event.createdAt}
+          userEmail={event.userEmail}
+          locale={locale}
+        />
+        <div className="space-y-1 text-sm">
+          <p>{t("inventory.timeline.markedAsBorrowedQuantity", { quantity: payload.quantity })}</p>
+          <p>
+            {t("inventory.timeline.markedAsBorrowedComment", {
+              comment: payload.availabilityComment || "—",
+            })}
+          </p>
+          <p>
+            {t("inventory.timeline.markedAsBorrowedDate", {
+              date: formatEventDateOnly(payload.borrowDate, locale),
+            })}
+          </p>
+        </div>
+        <EventViewLink relatedItemId={payload.relatedItemId} t={t} />
+      </CardContent>
+    </Card>
+  )
+}
+
+function ReturnedFromBorrowEventCard({
+  event,
+  payload,
+  locale,
+  t,
+}: {
+  event: AppEvent
+  payload: ReturnedFromBorrowEventPayload
+  locale: string
+  t: ReturnType<typeof useTranslation>["t"]
+}) {
+  return (
+    <Card className="shadow-sm">
+      <CardContent className="space-y-3 p-3">
+        <EventCardHeader
+          icon={Undo2}
+          iconClassName="text-green-600 dark:text-green-500"
+          title={t("inventory.timeline.returnedFromBorrow")}
+          createdAt={event.createdAt}
+          userEmail={event.userEmail}
+          locale={locale}
+        />
+        <p className="text-sm">
+          {t("inventory.timeline.returnedFromBorrowQuantity", { quantity: payload.quantity })}
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
+
 function CollapsibleEventCard({
   event,
   payload,
@@ -507,6 +603,34 @@ export function EventTimelineCard({ event, lookups }: EventTimelineCardProps) {
     if (repairedPayload) {
       return (
         <RepairedEventCard event={event} payload={repairedPayload} locale={i18n.language} t={t} />
+      )
+    }
+  }
+
+  if (event.type === "marked_as_borrowed") {
+    const borrowedPayload = payload ? parseMarkedAsBorrowedPayload(payload) : null
+    if (borrowedPayload) {
+      return (
+        <MarkedAsBorrowedEventCard
+          event={event}
+          payload={borrowedPayload}
+          locale={i18n.language}
+          t={t}
+        />
+      )
+    }
+  }
+
+  if (event.type === "returned_from_borrow") {
+    const returnedPayload = payload ? parseReturnedFromBorrowPayload(payload) : null
+    if (returnedPayload) {
+      return (
+        <ReturnedFromBorrowEventCard
+          event={event}
+          payload={returnedPayload}
+          locale={i18n.language}
+          t={t}
+        />
       )
     }
   }

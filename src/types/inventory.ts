@@ -60,6 +60,8 @@ export type InventoryItem = {
   repairDate: string | null
   /** Repair comment — only set on needs-repair (split) items created via markAsNeedsRepair. */
   repairComment: string | null
+  /** ISO date — only set on borrowed (split) items created via markAsBorrowed. */
+  borrowDate: string | null
   createdAt: string
   updatedAt: string
 }
@@ -77,6 +79,7 @@ export type CreateInventoryItemInput = Omit<
   | "originalItemId"
   | "repairDate"
   | "repairComment"
+  | "borrowDate"
   | "createdAt"
   | "updatedAt"
   | "price"
