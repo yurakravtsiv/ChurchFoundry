@@ -197,7 +197,7 @@ export function BorrowDialog({ item, open, onOpenChange, onConfirm }: BorrowDial
               {t("inventory.actions.cancel")}
             </Button>
             <Button type="submit" disabled={isSubmitting || borrowMutation.isPending || !item}>
-              {t("inventory.actions.markBorrowed")}
+              {t("inventory.actions.confirm")}
             </Button>
           </DialogFooter>
         </form>

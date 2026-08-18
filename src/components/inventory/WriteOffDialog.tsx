@@ -196,7 +196,7 @@ export function WriteOffDialog({ item, open, onOpenChange, onConfirm }: WriteOff
               {t("inventory.actions.cancel")}
             </Button>
             <Button type="submit" disabled={isSubmitting || writeOffMutation.isPending || !item}>
-              {t("inventory.actions.writeOff")}
+              {t("inventory.actions.confirm")}
             </Button>
           </DialogFooter>
         </form>

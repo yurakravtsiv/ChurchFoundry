@@ -196,7 +196,7 @@ export function NeedsRepairDialog({ item, open, onOpenChange, onConfirm }: Needs
               {t("inventory.actions.cancel")}
             </Button>
             <Button type="submit" disabled={isSubmitting || needsRepairMutation.isPending || !item}>
-              {t("inventory.actions.markNeedsRepair")}
+              {t("inventory.actions.confirm")}
             </Button>
           </DialogFooter>
         </form>
