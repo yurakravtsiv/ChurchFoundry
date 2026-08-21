@@ -1,12 +1,13 @@
-import { Settings } from "lucide-react"
+import { LogOut, Settings } from "lucide-react"
 import { AnimatePresence, motion } from "motion/react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router"
 
 import { ChurchLogo } from "@/components/ChurchLogo"
-import { LogoutButton } from "@/components/LogoutButton"
+import { LogoutConfirmDialog } from "@/components/LogoutButton"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { Button } from "@/components/ui/button"
 import {
   Sheet,
   SheetContent,
@@ -139,7 +140,17 @@ function SettingsNavButton({
   )
 }
 
-function SidebarPanel({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
+function SidebarPanel({
+  onNavigate,
+  onLogout,
+  collapsed,
+}: {
+  onNavigate?: () => void
+  onLogout?: () => void
+  collapsed?: boolean
+}) {
+  const { t } = useTranslation()
+
   return (
     <div className="flex h-full flex-col gap-6">
       <SidebarNav onNavigate={onNavigate} collapsed={collapsed} />
@@ -147,14 +158,23 @@ function SidebarPanel({ onNavigate, collapsed }: { onNavigate?: () => void; coll
         <SettingsNavButton collapsed={collapsed} onNavigate={onNavigate} />
         <div className="space-y-3 border-t border-border pt-3">
           <SidebarVersion collapsed={collapsed} />
-          <div className="border-t border-border pt-3 md:hidden">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+          {onLogout ? (
+            <div className="border-t border-border pt-3">
+              <div className="flex items-center justify-between gap-3">
                 <ThemeToggle onToggle={onNavigate} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={onLogout}
+                  aria-label={t("auth.logout")}
+                  title={t("auth.logout")}
+                >
+                  <LogOut className="size-4" />
+                </Button>
               </div>
-              <LogoutButton onPress={onNavigate} onSignedOut={onNavigate} />
             </div>
-          </div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -166,6 +186,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
   const { logoSrc, title, showChurchBranding } = useChurchBranding()
   const isStandalone = useStandalonePwa()
   const [hovered, setHovered] = useState(false)
+  const [logoutOpen, setLogoutOpen] = useState(false)
   const collapsed = !hovered
 
   return (
@@ -213,11 +234,19 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
               <SheetDescription className="sr-only">{t("nav.menuDescription")}</SheetDescription>
             </SheetHeader>
             <div className="mt-4 flex min-h-0 flex-1 flex-col">
-              <SidebarPanel onNavigate={() => onOpenChange(false)} />
+              <SidebarPanel
+                onNavigate={() => onOpenChange(false)}
+                onLogout={() => {
+                  setLogoutOpen(true)
+                  onOpenChange(false)
+                }}
+              />
             </div>
           </div>
         </SheetContent>
       </Sheet>
+
+      <LogoutConfirmDialog open={logoutOpen} onOpenChange={setLogoutOpen} />
     </>
   )
 }

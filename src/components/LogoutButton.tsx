@@ -14,29 +14,61 @@ import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { useAuth } from "@/hooks/useAuth"
 import { cn } from "@/lib/utils"
 
-type LogoutButtonProps = {
-  className?: string
+type LogoutConfirmDialogProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onSignedOut?: () => void
-  /** Fires when the logout control is pressed (e.g. close the mobile drawer). */
-  onPress?: () => void
 }
 
-export function LogoutButton({ className, onSignedOut, onPress }: LogoutButtonProps) {
+export function LogoutConfirmDialog({ open, onOpenChange, onSignedOut }: LogoutConfirmDialogProps) {
   const { t } = useTranslation()
   const { signOut } = useAuth()
-  const [open, setOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
 
   const onConfirm = async () => {
     setIsSigningOut(true)
     try {
       await signOut()
-      setOpen(false)
+      onOpenChange(false)
       onSignedOut?.()
     } finally {
       setIsSigningOut(false)
     }
   }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <MotionDialogContent open={open} className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{t("auth.logoutConfirmTitle")}</DialogTitle>
+          <DialogDescription>{t("auth.logoutConfirmDescription")}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSigningOut}
+            onClick={() => onOpenChange(false)}
+          >
+            {t("auth.logoutCancel")}
+          </Button>
+          <Button type="button" disabled={isSigningOut} onClick={() => void onConfirm()}>
+            {isSigningOut ? t("auth.loggingOut") : t("auth.logoutConfirm")}
+          </Button>
+        </DialogFooter>
+      </MotionDialogContent>
+    </Dialog>
+  )
+}
+
+type LogoutButtonProps = {
+  className?: string
+  onSignedOut?: () => void
+}
+
+export function LogoutButton({ className, onSignedOut }: LogoutButtonProps) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
 
   return (
     <>
@@ -45,37 +77,14 @@ export function LogoutButton({ className, onSignedOut, onPress }: LogoutButtonPr
         variant="outline"
         size="icon"
         className={cn(className)}
-        onClick={() => {
-          onPress?.()
-          setOpen(true)
-        }}
+        onClick={() => setOpen(true)}
         aria-label={t("auth.logout")}
         title={t("auth.logout")}
       >
         <LogOut className="size-4" />
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <MotionDialogContent open={open} className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t("auth.logoutConfirmTitle")}</DialogTitle>
-            <DialogDescription>{t("auth.logoutConfirmDescription")}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isSigningOut}
-              onClick={() => setOpen(false)}
-            >
-              {t("auth.logoutCancel")}
-            </Button>
-            <Button type="button" disabled={isSigningOut} onClick={() => void onConfirm()}>
-              {isSigningOut ? t("auth.loggingOut") : t("auth.logoutConfirm")}
-            </Button>
-          </DialogFooter>
-        </MotionDialogContent>
-      </Dialog>
+      <LogoutConfirmDialog open={open} onOpenChange={setOpen} onSignedOut={onSignedOut} />
     </>
   )
 }
