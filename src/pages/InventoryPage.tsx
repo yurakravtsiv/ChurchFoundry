@@ -25,6 +25,7 @@ import {
   Pencil,
   Plus,
   Search,
+  SlidersHorizontal,
   Undo2,
   Wrench,
   X,
@@ -34,6 +35,7 @@ import { type Ref, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
 import { BorrowDialog } from "@/components/inventory/BorrowDialog"
+import { InventoryColumnSettingsDialog } from "@/components/inventory/InventoryColumnSettingsDialog"
 import { InventoryItemForm } from "@/components/inventory/InventoryItemForm"
 import { NeedsRepairDialog } from "@/components/inventory/NeedsRepairDialog"
 import { RepairedConfirmDialog } from "@/components/inventory/RepairedConfirmDialog"
@@ -88,6 +90,12 @@ import {
 } from "@/hooks/queries/useInventoryQueries"
 import { useAuth } from "@/hooks/useAuth"
 import { useTypewriterPlaceholder } from "@/hooks/useTypewriterPlaceholder"
+import {
+  getSearchableColumnIds,
+  type InventoryColumnPrefs,
+  resolveVisibleColumnIds,
+} from "@/lib/inventoryColumnConfig"
+import { loadInventoryColumnPrefs, saveInventoryColumnPrefs } from "@/lib/inventoryColumnPrefs"
 import { exportToPdf, exportToXlsx, prepareExportData } from "@/lib/inventoryExport"
 import { availabilityLabel, conditionLabel } from "@/lib/inventoryLabels"
 import { itemMatchesSearch } from "@/lib/inventorySearch"
@@ -367,6 +375,8 @@ export function InventoryPage() {
   )
   const [showArchived, setShowArchived] = useState(false)
   const [showWrittenOff, setShowWrittenOff] = useState(false)
+  const [columnPrefs, setColumnPrefs] = useState<InventoryColumnPrefs>(loadInventoryColumnPrefs)
+  const [columnSettingsOpen, setColumnSettingsOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const desktopSearchRef = useRef<HTMLInputElement>(null)
   const mobileSearchRef = useRef<HTMLInputElement>(null)
@@ -458,16 +468,6 @@ export function InventoryPage() {
     [availabilityFilter, syncInventoryFilterSearchToUrl],
   )
 
-  // Drop write-off column sort when the conditional columns are removed.
-  useEffect(() => {
-    if (showWrittenOff) {
-      return
-    }
-    setSorting((prev) =>
-      prev.filter((entry) => entry.id !== "writeOffDate" && entry.id !== "writeOffReason"),
-    )
-  }, [showWrittenOff])
-
   const requestCloseCreate = useCallback(() => {
     if (createFormDirty) {
       setDiscardCreateOpen(true)
@@ -501,6 +501,8 @@ export function InventoryPage() {
     }
     return subcategories.filter((subcategory) => subcategory.categoryId === categoryFilter)
   }, [categoryFilter, subcategories])
+
+  const searchableColumnIds = useMemo(() => getSearchableColumnIds(columnPrefs), [columnPrefs])
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -540,7 +542,17 @@ export function InventoryPage() {
       ) {
         return false
       }
-      if (!itemMatchesSearch(item, search, categories, subcategories, locations, t)) {
+      if (
+        !itemMatchesSearch(
+          item,
+          search,
+          categories,
+          subcategories,
+          locations,
+          t,
+          searchableColumnIds,
+        )
+      ) {
         return false
       }
       return true
@@ -554,6 +566,7 @@ export function InventoryPage() {
     locationFilter,
     locations,
     search,
+    searchableColumnIds,
     showArchived,
     showWrittenOff,
     subcategories,
@@ -570,22 +583,31 @@ export function InventoryPage() {
     [filteredItems],
   )
 
-  // Drop repair column sort when the conditional columns are removed.
-  useEffect(() => {
-    if (hasRepairItems) {
-      return
-    }
-    setSorting((prev) =>
-      prev.filter((entry) => entry.id !== "repairDate" && entry.id !== "repairComment"),
-    )
-  }, [hasRepairItems])
+  const columnContext = useMemo(
+    () => ({
+      hasRepairItems,
+      hasBorrowedItems,
+      showWrittenOff,
+    }),
+    [hasBorrowedItems, hasRepairItems, showWrittenOff],
+  )
 
+  const visibleColumnIds = useMemo(
+    () => resolveVisibleColumnIds(columnPrefs, columnContext),
+    [columnContext, columnPrefs],
+  )
+
+  // Drop sort when the sorted column is no longer visible.
   useEffect(() => {
-    if (hasBorrowedItems) {
-      return
-    }
-    setSorting((prev) => prev.filter((entry) => entry.id !== "borrowDate"))
-  }, [hasBorrowedItems])
+    const visible = new Set<string>(visibleColumnIds)
+    setSorting((prev) => {
+      const next = prev.filter((entry) => visible.has(entry.id))
+      if (next.length === prev.length) {
+        return prev
+      }
+      return next.length > 0 ? next : [{ id: "name", desc: false }]
+    })
+  }, [visibleColumnIds])
 
   const columns = useMemo<ColumnDef<InventoryItem>[]>(() => {
     const baseColumns: ColumnDef<InventoryItem>[] = [
@@ -615,6 +637,17 @@ export function InventoryPage() {
         enableSorting: false,
       },
       {
+        id: "inventoryNumberId",
+        accessorKey: "inventoryNumberId",
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.inventoryNumberId")} column={column} />
+        ),
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap tabular-nums">{row.original.inventoryNumberId}</span>
+        ),
+      },
+      {
+        id: "name",
         accessorKey: "name",
         sortingFn: (rowA, rowB) =>
           compareLocaleText(rowA.original.name, rowB.original.name, i18n.language),
@@ -656,6 +689,7 @@ export function InventoryPage() {
         ),
       },
       {
+        id: "quantity",
         accessorKey: "quantity",
         header: ({ column }) => (
           <SortableColumnHeader label={t("inventory.columns.quantity")} column={column} />
@@ -704,43 +738,41 @@ export function InventoryPage() {
       },
     ]
 
-    if (hasRepairItems) {
-      baseColumns.push(
-        {
-          id: "repairDate",
-          accessorFn: (row) => (row.condition === "needs_repair" ? (row.repairDate ?? null) : null),
-          sortingFn: createNullableDateSortingFn((item) =>
-            item.condition === "needs_repair" ? parseDateMs(item.repairDate) : null,
-          ),
-          header: ({ column }) => (
-            <SortableColumnHeader label={t("inventory.columns.repairDate")} column={column} />
-          ),
-          cell: ({ row }) => {
-            const item = row.original
-            if (item.condition !== "needs_repair") {
-              return <span className="text-muted-foreground">—</span>
-            }
-            return (
-              <span className="whitespace-nowrap tabular-nums">
-                {formatWriteOffDate(item.repairDate)}
-              </span>
-            )
-          },
+    baseColumns.push(
+      {
+        id: "repairDate",
+        accessorFn: (row) => (row.condition === "needs_repair" ? (row.repairDate ?? null) : null),
+        sortingFn: createNullableDateSortingFn((item) =>
+          item.condition === "needs_repair" ? parseDateMs(item.repairDate) : null,
+        ),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.repairDate")} column={column} />
+        ),
+        cell: ({ row }) => {
+          const item = row.original
+          if (item.condition !== "needs_repair") {
+            return <span className="text-muted-foreground">—</span>
+          }
+          return (
+            <span className="whitespace-nowrap tabular-nums">
+              {formatWriteOffDate(item.repairDate)}
+            </span>
+          )
         },
-        {
-          id: "repairComment",
-          header: t("inventory.columns.repairComment"),
-          cell: ({ row }) => {
-            const item = row.original
-            if (item.condition !== "needs_repair") {
-              return <span className="text-muted-foreground">—</span>
-            }
-            return <TruncatedCell value={item.repairComment ?? ""} className="max-w-[14rem]" />
-          },
-          enableSorting: false,
+      },
+      {
+        id: "repairComment",
+        header: t("inventory.columns.repairComment"),
+        cell: ({ row }) => {
+          const item = row.original
+          if (item.condition !== "needs_repair") {
+            return <span className="text-muted-foreground">—</span>
+          }
+          return <TruncatedCell value={item.repairComment ?? ""} className="max-w-[14rem]" />
         },
-      )
-    }
+        enableSorting: false,
+      },
+    )
 
     baseColumns.push({
       id: "availability",
@@ -763,58 +795,55 @@ export function InventoryPage() {
       },
     })
 
-    if (hasBorrowedItems) {
-      baseColumns.push({
-        id: "borrowDate",
-        accessorFn: (row) => (row.availability === "borrowed" ? (row.borrowDate ?? null) : null),
-        sortingFn: createNullableDateSortingFn((item) =>
-          item.availability === "borrowed" ? parseDateMs(item.borrowDate) : null,
-        ),
-        header: ({ column }) => (
-          <SortableColumnHeader label={t("inventory.columns.borrowDate")} column={column} />
-        ),
-        cell: ({ row }) => {
-          const item = row.original
-          if (item.availability !== "borrowed") {
-            return <span className="text-muted-foreground">—</span>
-          }
-          return (
-            <span className="whitespace-nowrap tabular-nums">
-              {formatWriteOffDate(item.borrowDate)}
-            </span>
-          )
-        },
-      })
-    }
-
-    if (showWrittenOff) {
-      baseColumns.push(
-        {
-          id: "writeOffDate",
-          accessorFn: (row) => row.writeOffDate ?? null,
-          sortingFn: createNullableDateSortingFn((item) => parseDateMs(item.writeOffDate)),
-          header: ({ column }) => (
-            <SortableColumnHeader label={t("inventory.columns.writeOffDate")} column={column} />
-          ),
-          cell: ({ row }) => (
-            <span className="whitespace-nowrap tabular-nums">
-              {formatWriteOffDate(row.original.writeOffDate)}
-            </span>
-          ),
-        },
-        {
-          id: "writeOffReason",
-          header: t("inventory.columns.writeOffReason"),
-          cell: ({ row }) => (
-            <TruncatedCell value={row.original.writeOffReason ?? ""} className="max-w-[14rem]" />
-          ),
-          enableSorting: false,
-        },
-      )
-    }
+    baseColumns.push({
+      id: "borrowDate",
+      accessorFn: (row) => (row.availability === "borrowed" ? (row.borrowDate ?? null) : null),
+      sortingFn: createNullableDateSortingFn((item) =>
+        item.availability === "borrowed" ? parseDateMs(item.borrowDate) : null,
+      ),
+      header: ({ column }) => (
+        <SortableColumnHeader label={t("inventory.columns.borrowDate")} column={column} />
+      ),
+      cell: ({ row }) => {
+        const item = row.original
+        if (item.availability !== "borrowed") {
+          return <span className="text-muted-foreground">—</span>
+        }
+        return (
+          <span className="whitespace-nowrap tabular-nums">
+            {formatWriteOffDate(item.borrowDate)}
+          </span>
+        )
+      },
+    })
 
     baseColumns.push(
       {
+        id: "writeOffDate",
+        accessorFn: (row) => row.writeOffDate ?? null,
+        sortingFn: createNullableDateSortingFn((item) => parseDateMs(item.writeOffDate)),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.writeOffDate")} column={column} />
+        ),
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap tabular-nums">
+            {formatWriteOffDate(row.original.writeOffDate)}
+          </span>
+        ),
+      },
+      {
+        id: "writeOffReason",
+        header: t("inventory.columns.writeOffReason"),
+        cell: ({ row }) => (
+          <TruncatedCell value={row.original.writeOffReason ?? ""} className="max-w-[14rem]" />
+        ),
+        enableSorting: false,
+      },
+    )
+
+    baseColumns.push(
+      {
+        id: "availabilityComment",
         accessorKey: "availabilityComment",
         header: t("inventory.columns.availabilityComment"),
         cell: ({ row }) => (
@@ -823,6 +852,54 @@ export function InventoryPage() {
         enableSorting: false,
       },
       {
+        id: "supplier",
+        accessorKey: "supplier",
+        sortingFn: (rowA, rowB) =>
+          compareLocaleText(rowA.original.supplier, rowB.original.supplier, i18n.language),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.supplier")} column={column} />
+        ),
+        cell: ({ row }) => <TruncatedCell value={row.original.supplier} />,
+      },
+      {
+        id: "price",
+        accessorKey: "price",
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.price")} column={column} />
+        ),
+        cell: ({ row }) => {
+          const price = row.original.price
+          if (price == null) {
+            return <span className="text-muted-foreground">—</span>
+          }
+          return <span className="whitespace-nowrap tabular-nums">{price}</span>
+        },
+      },
+      {
+        id: "serialNumber",
+        accessorKey: "serialNumber",
+        sortingFn: (rowA, rowB) =>
+          compareLocaleText(rowA.original.serialNumber, rowB.original.serialNumber, i18n.language),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.serialNumber")} column={column} />
+        ),
+        cell: ({ row }) => <TruncatedCell value={row.original.serialNumber} />,
+      },
+      {
+        id: "warrantyUntil",
+        accessorFn: (row) => row.warrantyUntil ?? null,
+        sortingFn: createNullableDateSortingFn((item) => parseDateMs(item.warrantyUntil)),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.warrantyUntil")} column={column} />
+        ),
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap tabular-nums">
+            {formatWriteOffDate(row.original.warrantyUntil)}
+          </span>
+        ),
+      },
+      {
+        id: "comment",
         accessorKey: "comment",
         header: t("inventory.columns.comment"),
         cell: ({ row }) => <TruncatedCell value={row.original.comment} className="max-w-[14rem]" />,
@@ -1092,18 +1169,28 @@ export function InventoryPage() {
       },
     )
 
-    return baseColumns
+    const columnById = new Map<string, ColumnDef<InventoryItem>>()
+    for (const column of baseColumns) {
+      if (column.id) {
+        columnById.set(column.id, column)
+      }
+    }
+
+    const visibleColumns = visibleColumnIds.flatMap((id) => {
+      const column = columnById.get(id)
+      return column ? [column] : []
+    })
+    const actionsColumn = columnById.get("actions")
+    return actionsColumn ? [...visibleColumns, actionsColumn] : visibleColumns
   }, [
     categoryNameById,
     formatWriteOffDate,
-    hasBorrowedItems,
-    hasRepairItems,
     i18n.language,
     locationNameById,
     navigate,
-    showWrittenOff,
     subcategoryNameById,
     t,
+    visibleColumnIds,
   ])
 
   const table = useReactTable({
@@ -1130,41 +1217,22 @@ export function InventoryPage() {
     )
   }
 
-  const skeletonColumnCount =
-    11 + (hasRepairItems ? 2 : 0) + (hasBorrowedItems ? 1 : 0) + (showWrittenOff ? 2 : 0)
-  const skeletonColumnClassNames = showWrittenOff
-    ? [
-        "size-10",
-        "h-4 w-32",
-        "h-4 w-24",
-        "h-4 w-24",
-        "h-4 w-10",
-        "h-4 w-24",
-        "h-4 w-20",
-        "h-4 w-24",
-        "h-4 w-28",
-        "h-4 w-20",
-        "h-4 w-24",
-        "h-4 w-28",
-        "h-4 w-28",
-        "h-4 w-28",
-        "size-8",
-      ]
-    : [
-        "size-10",
-        "h-4 w-32",
-        "h-4 w-24",
-        "h-4 w-24",
-        "h-4 w-10",
-        "h-4 w-24",
-        "h-4 w-20",
-        "h-4 w-24",
-        "h-4 w-28",
-        "h-4 w-20",
-        "h-4 w-28",
-        "h-4 w-28",
-        "size-8",
-      ]
+  const skeletonColumnCount = visibleColumnIds.length + 1
+  const skeletonColumnClassNames = [
+    ...visibleColumnIds.map((id): string => {
+      if (id === "photo") {
+        return "size-10"
+      }
+      if (id === "name") {
+        return "h-4 w-32"
+      }
+      if (id === "quantity" || id === "inventoryNumberId" || id === "price") {
+        return "h-4 w-10"
+      }
+      return "h-4 w-24"
+    }),
+    "size-8",
+  ]
 
   const openCreate = () => setCreateOpen(true)
 
@@ -1193,7 +1261,10 @@ export function InventoryPage() {
   }
 
   const runExport = async (format: "xlsx" | "pdf") => {
-    const exportOptions = { includeWriteOffColumns: showWrittenOff }
+    const exportOptions = {
+      includeWriteOffColumns: showWrittenOff,
+      visibleColumnIds,
+    }
     const exportItems =
       showWrittenOff || showArchived
         ? filteredItems
@@ -1215,6 +1286,11 @@ export function InventoryPage() {
 
   const isStorageEmpty = items.length === 0
   const isFilterEmpty = !isStorageEmpty && filteredItems.length === 0
+
+  const handleSaveColumnPrefs = (nextPrefs: InventoryColumnPrefs) => {
+    setColumnPrefs(nextPrefs)
+    saveInventoryColumnPrefs(nextPrefs)
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 bg-background px-[15px] py-[10px]">
@@ -1249,6 +1325,23 @@ export function InventoryPage() {
             </Button>
             <TooltipProvider delayDuration={200}>
               <div className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={(event) => {
+                        event.currentTarget.blur()
+                        setColumnSettingsOpen(true)
+                      }}
+                    >
+                      <SlidersHorizontal className="size-4" />
+                      {t("inventory.columnSettings.open")}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("inventory.columnSettings.openTooltip")}</TooltipContent>
+                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -1716,6 +1809,13 @@ export function InventoryPage() {
           </Table>
         </div>
       )}
+
+      <InventoryColumnSettingsDialog
+        open={columnSettingsOpen}
+        prefs={columnPrefs}
+        onOpenChange={setColumnSettingsOpen}
+        onSave={handleSaveColumnPrefs}
+      />
 
       <Dialog
         open={createOpen}

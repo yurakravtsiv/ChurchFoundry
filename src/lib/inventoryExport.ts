@@ -3,6 +3,13 @@ import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 import * as XLSX from "xlsx-js-style"
 
+import {
+  getDefaultColumnPrefs,
+  getExportDataColumnIds,
+  type InventoryColumnId,
+  type InventoryExportRowKey,
+  resolveVisibleColumnIds,
+} from "@/lib/inventoryColumnConfig"
 import { availabilityLabel, conditionLabel } from "@/lib/inventoryLabels"
 import type { Category, InventoryItem, Location, Subcategory } from "@/types/inventory"
 
@@ -29,41 +36,25 @@ export type InventoryExportRow = {
 }
 
 export type InventoryExportOptions = {
-  /** When true, includes write-off date/reason columns after condition. */
+  /** When true, includes archived rows that would otherwise be omitted. */
   includeWriteOffColumns?: boolean
+  /** Visible table columns in display order. Photo is PDF-only; skipped in XLSX. */
+  visibleColumnIds?: readonly InventoryColumnId[]
 }
 
-/** Stable column order for XLSX/PDF body cells (without write-off extras). */
-const BASE_EXPORT_ROW_KEYS = [
-  "inventoryNumberId",
-  "name",
-  "category",
-  "subcategory",
-  "quantity",
-  "condition",
-  "repairDate",
-  "repairComment",
-  "location",
-  "availability",
-  "borrowDate",
-  "availabilityComment",
-  "supplier",
-  "price",
-  "serialNumber",
-  "warrantyUntil",
-  "comment",
-] as const satisfies ReadonlyArray<keyof InventoryExportRow>
-
-type ExportRowKey = (typeof BASE_EXPORT_ROW_KEYS)[number] | "writeOffDate" | "writeOffReason"
-
-function getExportRowKeys(includeWriteOffColumns: boolean): ExportRowKey[] {
-  if (!includeWriteOffColumns) {
-    return [...BASE_EXPORT_ROW_KEYS]
+function resolveExportVisibleColumnIds(options: InventoryExportOptions): InventoryColumnId[] {
+  if (options.visibleColumnIds) {
+    return [...options.visibleColumnIds]
   }
-  const keys: ExportRowKey[] = [...BASE_EXPORT_ROW_KEYS]
-  const repairCommentIndex = keys.indexOf("repairComment")
-  keys.splice(repairCommentIndex + 1, 0, "writeOffDate", "writeOffReason")
-  return keys
+  return resolveVisibleColumnIds(getDefaultColumnPrefs(), {
+    hasRepairItems: false,
+    hasBorrowedItems: false,
+    showWrittenOff: options.includeWriteOffColumns === true,
+  })
+}
+
+export function getExportRowKeys(options: InventoryExportOptions = {}): InventoryExportRowKey[] {
+  return getExportDataColumnIds(resolveExportVisibleColumnIds(options))
 }
 
 /** Matches Badge success / warning (light theme) used in the inventory table. */
@@ -94,11 +85,10 @@ const CONDITION_CELL_STYLES = {
   },
 } as const
 
-const PDF_PHOTO_COLUMN_INDEX = 0
 const PDF_ROW_MIN_HEIGHT_MM = 18
 const PDF_PHOTO_SIZE_MM = 12
 
-export function getExportColumnHeaders(t: TFunction): Record<ExportRowKey, string> {
+export function getExportColumnHeaders(t: TFunction): Record<InventoryExportRowKey, string> {
   return {
     inventoryNumberId: t("export.columns.inventoryNumberId"),
     name: t("export.columns.name"),
@@ -179,10 +169,10 @@ function formatWriteOffDateForExport(value: string | null): string {
 function localizeExportRows(
   data: InventoryExportRow[],
   t: TFunction,
-  includeWriteOffColumns: boolean,
+  options: InventoryExportOptions,
 ): Record<string, string | number>[] {
   const headers = getExportColumnHeaders(t)
-  const keys = getExportRowKeys(includeWriteOffColumns)
+  const keys = getExportRowKeys(options)
   return data.map((row) => {
     const localizedRow: Record<string, string | number> = {}
     for (const key of keys) {
@@ -225,10 +215,8 @@ export function prepareExportData(
         serialNumber: item.serialNumber,
         warrantyUntil: item.warrantyUntil ?? "",
         comment: item.comment,
-      }
-      if (includeWriteOffColumns) {
-        row.writeOffDate = formatWriteOffDateForExport(item.writeOffDate)
-        row.writeOffReason = item.writeOffReason ?? ""
+        writeOffDate: formatWriteOffDateForExport(item.writeOffDate),
+        writeOffReason: item.writeOffReason ?? "",
       }
       return row
     })
@@ -275,8 +263,7 @@ export function exportToXlsx(
   t: TFunction,
   options: InventoryExportOptions = {},
 ): void {
-  const includeWriteOffColumns = options.includeWriteOffColumns === true
-  const localizedData = localizeExportRows(data, t, includeWriteOffColumns)
+  const localizedData = localizeExportRows(data, t, options)
   const worksheet = XLSX.utils.json_to_sheet(localizedData)
   worksheet["!cols"] = autoFitColumns(localizedData)
   styleXlsxHeaderRow(worksheet)
@@ -299,11 +286,12 @@ export async function exportToPdf(
   )
   const rows = prepareExportData(exportItems, categories, subcategories, locations, t, options)
   const headers = getExportColumnHeaders(t)
-  const rowKeys = getExportRowKeys(includeWriteOffColumns)
-  const conditionColumnIndex = 1 + rowKeys.indexOf("condition")
-  const availabilityColumnIndex = 1 + rowKeys.indexOf("availability")
-  const availabilityCommentColumnIndex = 1 + rowKeys.indexOf("availabilityComment")
-  const commentColumnIndex = 1 + rowKeys.indexOf("comment")
+  const visibleColumnIds = resolveExportVisibleColumnIds(options)
+  const photoColumnIndex = visibleColumnIds.indexOf("photo")
+  const conditionColumnIndex = visibleColumnIds.indexOf("condition")
+  const availabilityColumnIndex = visibleColumnIds.indexOf("availability")
+  const availabilityCommentColumnIndex = visibleColumnIds.indexOf("availabilityComment")
+  const commentColumnIndex = visibleColumnIds.indexOf("comment")
 
   // Font is ~670KB base64 — load only when exporting, not in the main bundle.
   const { robotoFontBase64 } = await import("@/lib/fonts/robotoFont")
@@ -321,18 +309,33 @@ export async function exportToPdf(
     condition: item.condition,
   }))
 
-  const head = [t("export.columns.photo"), ...rowKeys.map((key) => headers[key])]
+  const head = visibleColumnIds.map((id) =>
+    id === "photo" ? t("export.columns.photo") : headers[id],
+  )
 
-  const body = rows.map((row) => [
-    "",
-    ...rowKeys.map((key) => {
-      const value = row[key]
+  const body = rows.map((row) =>
+    visibleColumnIds.map((id) => {
+      if (id === "photo") {
+        return ""
+      }
+      const value = row[id]
       if (typeof value === "number") {
         return value
       }
       return softBreakLongRuns(value)
     }),
-  ])
+  )
+
+  const columnStyles: Record<number, { cellWidth?: number; halign?: "center" }> = {}
+  if (photoColumnIndex >= 0) {
+    columnStyles[photoColumnIndex] = { cellWidth: PDF_PHOTO_SIZE_MM + 4, halign: "center" }
+  }
+  if (availabilityCommentColumnIndex >= 0) {
+    columnStyles[availabilityCommentColumnIndex] = { cellWidth: 28 }
+  }
+  if (commentColumnIndex >= 0) {
+    columnStyles[commentColumnIndex] = { cellWidth: 34 }
+  }
 
   autoTable(doc, {
     head: [head],
@@ -341,7 +344,7 @@ export async function exportToPdf(
       font: "Roboto",
       fontSize: 7,
       overflow: "linebreak",
-      minCellHeight: PDF_ROW_MIN_HEIGHT_MM,
+      minCellHeight: photoColumnIndex >= 0 ? PDF_ROW_MIN_HEIGHT_MM : 10,
       valign: "middle",
       cellPadding: { top: 2.5, right: 1.5, bottom: 2.5, left: 1.5 },
     },
@@ -353,17 +356,13 @@ export async function exportToPdf(
       valign: "middle",
       overflow: "linebreak",
     },
-    columnStyles: {
-      [PDF_PHOTO_COLUMN_INDEX]: { cellWidth: PDF_PHOTO_SIZE_MM + 4, halign: "center" },
-      [availabilityCommentColumnIndex]: { cellWidth: 28 },
-      [commentColumnIndex]: { cellWidth: 34 },
-    },
+    columnStyles,
     didParseCell: (hookData) => {
       if (hookData.section !== "body") {
         return
       }
 
-      if (hookData.column.index === conditionColumnIndex) {
+      if (conditionColumnIndex >= 0 && hookData.column.index === conditionColumnIndex) {
         const condition = rowMeta[hookData.row.index]?.condition
         if (!condition) {
           return
@@ -375,7 +374,7 @@ export async function exportToPdf(
         return
       }
 
-      if (hookData.column.index === availabilityColumnIndex) {
+      if (availabilityColumnIndex >= 0 && hookData.column.index === availabilityColumnIndex) {
         const availability = rowMeta[hookData.row.index]?.availability
         if (!availability) {
           return
@@ -387,7 +386,11 @@ export async function exportToPdf(
       }
     },
     didDrawCell: (hookData) => {
-      if (hookData.section !== "body" || hookData.column.index !== PDF_PHOTO_COLUMN_INDEX) {
+      if (
+        photoColumnIndex < 0 ||
+        hookData.section !== "body" ||
+        hookData.column.index !== photoColumnIndex
+      ) {
         return
       }
       const source = rowMeta[hookData.row.index]?.avatarDataUrl

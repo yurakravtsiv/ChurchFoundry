@@ -159,6 +159,7 @@
     },
     "columns": {
       "photo": "Photo",
+      "inventoryNumberId": "Inv. #",
       "name": "Name",
       "category": "Category",
       "subcategory": "Subcategory",
@@ -172,7 +173,21 @@
       "borrowDate": "Borrow date",
       "comment": "Comment",
       "writeOffDate": "Write-off date",
-      "writeOffReason": "Write-off reason"
+      "writeOffReason": "Write-off reason",
+      "supplier": "Supplier",
+      "price": "Price",
+      "serialNumber": "Serial number",
+      "warrantyUntil": "Warranty until"
+    },
+    "columnSettings": {
+      "open": "Columns",
+      "openTooltip": "Configure table columns",
+      "title": "Table columns",
+      "hint": "Choose which columns to show and drag to reorder. The same layout is used in search and export.",
+      "save": "Save",
+      "reset": "Reset",
+      "cancel": "Cancel",
+      "dragHandle": "Reorder column"
     },
     "actions": {
       "menu": "Actions",
