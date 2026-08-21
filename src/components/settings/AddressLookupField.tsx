@@ -29,10 +29,12 @@ export function AddressLookupField({
   const { t, i18n } = useTranslation()
   const listId = useId()
   const [open, setOpen] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState(false)
   const skipSearchRef = useRef(false)
+  const typedWhileFocusedRef = useRef(false)
 
   useEffect(() => {
     if (skipSearchRef.current) {
@@ -46,6 +48,10 @@ export function AddressLookupField({
       setIsSearching(false)
       setSearchError(false)
       setOpen(false)
+      return
+    }
+
+    if (!isFocused || !typedWhileFocusedRef.current) {
       return
     }
 
@@ -79,12 +85,19 @@ export function AddressLookupField({
       window.clearTimeout(timeoutId)
       controller.abort()
     }
-  }, [i18n.language, value])
+  }, [i18n.language, isFocused, value])
 
   const handleSelect = (label: string) => {
     skipSearchRef.current = true
+    typedWhileFocusedRef.current = false
     onChange(label)
     setSuggestions([])
+    setOpen(false)
+  }
+
+  const closeSuggestions = () => {
+    typedWhileFocusedRef.current = false
+    setIsFocused(false)
     setOpen(false)
   }
 
@@ -96,12 +109,12 @@ export function AddressLookupField({
         <Input
           id={id}
           value={value}
-          onChange={(event) => onChange(event.target.value)}
-          onFocus={() => {
-            if (suggestions.length > 0 || searchError || isSearching) {
-              setOpen(true)
-            }
+          onChange={(event) => {
+            typedWhileFocusedRef.current = true
+            onChange(event.target.value)
           }}
+          onFocus={() => setIsFocused(true)}
+          onBlur={closeSuggestions}
           placeholder={t("settings.church.addressPlaceholder")}
           autoComplete="off"
           maxLength={maxLength}
