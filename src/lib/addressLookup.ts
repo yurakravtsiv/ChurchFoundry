@@ -3,7 +3,7 @@ export type AddressSuggestion = {
   label: string
 }
 
-const PHOTON_URL = "https://photon.komoot.io/api/"
+const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
@@ -28,53 +28,59 @@ function uniqueParts(parts: Array<string | undefined>): string[] {
   return unique
 }
 
-export function formatPhotonAddress(properties: Record<string, unknown>): string {
-  const street = readString(properties.street)
-  const housenumber = readString(properties.housenumber)
-  const streetLine = uniqueParts([street, housenumber]).join(" ")
-  const name = readString(properties.name)
-  const city =
-    readString(properties.city) ||
-    readString(properties.locality) ||
-    readString(properties.district) ||
-    readString(properties.town)
-
-  const primary = streetLine || name
-  const includeName = Boolean(name && streetLine && name !== street && name !== city)
-
-  return uniqueParts([
-    includeName ? name : undefined,
-    primary,
-    readString(properties.postcode),
-    city,
-    readString(properties.state),
-    readString(properties.country),
-  ]).join(", ")
+export function nominatimLanguage(lang: string): "uk" | "en" {
+  return lang.toLowerCase().startsWith("uk") ? "uk" : "en"
 }
 
-export function parsePhotonFeatures(data: unknown): AddressSuggestion[] {
-  if (!isRecord(data) || !Array.isArray(data.features)) {
+export function formatNominatimAddress(item: Record<string, unknown>): string {
+  const address = isRecord(item.address) ? item.address : {}
+  const house = readString(address.house_number)
+  const road =
+    readString(address.road) || readString(address.pedestrian) || readString(address.street)
+  const streetLine = uniqueParts([road, house]).join(" ")
+  const name = readString(item.name)
+  const city =
+    readString(address.city) ||
+    readString(address.town) ||
+    readString(address.village) ||
+    readString(address.municipality)
+
+  const includeName = Boolean(name && streetLine && name !== road && name !== city)
+
+  const formatted = uniqueParts([
+    includeName ? name : undefined,
+    streetLine || name,
+    readString(address.postcode),
+    city,
+    readString(address.state),
+    readString(address.country),
+  ]).join(", ")
+
+  return formatted || readString(item.display_name)
+}
+
+export function parseNominatimResults(data: unknown): AddressSuggestion[] {
+  if (!Array.isArray(data)) {
     return []
   }
 
   const suggestions: AddressSuggestion[] = []
   const seenLabels = new Set<string>()
 
-  for (const feature of data.features) {
-    if (!isRecord(feature)) {
+  for (const item of data) {
+    if (!isRecord(item)) {
       continue
     }
-    const properties = isRecord(feature.properties) ? feature.properties : {}
-    const label = formatPhotonAddress(properties)
+    const label = formatNominatimAddress(item)
     if (!label || seenLabels.has(label)) {
       continue
     }
     seenLabels.add(label)
 
-    const osmId = properties.osm_id
+    const placeId = item.place_id
     const id =
-      typeof osmId === "number" || typeof osmId === "string"
-        ? String(osmId)
+      typeof placeId === "number" || typeof placeId === "string"
+        ? String(placeId)
         : `${suggestions.length}-${label}`
     suggestions.push({ id, label })
   }
@@ -92,18 +98,25 @@ export async function searchAddresses(
     return []
   }
 
+  const language = nominatimLanguage(lang)
   const params = new URLSearchParams({
     q: trimmed,
+    format: "jsonv2",
+    addressdetails: "1",
     limit: "6",
+    "accept-language": language,
   })
-  if (lang === "en") {
-    params.set("lang", "en")
-  }
 
-  const response = await fetch(`${PHOTON_URL}?${params.toString()}`, { signal })
+  const response = await fetch(`${NOMINATIM_URL}?${params.toString()}`, {
+    signal,
+    headers: {
+      Accept: "application/json",
+      "Accept-Language": language,
+    },
+  })
   if (!response.ok) {
     throw new Error("Address search failed")
   }
 
-  return parsePhotonFeatures(await response.json())
+  return parseNominatimResults(await response.json())
 }
