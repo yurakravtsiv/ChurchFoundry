@@ -1,5 +1,6 @@
 export type SupportedLanguage = "uk" | "en"
 
+export type { ChurchProfile } from "@/types/church"
 export type {
   AvailabilityStatus,
   Category,

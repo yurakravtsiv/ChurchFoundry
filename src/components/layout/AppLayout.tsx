@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { type ReactNode, useState } from "react"
 import { Outlet } from "react-router"
 
 import { Header } from "@/components/layout/Header"
@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/layout/Sidebar"
 
 const themeBackgroundStyle = { backgroundColor: "hsl(var(--background))" } as const
 
-export function AppLayout() {
+export function AppShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
@@ -28,10 +28,18 @@ export function AppLayout() {
             className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-background"
             style={themeBackgroundStyle}
           >
-            <Outlet />
+            {children}
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+export function AppLayout() {
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>
   )
 }

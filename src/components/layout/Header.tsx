@@ -2,10 +2,11 @@ import { RefreshCw } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link, useLocation } from "react-router"
-
+import { ChurchLogo } from "@/components/ChurchLogo"
 import { LogoutButton } from "@/components/LogoutButton"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { Button } from "@/components/ui/button"
+import { useChurchBranding } from "@/hooks/useChurchBranding"
 import { useStandalonePwa } from "@/hooks/useStandalonePwa"
 import { navItems } from "@/lib/nav"
 import { reloadApp } from "@/lib/reloadApp"
@@ -33,6 +34,7 @@ function useCurrentPageLabelKey() {
 
 export function Header({ onOpenSidebar }: HeaderProps) {
   const { t } = useTranslation()
+  const { logoSrc, title } = useChurchBranding()
   const pageLabelKey = useCurrentPageLabelKey()
   const isStandalone = useStandalonePwa()
   const [refreshing, setRefreshing] = useState(false)
@@ -59,21 +61,15 @@ export function Header({ onOpenSidebar }: HeaderProps) {
             onClick={onOpenSidebar}
             aria-label={t("nav.openMenu")}
           >
-            <img src="/favicon.svg" alt="" width={28} height={28} className="size-7 rounded-md" />
+            <ChurchLogo src={logoSrc} size={28} />
           </button>
 
           <Link
             to="/"
             className="hidden min-w-0 items-center gap-2 font-semibold tracking-tight md:flex"
           >
-            <img
-              src="/favicon.svg"
-              alt=""
-              width={28}
-              height={28}
-              className="size-7 shrink-0 rounded-md"
-            />
-            <span className="truncate text-base sm:text-lg">{t("app.name")}</span>
+            <ChurchLogo src={logoSrc} size={28} />
+            <span className="truncate text-base sm:text-lg">{title}</span>
           </Link>
 
           <p className="pointer-events-none absolute inset-x-0 mx-auto max-w-[55%] truncate text-center text-lg font-semibold tracking-tight md:hidden">

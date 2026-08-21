@@ -1,13 +1,17 @@
 import { QRCodeSVG } from "qrcode.react"
-import { useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
+import { useChurchProfileQuery } from "@/hooks/queries/useChurchProfileQueries"
 import { APP_ICON_DATA_URL } from "@/lib/appIcon"
 import { formatInventoryPublicCode } from "@/lib/inventoryCode"
+import { toSquareRoundedPng } from "@/lib/squareRoundedImage"
 
 /** Logo side length as a fraction of the QR size (keep modest for scan reliability). */
 const QR_CENTER_ICON_RATIO = 0.22
+/** Matches Tailwind `rounded-md` (6px) on the 28px header logo. */
+const ROUNDED_MD_RATIO = 6 / 28
 
 type ItemQrCodeProps = {
   value: string
@@ -137,9 +141,40 @@ async function rasterizeQrSvg(svg: SVGSVGElement, pixelSize: number): Promise<HT
 
 export function ItemQrCode({ value, itemName, inventoryNumberId, size = 200 }: ItemQrCodeProps) {
   const { t } = useTranslation()
+  const { data: churchProfile } = useChurchProfileQuery()
   const svgRef = useRef<SVGSVGElement>(null)
   const publicCode = formatInventoryPublicCode(inventoryNumberId)
   const centerIconSize = Math.max(24, Math.round(size * QR_CENTER_ICON_RATIO))
+  const logoDataUrl = churchProfile?.logoDataUrl
+  const [centerIconSrc, setCenterIconSrc] = useState(logoDataUrl || APP_ICON_DATA_URL)
+
+  useEffect(() => {
+    if (!logoDataUrl) {
+      setCenterIconSrc(APP_ICON_DATA_URL)
+      return
+    }
+
+    const outputSize = centerIconSize * 2
+    const cornerRadius = outputSize * ROUNDED_MD_RATIO
+    let cancelled = false
+
+    void toSquareRoundedPng(logoDataUrl, outputSize, cornerRadius)
+      .then((png) => {
+        if (!cancelled) {
+          setCenterIconSrc(png)
+        }
+      })
+      .catch((error) => {
+        console.error("[ItemQrCode] Failed to prepare church logo", error)
+        if (!cancelled) {
+          setCenterIconSrc(logoDataUrl)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [centerIconSize, logoDataUrl])
 
   const downloadAsPng = async () => {
     const svg = svgRef.current
@@ -250,7 +285,7 @@ export function ItemQrCode({ value, itemName, inventoryNumberId, size = 200 }: I
           className="max-w-full"
           style={{ width: "100%", height: "auto" }}
           imageSettings={{
-            src: APP_ICON_DATA_URL,
+            src: centerIconSrc,
             height: centerIconSize,
             width: centerIconSize,
             excavate: true,

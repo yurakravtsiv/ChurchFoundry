@@ -56,8 +56,33 @@
   "settings": {
     "title": "Settings",
     "tabs": {
+      "church": "Church",
       "inventory": "Inventory",
       "generateData": "Generate data"
+    },
+    "church": {
+      "title": "Church",
+      "description": "Shown in the header, on inventory QR codes, and to guests who scan an item.",
+      "name": "Name",
+      "namePlaceholder": "Church name",
+      "address": "Address",
+      "addressPlaceholder": "Start typing to search",
+      "addressSearching": "Searching…",
+      "addressEmpty": "No addresses found",
+      "addressError": "Could not search addresses. You can type the address manually.",
+      "phone": "Phone",
+      "phonePlaceholder": "Phone number",
+      "email": "Email",
+      "emailPlaceholder": "Email",
+      "logo": "Logo",
+      "logoHint": "Square image works best. Used in the header and at the center of inventory QR codes.",
+      "logoCompressing": "Compressing logo…",
+      "removeLogo": "Remove logo",
+      "save": "Save",
+      "saving": "Saving…",
+      "validation": {
+        "email": "Enter a valid email"
+      }
     },
     "inventory": {
       "categories": "Categories",
@@ -377,10 +402,16 @@
     "action": "Update",
     "dismiss": "Dismiss"
   },
+  "church": {
+    "public": {
+      "openMap": "Open in maps"
+    }
+  },
   "auth": {
     "login": "Log in",
     "loggingIn": "Signing in...",
     "loginSubtitle": "Sign in to continue",
+    "scanSubtitle": "Log in to view this inventory item.",
     "logout": "Log out",
     "loggingOut": "Signing out...",
     "logoutConfirmTitle": "Log out of your account?",

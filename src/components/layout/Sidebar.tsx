@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router"
 
+import { ChurchLogo } from "@/components/ChurchLogo"
 import { LogoutButton } from "@/components/LogoutButton"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import {
@@ -13,6 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { useChurchBranding } from "@/hooks/useChurchBranding"
 import { useStandalonePwa } from "@/hooks/useStandalonePwa"
 import { navItems } from "@/lib/nav"
 import { cn } from "@/lib/utils"
@@ -161,6 +163,7 @@ function SidebarPanel({ onNavigate, collapsed }: { onNavigate?: () => void; coll
 
 export function Sidebar({ open, onOpenChange }: SidebarProps) {
   const { t } = useTranslation()
+  const { logoSrc, title, showChurchBranding } = useChurchBranding()
   const isStandalone = useStandalonePwa()
   const [hovered, setHovered] = useState(false)
   const collapsed = !hovered
@@ -203,7 +206,10 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
             )}
           >
             <SheetHeader className="text-left">
-              <SheetTitle>{t("app.name")}</SheetTitle>
+              <SheetTitle className="flex min-w-0 items-center gap-2">
+                {showChurchBranding ? <ChurchLogo src={logoSrc} size={28} /> : null}
+                <span className="truncate">{title}</span>
+              </SheetTitle>
               <SheetDescription className="sr-only">{t("nav.menuDescription")}</SheetDescription>
             </SheetHeader>
             <div className="mt-4 flex min-h-0 flex-1 flex-col">

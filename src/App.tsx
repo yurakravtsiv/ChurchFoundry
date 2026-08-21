@@ -11,7 +11,7 @@ import { ThemeProvider, useTheme } from "@/hooks/useTheme"
 import { syncStandaloneDisplay } from "@/lib/display"
 import { ComingSoonPage } from "@/pages/ComingSoonPage"
 import { DashboardPage } from "@/pages/DashboardPage"
-import { InventoryItemDetailPage } from "@/pages/InventoryItemDetailPage"
+import { InventoryItemAccess } from "@/pages/InventoryItemAccess"
 import { InventoryPage } from "@/pages/InventoryPage"
 import { LoginPage } from "@/pages/LoginPage"
 import { SettingsPage } from "@/pages/SettingsPage"
@@ -32,6 +32,8 @@ const router = createBrowserRouter(
         <Route path="/login" element={<LoginPage />} />
       </Route>
 
+      <Route path="/inventory/:id" element={<InventoryItemAccess />} />
+
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
@@ -39,7 +41,6 @@ const router = createBrowserRouter(
           <Route path="/services" element={<ComingSoonPage />} />
           <Route path="/calendar" element={<ComingSoonPage />} />
           <Route path="/inventory" element={<InventoryPage />} />
-          <Route path="/inventory/:id" element={<InventoryItemDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>

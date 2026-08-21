@@ -3,19 +3,27 @@ import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router"
+import { useNavigate, useSearchParams } from "react-router"
 import { z } from "zod"
 
+import { ChurchLogo } from "@/components/ChurchLogo"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useChurchProfileQuery } from "@/hooks/queries/useChurchProfileQueries"
+import { getSafeRedirectPath } from "@/lib/safeRedirect"
 import { supabase } from "@/lib/supabase"
 
 export function LoginPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const { data: churchProfile } = useChurchProfileQuery()
   const [authError, setAuthError] = useState<string | null>(null)
+  const nextPath = getSafeRedirectPath(searchParams.get("next")) ?? "/"
+  const logoSrc = churchProfile?.logoDataUrl || "/favicon.svg"
+  const title = churchProfile?.name.trim() || t("app.name")
 
   const loginSchema = z.object({
     email: z.email({ error: t("auth.validation.email") }),
@@ -49,22 +57,16 @@ export function LoginPage() {
       return
     }
 
-    void navigate("/", { replace: true })
+    void navigate(nextPath, { replace: true })
   })
 
   return (
     <main className="mx-auto flex min-h-[var(--app-height)] w-full max-w-md flex-col justify-center bg-background px-4 py-8 pt-[max(2rem,env(safe-area-inset-top,0px))]">
       <Card>
         <CardHeader className="space-y-4 text-center">
-          <img
-            src="/favicon.svg"
-            alt=""
-            width={64}
-            height={64}
-            className="mx-auto size-16 rounded-2xl"
-          />
+          <ChurchLogo src={logoSrc} size={64} roundedClassName="rounded-2xl" className="mx-auto" />
           <div className="space-y-2">
-            <CardTitle className="text-2xl font-bold tracking-tight">{t("app.name")}</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight">{title}</CardTitle>
             <CardDescription>{t("auth.loginSubtitle")}</CardDescription>
           </div>
         </CardHeader>

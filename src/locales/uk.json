@@ -56,8 +56,33 @@
   "settings": {
     "title": "Налаштування",
     "tabs": {
+      "church": "Церква",
       "inventory": "Інвентар",
       "generateData": "Генерація даних"
+    },
+    "church": {
+      "title": "Церква",
+      "description": "Показується в хедері, у QR-кодах інвентарю та гостям, які сканують предмет.",
+      "name": "Назва",
+      "namePlaceholder": "Назва церкви",
+      "address": "Адреса",
+      "addressPlaceholder": "Почніть вводити для пошуку",
+      "addressSearching": "Пошук…",
+      "addressEmpty": "Адрес не знайдено",
+      "addressError": "Не вдалось знайти адресу. Можна ввести її вручну.",
+      "phone": "Телефон",
+      "phonePlaceholder": "Номер телефону",
+      "email": "Email",
+      "emailPlaceholder": "Email",
+      "logo": "Логотип",
+      "logoHint": "Найкраще квадратне зображення. Використовується в хедері та в центрі QR-кодів інвентарю.",
+      "logoCompressing": "Стиснення логотипу…",
+      "removeLogo": "Видалити логотип",
+      "save": "Зберегти",
+      "saving": "Збереження…",
+      "validation": {
+        "email": "Введіть коректний email"
+      }
     },
     "inventory": {
       "categories": "Категорії",
@@ -377,10 +402,16 @@
     "action": "Оновити",
     "dismiss": "Закрити"
   },
+  "church": {
+    "public": {
+      "openMap": "Відкрити на карті"
+    }
+  },
   "auth": {
     "login": "Увійти",
     "loggingIn": "Вхід...",
     "loginSubtitle": "Увійдіть, щоб продовжити",
+    "scanSubtitle": "Увійдіть, щоб переглянути цей предмет інвентарю.",
     "logout": "Вийти",
     "loggingOut": "Вихід...",
     "logoutConfirmTitle": "Вийти з облікового запису?",
