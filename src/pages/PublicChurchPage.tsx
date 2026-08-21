@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import { Link, useParams } from "react-router"
 import { ChurchLogo } from "@/components/ChurchLogo"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useChurchProfileQuery } from "@/hooks/queries/useChurchProfileQueries"
 
 function mapsSearchUrl(address: string) {
@@ -28,10 +28,7 @@ export function PublicChurchPage() {
       <Card>
         <CardHeader className="space-y-4 text-center">
           <ChurchLogo src={logoSrc} size={64} roundedClassName="rounded-2xl" className="mx-auto" />
-          <div className="space-y-2">
-            <CardTitle className="text-2xl font-bold tracking-tight">{name}</CardTitle>
-            <CardDescription>{t("auth.scanSubtitle")}</CardDescription>
-          </div>
+          <CardTitle className="text-2xl font-bold tracking-tight">{name}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {address || phone || email ? (
@@ -75,6 +72,7 @@ export function PublicChurchPage() {
             </ul>
           ) : null}
 
+          <p className="text-center text-sm text-muted-foreground">{t("auth.scanSubtitle")}</p>
           <Button type="button" className="w-full" asChild>
             <Link to={loginTo}>{t("auth.login")}</Link>
           </Button>
