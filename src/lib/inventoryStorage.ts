@@ -233,28 +233,70 @@ function normalizeEntityList<T extends { removed?: boolean }>(
   return normalized
 }
 
-export function getCategories(): Category[] {
+/**
+ * Internal: all categories including soft-deleted (`removed === true`).
+ * For mutations and lookups only — never use this from dropdown/settings list UI.
+ */
+function getAllCategoriesRaw(): Category[] {
   return normalizeEntityList(CATEGORIES_KEY, readJsonArray<Category>(CATEGORIES_KEY))
+}
+
+/** Visible categories only (`removed !== true`). */
+export function getCategories(): Category[] {
+  return filterVisible(getAllCategoriesRaw())
 }
 
 export function saveCategories(categories: Category[]): void {
   writeJson(CATEGORIES_KEY, categories)
 }
 
-export function getSubcategories(): Subcategory[] {
+/**
+ * Internal: all subcategories including soft-deleted (`removed === true`).
+ * For mutations and lookups only — never use this from dropdown/settings list UI.
+ */
+function getAllSubcategoriesRaw(): Subcategory[] {
   return normalizeEntityList(SUBCATEGORIES_KEY, readJsonArray<Subcategory>(SUBCATEGORIES_KEY))
+}
+
+/** Visible subcategories only (`removed !== true`). */
+export function getSubcategories(): Subcategory[] {
+  return filterVisible(getAllSubcategoriesRaw())
 }
 
 export function saveSubcategories(subcategories: Subcategory[]): void {
   writeJson(SUBCATEGORIES_KEY, subcategories)
 }
 
-export function getLocations(): Location[] {
+/**
+ * Internal: all locations including soft-deleted (`removed === true`).
+ * For mutations and lookups only — never use this from dropdown/settings list UI.
+ */
+function getAllLocationsRaw(): Location[] {
   return normalizeEntityList(LOCATIONS_KEY, readJsonArray<Location>(LOCATIONS_KEY))
+}
+
+/** Visible locations only (`removed !== true`). */
+export function getLocations(): Location[] {
+  return filterVisible(getAllLocationsRaw())
 }
 
 export function saveLocations(locations: Location[]): void {
   writeJson(LOCATIONS_KEY, locations)
+}
+
+/** All reference entities including soft-deleted — for resolving names on items. */
+export type InventoryReferenceLookups = {
+  categories: Category[]
+  subcategories: Subcategory[]
+  locations: Location[]
+}
+
+export function getInventoryReferenceLookups(): InventoryReferenceLookups {
+  return {
+    categories: getAllCategoriesRaw(),
+    subcategories: getAllSubcategoriesRaw(),
+    locations: getAllLocationsRaw(),
+  }
 }
 
 /** Migrates legacy `location: string` items to `locationId` + locations list. */
@@ -267,7 +309,7 @@ function migrateLegacyLocationFields(): void {
     return
   }
 
-  let locations = getLocations()
+  let locations = getAllLocationsRaw()
   const nameToId = new Map(locations.map((location) => [location.name.toLowerCase(), location.id]))
 
   const migrated = raw.map((item) => {
@@ -411,8 +453,7 @@ export function saveInventoryItems(items: InventoryItem[]): void {
 
 export function createCategory(name: string): Category {
   const category: Category = { id: newId(), name: name.trim(), removed: false }
-  const next = [...getCategories(), category]
-  saveCategories(next)
+  saveCategories([...getAllCategoriesRaw(), category])
   return category
 }
 
@@ -423,22 +464,83 @@ export function createSubcategory(categoryId: string, name: string): Subcategory
     name: name.trim(),
     removed: false,
   }
-  const next = [...getSubcategories(), subcategory]
-  saveSubcategories(next)
+  saveSubcategories([...getAllSubcategoriesRaw(), subcategory])
   return subcategory
 }
 
 export function createLocation(name: string): Location {
   const location: Location = { id: newId(), name: name.trim(), removed: false }
-  const next = [...getLocations(), location]
-  saveLocations(next)
+  saveLocations([...getAllLocationsRaw(), location])
   return location
 }
 
-/** Видаляє категорію і всі її підкатегорії каскадно. */
+export function updateCategory(id: string, name: string): Category | undefined {
+  const all = getAllCategoriesRaw()
+  const index = all.findIndex((category) => category.id === id)
+  if (index === -1 || all[index].removed) {
+    return undefined
+  }
+  const updated: Category = { ...all[index], name: name.trim() }
+  const next = [...all]
+  next[index] = updated
+  saveCategories(next)
+  return updated
+}
+
+export function updateSubcategory(id: string, name: string): Subcategory | undefined {
+  const all = getAllSubcategoriesRaw()
+  const index = all.findIndex((subcategory) => subcategory.id === id)
+  if (index === -1 || all[index].removed) {
+    return undefined
+  }
+  const updated: Subcategory = { ...all[index], name: name.trim() }
+  const next = [...all]
+  next[index] = updated
+  saveSubcategories(next)
+  return updated
+}
+
+export function updateLocation(id: string, name: string): Location | undefined {
+  const all = getAllLocationsRaw()
+  const index = all.findIndex((location) => location.id === id)
+  if (index === -1 || all[index].removed) {
+    return undefined
+  }
+  const updated: Location = { ...all[index], name: name.trim() }
+  const next = [...all]
+  next[index] = updated
+  saveLocations(next)
+  return updated
+}
+
+/** Soft-deletes a category and all of its subcategories. */
 export function deleteCategory(id: string): void {
-  saveCategories(getCategories().filter((category) => category.id !== id))
-  saveSubcategories(getSubcategories().filter((subcategory) => subcategory.categoryId !== id))
+  saveCategories(
+    getAllCategoriesRaw().map((category) =>
+      category.id === id ? { ...category, removed: true } : category,
+    ),
+  )
+  saveSubcategories(
+    getAllSubcategoriesRaw().map((subcategory) =>
+      subcategory.categoryId === id ? { ...subcategory, removed: true } : subcategory,
+    ),
+  )
+}
+
+export function deleteSubcategory(id: string): void {
+  saveSubcategories(
+    getAllSubcategoriesRaw().map((subcategory) =>
+      subcategory.id === id ? { ...subcategory, removed: true } : subcategory,
+    ),
+  )
+}
+
+export function deleteLocation(id: string): void {
+  saveLocations(
+    getAllLocationsRaw().map((location) =>
+      location.id === id ? { ...location, removed: true } : location,
+    ),
+  )
 }
 
 export function createInventoryItem(

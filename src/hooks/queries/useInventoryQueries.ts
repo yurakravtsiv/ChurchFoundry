@@ -6,8 +6,12 @@ import {
   createInventoryItem,
   createLocation,
   createSubcategory,
+  deleteCategory,
+  deleteLocation,
+  deleteSubcategory,
   getCategories,
   getInventoryItems,
+  getInventoryReferenceLookups,
   getLocations,
   getSubcategories,
   markAsBorrowed,
@@ -16,7 +20,10 @@ import {
   returnBorrowed,
   returnToStock,
   unarchiveInventoryItem,
+  updateCategory,
   updateInventoryItem,
+  updateLocation,
+  updateSubcategory,
   writeOffItem,
 } from "@/lib/inventoryStorage"
 import type { CreateInventoryItemInput, UpdateInventoryItemInput } from "@/types/inventory"
@@ -26,6 +33,7 @@ export const inventoryQueryKeys = {
   categories: ["categories"] as const,
   subcategories: ["subcategories"] as const,
   locations: ["locations"] as const,
+  lookups: ["inventory-reference-lookups"] as const,
 }
 
 /** Temporary fake latency so skeleton/loading UI is visible during localStorage reads. */
@@ -35,6 +43,15 @@ function delay(ms: number) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms)
   })
+}
+
+async function invalidateReferenceQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.categories }),
+    queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.subcategories }),
+    queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.locations }),
+    queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.lookups }),
+  ])
 }
 
 async function invalidateInventoryQueries(queryClient: ReturnType<typeof useQueryClient>) {
@@ -78,6 +95,16 @@ export function useLocationsQuery() {
     queryFn: async () => {
       await delay(FAKE_QUERY_DELAY_MS)
       return getLocations()
+    },
+  })
+}
+
+export function useInventoryReferenceLookupsQuery() {
+  return useQuery({
+    queryKey: inventoryQueryKeys.lookups,
+    queryFn: async () => {
+      await delay(FAKE_QUERY_DELAY_MS)
+      return getInventoryReferenceLookups()
     },
   })
 }
@@ -251,7 +278,7 @@ export function useCreateCategoryMutation() {
   return useMutation({
     mutationFn: async (name: string) => createCategory(name),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.categories })
+      await invalidateReferenceQueries(queryClient)
     },
   })
 }
@@ -262,7 +289,7 @@ export function useCreateSubcategoryMutation() {
     mutationFn: async ({ categoryId, name }: { categoryId: string; name: string }) =>
       createSubcategory(categoryId, name),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.subcategories })
+      await invalidateReferenceQueries(queryClient)
     },
   })
 }
@@ -272,7 +299,67 @@ export function useCreateLocationMutation() {
   return useMutation({
     mutationFn: async (name: string) => createLocation(name),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.locations })
+      await invalidateReferenceQueries(queryClient)
+    },
+  })
+}
+
+export function useUpdateCategoryMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => updateCategory(id, name),
+    onSuccess: async () => {
+      await invalidateReferenceQueries(queryClient)
+    },
+  })
+}
+
+export function useUpdateSubcategoryMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => updateSubcategory(id, name),
+    onSuccess: async () => {
+      await invalidateReferenceQueries(queryClient)
+    },
+  })
+}
+
+export function useUpdateLocationMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => updateLocation(id, name),
+    onSuccess: async () => {
+      await invalidateReferenceQueries(queryClient)
+    },
+  })
+}
+
+export function useDeleteCategoryMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => deleteCategory(id),
+    onSuccess: async () => {
+      await invalidateReferenceQueries(queryClient)
+    },
+  })
+}
+
+export function useDeleteSubcategoryMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => deleteSubcategory(id),
+    onSuccess: async () => {
+      await invalidateReferenceQueries(queryClient)
+    },
+  })
+}
+
+export function useDeleteLocationMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => deleteLocation(id),
+    onSuccess: async () => {
+      await invalidateReferenceQueries(queryClient)
     },
   })
 }

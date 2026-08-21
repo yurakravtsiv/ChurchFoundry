@@ -53,14 +53,44 @@
     "inventory": "Inventory",
     "comingSoonMessage": "Coming soon..."
   },
-  "generateData": {
-    "menuLabel": "Generate data",
-    "title": "Generate test data?",
-    "description": "{{count}} new test inventory items will be created with varied categories, subcategories, locations, and conditions.",
-    "cancel": "Cancel",
-    "confirm": "Generate",
-    "generating": "Generating...",
-    "success": "Created {{count}} items"
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "inventory": "Inventory",
+      "generateData": "Generate data"
+    },
+    "inventory": {
+      "categories": "Categories",
+      "subcategories": "Subcategories",
+      "locations": "Locations",
+      "create": "Create",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "emptyCategories": "No categories yet",
+      "emptySubcategories": "No subcategories yet",
+      "emptyLocations": "No locations yet",
+      "emptyGroup": "None",
+      "createCategoryTitle": "New category",
+      "editCategoryTitle": "Edit category",
+      "createSubcategoryTitle": "New subcategory",
+      "editSubcategoryTitle": "Edit subcategory",
+      "createLocationTitle": "New location",
+      "editLocationTitle": "Edit location",
+      "categoryField": "Category",
+      "categoryPlaceholder": "Select a category",
+      "name": "Name",
+      "createDisabledNoCategory": "Create a category first",
+      "deleteTitle": "Delete “{{name}}”?",
+      "deleteDescription": "This will hide it from selection lists. You can still see it on items that already use it.",
+      "deleteInUseDescription": "{{count}} item(s) currently use this value. It will stay visible on those items, but it will no longer appear in dropdowns for new or other items."
+    },
+    "generateData": {
+      "title": "Generate test data?",
+      "description": "{{count}} new test inventory items will be created with varied categories, subcategories, locations, and conditions.",
+      "confirm": "Generate",
+      "generating": "Generating..."
+    }
   },
   "inventory": {
     "downloadQr": "Download as image",

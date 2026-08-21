@@ -82,11 +82,9 @@ import { TableSkeleton } from "@/components/ui/table-skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   useArchiveInventoryItemMutation,
-  useCategoriesQuery,
   useCreateInventoryItemMutation,
   useInventoryItemsQuery,
-  useLocationsQuery,
-  useSubcategoriesQuery,
+  useInventoryReferenceLookupsQuery,
 } from "@/hooks/queries/useInventoryQueries"
 import { useAuth } from "@/hooks/useAuth"
 import { useTypewriterPlaceholder } from "@/hooks/useTypewriterPlaceholder"
@@ -98,7 +96,9 @@ import {
 import { loadInventoryColumnPrefs, saveInventoryColumnPrefs } from "@/lib/inventoryColumnPrefs"
 import { exportToPdf, exportToXlsx, prepareExportData } from "@/lib/inventoryExport"
 import { availabilityLabel, conditionLabel } from "@/lib/inventoryLabels"
+import { optionsUsedByItems } from "@/lib/inventoryReferenceOptions"
 import { itemMatchesSearch } from "@/lib/inventorySearch"
+import { filterVisible } from "@/lib/removedEntity"
 import { cn } from "@/lib/utils"
 import type { AvailabilityStatus, InventoryItem, ItemCondition } from "@/types/inventory"
 
@@ -327,34 +327,24 @@ export function InventoryPage() {
     refetch: refetchItems,
   } = useInventoryItemsQuery()
   const {
-    data: categories = [],
-    isLoading: categoriesLoading,
-    isError: categoriesError,
-    refetch: refetchCategories,
-  } = useCategoriesQuery()
-  const {
-    data: subcategories = [],
-    isLoading: subcategoriesLoading,
-    isError: subcategoriesError,
-    refetch: refetchSubcategories,
-  } = useSubcategoriesQuery()
-  const {
-    data: locations = [],
-    isLoading: locationsLoading,
-    isError: locationsError,
-    refetch: refetchLocations,
-  } = useLocationsQuery()
+    data: lookups,
+    isLoading: lookupsLoading,
+    isError: lookupsError,
+    refetch: refetchLookups,
+  } = useInventoryReferenceLookupsQuery()
   const createItemMutation = useCreateInventoryItemMutation()
   const archiveItemMutation = useArchiveInventoryItemMutation()
 
-  const isLoading = itemsLoading || categoriesLoading || subcategoriesLoading || locationsLoading
-  const isError = itemsError || categoriesError || subcategoriesError || locationsError
+  const categories = lookups?.categories ?? []
+  const subcategories = lookups?.subcategories ?? []
+  const locations = lookups?.locations ?? []
+
+  const isLoading = itemsLoading || lookupsLoading
+  const isError = itemsError || lookupsError
   const refetchAll = useCallback(() => {
     void refetchItems()
-    void refetchCategories()
-    void refetchSubcategories()
-    void refetchLocations()
-  }, [refetchCategories, refetchItems, refetchLocations, refetchSubcategories])
+    void refetchLookups()
+  }, [refetchItems, refetchLookups])
 
   const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }])
   const [search, setSearch] = useState("")
@@ -495,12 +485,37 @@ export function InventoryPage() {
     return new Map(locations.map((location) => [location.id, location.name]))
   }, [locations])
 
+  const categoryFilterOptions = useMemo(() => {
+    return optionsUsedByItems(
+      filterVisible(categories),
+      categories,
+      items.map((item) => item.categoryId),
+    )
+  }, [categories, items])
+
+  const locationFilterOptions = useMemo(() => {
+    return optionsUsedByItems(
+      filterVisible(locations),
+      locations,
+      items.map((item) => item.locationId),
+    )
+  }, [items, locations])
+
   const filteredSubcategories = useMemo(() => {
     if (categoryFilter === "all") {
       return []
     }
-    return subcategories.filter((subcategory) => subcategory.categoryId === categoryFilter)
-  }, [categoryFilter, subcategories])
+    const visible = filterVisible(subcategories).filter(
+      (subcategory) => subcategory.categoryId === categoryFilter,
+    )
+    const lookupForCategory = subcategories.filter(
+      (subcategory) => subcategory.categoryId === categoryFilter,
+    )
+    const usedIds = items
+      .filter((item) => item.categoryId === categoryFilter)
+      .map((item) => item.subcategoryId)
+    return optionsUsedByItems(visible, lookupForCategory, usedIds)
+  }, [categoryFilter, items, subcategories])
 
   const searchableColumnIds = useMemo(() => getSearchableColumnIds(columnPrefs), [columnPrefs])
 
@@ -1411,7 +1426,7 @@ export function InventoryPage() {
                     setCategoryFilter(value)
                     setSubcategoryFilter("all")
                   }}
-                  disabled={categoriesLoading}
+                  disabled={lookupsLoading}
                 >
                   <SelectTrigger
                     id="inventory-filter-category"
@@ -1422,13 +1437,13 @@ export function InventoryPage() {
                   >
                     <SelectValue
                       placeholder={
-                        categoriesLoading ? t("common.loading") : t("inventory.filters.all")
+                        lookupsLoading ? t("common.loading") : t("inventory.filters.all")
                       }
                     />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                    {categories.map((category) => (
+                    {categoryFilterOptions.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
                       </SelectItem>
@@ -1459,7 +1474,7 @@ export function InventoryPage() {
                   <Select
                     value={subcategoryFilter}
                     onValueChange={setSubcategoryFilter}
-                    disabled={categoryFilter === "all" || subcategoriesLoading}
+                    disabled={categoryFilter === "all" || lookupsLoading}
                   >
                     <SelectTrigger
                       id="inventory-filter-subcategory"
@@ -1471,7 +1486,7 @@ export function InventoryPage() {
                     >
                       <SelectValue
                         placeholder={
-                          subcategoriesLoading ? t("common.loading") : t("inventory.filters.all")
+                          lookupsLoading ? t("common.loading") : t("inventory.filters.all")
                         }
                       />
                     </SelectTrigger>
@@ -1536,7 +1551,7 @@ export function InventoryPage() {
                 <Select
                   value={locationFilter}
                   onValueChange={setLocationFilter}
-                  disabled={locationsLoading}
+                  disabled={lookupsLoading}
                 >
                   <SelectTrigger
                     id="inventory-filter-location"
@@ -1547,13 +1562,13 @@ export function InventoryPage() {
                   >
                     <SelectValue
                       placeholder={
-                        locationsLoading ? t("common.loading") : t("inventory.filters.all")
+                        lookupsLoading ? t("common.loading") : t("inventory.filters.all")
                       }
                     />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
-                    {locations.map((location) => (
+                    {locationFilterOptions.map((location) => (
                       <SelectItem key={location.id} value={location.id}>
                         {location.name}
                       </SelectItem>

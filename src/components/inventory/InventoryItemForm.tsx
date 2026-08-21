@@ -23,10 +23,12 @@ import {
   useCategoriesQuery,
   useCreateCategoryMutation,
   useCreateLocationMutation,
+  useInventoryReferenceLookupsQuery,
   useLocationsQuery,
   useSubcategoriesQuery,
 } from "@/hooks/queries/useInventoryQueries"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
+import { optionsWithCurrent } from "@/lib/inventoryReferenceOptions"
 import { compressImage } from "@/lib/inventoryStorage"
 import { cn } from "@/lib/utils"
 import type {
@@ -157,6 +159,10 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
       isError: locationsError,
       refetch: refetchLocations,
     } = useLocationsQuery()
+    const { data: lookups, isLoading: lookupsLoading } = useInventoryReferenceLookupsQuery()
+    const lookupCategories = lookups?.categories ?? []
+    const lookupSubcategories = lookups?.subcategories ?? []
+    const lookupLocations = lookups?.locations ?? []
     const [createCategoryOpen, setCreateCategoryOpen] = useState(false)
     const [createSubcategoryOpen, setCreateSubcategoryOpen] = useState(false)
     const [createLocationOpen, setCreateLocationOpen] = useState(false)
@@ -345,12 +351,25 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
     }, [isDirty, onDirtyChange])
 
     const categoryId = watch("categoryId")
+    const subcategoryId = watch("subcategoryId")
+    const locationId = watch("locationId")
     const photos = watch("photos") ?? []
     const avatarPhotoId = watch("avatarPhotoId")
 
-    const filteredSubcategories = useMemo(
-      () => subcategories.filter((subcategory) => subcategory.categoryId === categoryId),
-      [categoryId, subcategories],
+    const categoryOptions = useMemo(
+      () => optionsWithCurrent(categories, lookupCategories, categoryId),
+      [categories, categoryId, lookupCategories],
+    )
+    const filteredSubcategories = useMemo(() => {
+      const visible = subcategories.filter((subcategory) => subcategory.categoryId === categoryId)
+      const lookupForCategory = lookupSubcategories.filter(
+        (subcategory) => subcategory.categoryId === categoryId,
+      )
+      return optionsWithCurrent(visible, lookupForCategory, subcategoryId)
+    }, [categoryId, lookupSubcategories, subcategoryId, subcategories])
+    const locationOptions = useMemo(
+      () => optionsWithCurrent(locations, lookupLocations, locationId),
+      [locationId, locations, lookupLocations],
     )
 
     // Reset subcategory only when the user actually changes category.
@@ -403,17 +422,18 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
       setLocationSelectOpen(false)
     }, [locations, setValue])
 
-    // If selected category no longer exists, clear both selects.
+    // If selected category no longer exists at all, clear both selects.
+    // Soft-deleted categories stay as the current value via lookups.
     useEffect(() => {
-      if (categoriesLoading || pendingCategoryIdRef.current) {
+      if (categoriesLoading || lookupsLoading || pendingCategoryIdRef.current) {
         return
       }
-      if (categoryId && !categories.some((category) => category.id === categoryId)) {
+      if (categoryId && !lookupCategories.some((category) => category.id === categoryId)) {
         setValue("categoryId", "", { shouldValidate: false })
         setValue("subcategoryId", "", { shouldValidate: false })
         clearErrors(["categoryId", "subcategoryId"])
       }
-    }, [categories, categoriesLoading, categoryId, clearErrors, setValue])
+    }, [categoriesLoading, categoryId, clearErrors, lookupCategories, lookupsLoading, setValue])
 
     const scrollToFirstError = () => {
       // Wait for error messages to paint before scrolling.
@@ -580,7 +600,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((category) => (
+                        {categoryOptions.map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             {category.name}
                           </SelectItem>
@@ -759,7 +779,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {locations.map((location) => (
+                        {locationOptions.map((location) => (
                           <SelectItem key={location.id} value={location.id}>
                             {location.name}
                           </SelectItem>
@@ -950,7 +970,11 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
         <CreateSubcategoryDialog
           open={createSubcategoryOpen}
           categoryId={categoryId}
-          categoryName={categories.find((category) => category.id === categoryId)?.name ?? ""}
+          categoryName={
+            lookupCategories.find((category) => category.id === categoryId)?.name ??
+            categories.find((category) => category.id === categoryId)?.name ??
+            ""
+          }
           onOpenChange={setCreateSubcategoryOpen}
           onCreated={(subcategory) => {
             pendingSubcategoryIdRef.current = subcategory.id

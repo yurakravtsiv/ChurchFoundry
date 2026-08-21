@@ -14,6 +14,7 @@ import { DashboardPage } from "@/pages/DashboardPage"
 import { InventoryItemDetailPage } from "@/pages/InventoryItemDetailPage"
 import { InventoryPage } from "@/pages/InventoryPage"
 import { LoginPage } from "@/pages/LoginPage"
+import { SettingsPage } from "@/pages/SettingsPage"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +40,7 @@ const router = createBrowserRouter(
           <Route path="/calendar" element={<ComingSoonPage />} />
           <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/inventory/:id" element={<InventoryItemDetailPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>
     </>,

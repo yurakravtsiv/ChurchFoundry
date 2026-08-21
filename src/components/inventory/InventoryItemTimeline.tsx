@@ -5,11 +5,7 @@ import { EventTimelineCard } from "@/components/inventory/EventTimelineCard"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useEventsForEntityQuery } from "@/hooks/queries/useEventsQueries"
-import {
-  useCategoriesQuery,
-  useLocationsQuery,
-  useSubcategoriesQuery,
-} from "@/hooks/queries/useInventoryQueries"
+import { useInventoryReferenceLookupsQuery } from "@/hooks/queries/useInventoryQueries"
 import type { EventTaxonomyLookups } from "@/lib/eventFieldDisplay"
 import { cn } from "@/lib/utils"
 import type { EventObjectType } from "@/types/events"
@@ -39,9 +35,10 @@ export function InventoryItemTimeline({
 }: InventoryItemTimelineProps) {
   const { t } = useTranslation()
   const { data: events = [], isLoading } = useEventsForEntityQuery(objectId, entityId)
-  const { data: categories = [] } = useCategoriesQuery()
-  const { data: subcategories = [] } = useSubcategoriesQuery()
-  const { data: locations = [] } = useLocationsQuery()
+  const { data: referenceLookups } = useInventoryReferenceLookupsQuery()
+  const categories = referenceLookups?.categories ?? []
+  const subcategories = referenceLookups?.subcategories ?? []
+  const locations = referenceLookups?.locations ?? []
 
   const lookups = useMemo<EventTaxonomyLookups>(
     () => ({

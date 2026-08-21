@@ -53,14 +53,44 @@
     "inventory": "Інвентар",
     "comingSoonMessage": "Незабаром..."
   },
-  "generateData": {
-    "menuLabel": "Генерація даних",
-    "title": "Згенерувати тестові дані?",
-    "description": "Буде створено {{count}} нових тестових предметів інвентарю з різними категоріями, підкатегоріями, локаціями та станами.",
-    "cancel": "Скасувати",
-    "confirm": "Згенерувати",
-    "generating": "Генерація...",
-    "success": "Створено {{count}} предметів"
+  "settings": {
+    "title": "Налаштування",
+    "tabs": {
+      "inventory": "Інвентар",
+      "generateData": "Генерація даних"
+    },
+    "inventory": {
+      "categories": "Категорії",
+      "subcategories": "Підкатегорії",
+      "locations": "Локації",
+      "create": "Створити",
+      "edit": "Редагувати",
+      "delete": "Видалити",
+      "save": "Зберегти",
+      "emptyCategories": "Категорій ще немає",
+      "emptySubcategories": "Підкатегорій ще немає",
+      "emptyLocations": "Локацій ще немає",
+      "emptyGroup": "Немає",
+      "createCategoryTitle": "Нова категорія",
+      "editCategoryTitle": "Редагувати категорію",
+      "createSubcategoryTitle": "Нова підкатегорія",
+      "editSubcategoryTitle": "Редагувати підкатегорію",
+      "createLocationTitle": "Нова локація",
+      "editLocationTitle": "Редагувати локацію",
+      "categoryField": "Категорія",
+      "categoryPlaceholder": "Оберіть категорію",
+      "name": "Назва",
+      "createDisabledNoCategory": "Спочатку створіть категорію",
+      "deleteTitle": "Видалити «{{name}}»?",
+      "deleteDescription": "Воно зникне зі списків вибору. На предметах, які вже його використовують, значення залишиться видимим.",
+      "deleteInUseDescription": "{{count}} предмет(ів) зараз використовують це значення. Воно залишиться видимим на цих предметах, але його не можна буде вибрати в дропдауні для нових чи інших предметів."
+    },
+    "generateData": {
+      "title": "Згенерувати тестові дані?",
+      "description": "Буде створено {{count}} нових тестових предметів інвентарю з різними категоріями, підкатегоріями, локаціями та станами.",
+      "confirm": "Згенерувати",
+      "generating": "Генерація..."
+    }
   },
   "inventory": {
     "downloadQr": "Завантажити як зображення",

@@ -20,6 +20,10 @@ type HeaderProps = {
 function useCurrentPageLabelKey() {
   const { pathname } = useLocation()
 
+  if (pathname === "/settings" || pathname.startsWith("/settings/")) {
+    return "settings.title"
+  }
+
   const match = navItems.find((item) =>
     item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`),
   )
