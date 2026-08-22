@@ -5,10 +5,7 @@ import { Link, useParams } from "react-router"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useChurchProfileQuery } from "@/hooks/queries/useChurchProfileQueries"
-
-function mapsSearchUrl(address: string) {
-  return `https://www.openstreetmap.org/search?query=${encodeURIComponent(address)}`
-}
+import { mapsSearchUrl } from "@/lib/addressLookup"
 
 export function PublicChurchPage() {
   const { t } = useTranslation()

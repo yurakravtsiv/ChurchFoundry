@@ -4,6 +4,9 @@ export type AddressSuggestion = {
 }
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+const STREET_ADDRESS_TYPES = new Set(["road", "pedestrian", "path", "street"])
+const HOUSE_NUMBER_IN_QUERY =
+  /(?:^|[\s,.;])(\d{1,4}(?:[/-]\d{1,3})?(?:-?[а-яА-ЯіїєґІЇЄҐa-zA-Z])?)(?=$|[\s,.;])/giu
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
@@ -28,15 +31,33 @@ function uniqueParts(parts: Array<string | undefined>): string[] {
   return unique
 }
 
+function isStreetLevel(item: Record<string, unknown>, road: string): boolean {
+  const addressType = readString(item.addresstype)
+  if (addressType) {
+    return STREET_ADDRESS_TYPES.has(addressType)
+  }
+  return Boolean(road)
+}
+
 export function nominatimLanguage(lang: string): "uk" | "en" {
   return lang.toLowerCase().startsWith("uk") ? "uk" : "en"
 }
 
-export function formatNominatimAddress(item: Record<string, unknown>): string {
+export function extractHouseNumber(query: string): string | undefined {
+  const matches = [...query.matchAll(HOUSE_NUMBER_IN_QUERY)]
+  return matches.at(-1)?.[1]
+}
+
+export function formatNominatimAddress(
+  item: Record<string, unknown>,
+  houseNumberFromQuery?: string,
+): string {
   const address = isRecord(item.address) ? item.address : {}
-  const house = readString(address.house_number)
   const road =
     readString(address.road) || readString(address.pedestrian) || readString(address.street)
+  const osmHouse = readString(address.house_number)
+  const house =
+    osmHouse || (houseNumberFromQuery && isStreetLevel(item, road) ? houseNumberFromQuery : "")
   const streetLine = uniqueParts([road, house]).join(" ")
   const name = readString(item.name)
   const city =
@@ -59,7 +80,10 @@ export function formatNominatimAddress(item: Record<string, unknown>): string {
   return formatted || readString(item.display_name)
 }
 
-export function parseNominatimResults(data: unknown): AddressSuggestion[] {
+export function parseNominatimResults(
+  data: unknown,
+  houseNumberFromQuery?: string,
+): AddressSuggestion[] {
   if (!Array.isArray(data)) {
     return []
   }
@@ -71,7 +95,7 @@ export function parseNominatimResults(data: unknown): AddressSuggestion[] {
     if (!isRecord(item)) {
       continue
     }
-    const label = formatNominatimAddress(item)
+    const label = formatNominatimAddress(item, houseNumberFromQuery)
     if (!label || seenLabels.has(label)) {
       continue
     }
@@ -88,6 +112,30 @@ export function parseNominatimResults(data: unknown): AddressSuggestion[] {
   return suggestions
 }
 
+export function withTypedAddressFallback(
+  query: string,
+  suggestions: AddressSuggestion[],
+): AddressSuggestion[] {
+  const trimmed = query.trim()
+  if (!trimmed) {
+    return suggestions
+  }
+
+  const alreadyListed = suggestions.some(
+    (suggestion) =>
+      suggestion.label.localeCompare(trimmed, undefined, { sensitivity: "accent" }) === 0,
+  )
+  if (alreadyListed) {
+    return suggestions
+  }
+
+  return [{ id: `typed:${trimmed}`, label: trimmed }, ...suggestions]
+}
+
+export function mapsSearchUrl(address: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+}
+
 export async function searchAddresses(
   query: string,
   lang: string,
@@ -99,6 +147,7 @@ export async function searchAddresses(
   }
 
   const language = nominatimLanguage(lang)
+  const houseNumberFromQuery = extractHouseNumber(trimmed)
   const params = new URLSearchParams({
     q: trimmed,
     format: "jsonv2",
@@ -118,5 +167,8 @@ export async function searchAddresses(
     throw new Error("Address search failed")
   }
 
-  return parseNominatimResults(await response.json())
+  return withTypedAddressFallback(
+    trimmed,
+    parseNominatimResults(await response.json(), houseNumberFromQuery),
+  )
 }
