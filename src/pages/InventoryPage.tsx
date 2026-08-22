@@ -99,6 +99,14 @@ import { exportToPdf, exportToXlsx, prepareExportData } from "@/lib/inventoryExp
 import { availabilityLabel, conditionLabel } from "@/lib/inventoryLabels"
 import { optionsUsedByItems } from "@/lib/inventoryReferenceOptions"
 import { itemMatchesSearch } from "@/lib/inventorySearch"
+import {
+  DEFAULT_INVENTORY_SORTING,
+  DEFAULT_INVENTORY_TABLE_VIEW,
+  type InventoryTableViewState,
+  isDefaultInventorySorting,
+  loadInventoryTableView,
+  saveInventoryTableView,
+} from "@/lib/inventoryTableView"
 import { compareLocaleText, sortByName } from "@/lib/localeCompare"
 import { filterVisible } from "@/lib/removedEntity"
 import { cn } from "@/lib/utils"
@@ -311,6 +319,20 @@ function buildInventoryFilterSearch(availabilityFilter: string, conditionFilter:
   return serialized ? `?${serialized}` : ""
 }
 
+function getInitialInventoryTableView(locationSearch: string): InventoryTableViewState {
+  const stored = loadInventoryTableView()
+  const params = new URLSearchParams(locationSearch)
+  return {
+    ...stored,
+    availabilityFilter: params.has("availability")
+      ? initialAvailabilityFilter(params)
+      : stored.availabilityFilter,
+    conditionFilter: params.has("condition")
+      ? initialConditionFilter(params)
+      : stored.conditionFilter,
+  }
+}
+
 export function InventoryPage() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
@@ -345,26 +367,23 @@ export function InventoryPage() {
     void refetchLookups()
   }, [refetchItems, refetchLookups])
 
-  const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }])
-  const [search, setSearch] = useState("")
+  const [tableView] = useState(() => getInitialInventoryTableView(locationSearch))
+  const [sorting, setSorting] = useState<SortingState>(tableView.sorting)
+  const [search, setSearch] = useState(tableView.search)
   const searchExampleWords = useMemo(
     () =>
       i18n.language.startsWith("en") ? [...SEARCH_EXAMPLE_WORDS.en] : [...SEARCH_EXAMPLE_WORDS.uk],
     [i18n.language],
   )
   const searchTypewriterText = useTypewriterPlaceholder(searchExampleWords)
-  const [categoryFilter, setCategoryFilter] = useState("all")
-  const [subcategoryFilter, setSubcategoryFilter] = useState("all")
-  const [availabilityFilter, setAvailabilityFilter] = useState(() =>
-    initialAvailabilityFilter(new URLSearchParams(locationSearch)),
-  )
-  const [locationFilter, setLocationFilter] = useState("all")
-  const [responsibleFilter, setResponsibleFilter] = useState("all")
-  const [conditionFilter, setConditionFilter] = useState(() =>
-    initialConditionFilter(new URLSearchParams(locationSearch)),
-  )
-  const [showArchived, setShowArchived] = useState(false)
-  const [showWrittenOff, setShowWrittenOff] = useState(false)
+  const [categoryFilter, setCategoryFilter] = useState(tableView.categoryFilter)
+  const [subcategoryFilter, setSubcategoryFilter] = useState(tableView.subcategoryFilter)
+  const [availabilityFilter, setAvailabilityFilter] = useState(tableView.availabilityFilter)
+  const [locationFilter, setLocationFilter] = useState(tableView.locationFilter)
+  const [responsibleFilter, setResponsibleFilter] = useState(tableView.responsibleFilter)
+  const [conditionFilter, setConditionFilter] = useState(tableView.conditionFilter)
+  const [showArchived, setShowArchived] = useState(tableView.showArchived)
+  const [showWrittenOff, setShowWrittenOff] = useState(tableView.showWrittenOff)
   const [columnPrefs, setColumnPrefs] = useState<InventoryColumnPrefs>(loadInventoryColumnPrefs)
   const [columnSettingsOpen, setColumnSettingsOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
@@ -425,11 +444,41 @@ export function InventoryPage() {
     [i18n.language],
   )
 
-  // Keep filters in sync when arriving via dashboard deep-links or sidebar (same route instance).
+  useEffect(() => {
+    saveInventoryTableView({
+      sorting,
+      search,
+      categoryFilter,
+      subcategoryFilter,
+      availabilityFilter,
+      locationFilter,
+      responsibleFilter,
+      conditionFilter,
+      showArchived,
+      showWrittenOff,
+    })
+  }, [
+    availabilityFilter,
+    categoryFilter,
+    conditionFilter,
+    locationFilter,
+    responsibleFilter,
+    search,
+    showArchived,
+    showWrittenOff,
+    sorting,
+    subcategoryFilter,
+  ])
+
+  // Dashboard tiles set query params; empty /inventory keeps the stored filters.
   useEffect(() => {
     const params = new URLSearchParams(locationSearch)
-    setConditionFilter(initialConditionFilter(params))
-    setAvailabilityFilter(initialAvailabilityFilter(params))
+    if (params.has("availability")) {
+      setAvailabilityFilter(initialAvailabilityFilter(params))
+    }
+    if (params.has("condition")) {
+      setConditionFilter(initialConditionFilter(params))
+    }
   }, [locationSearch])
 
   const syncInventoryFilterSearchToUrl = useCallback(
@@ -647,7 +696,7 @@ export function InventoryPage() {
       if (next.length === prev.length) {
         return prev
       }
-      return next.length > 0 ? next : [{ id: "name", desc: false }]
+      return next.length > 0 ? next : [...DEFAULT_INVENTORY_SORTING]
     })
   }, [visibleColumnIds])
 
@@ -1327,18 +1376,20 @@ export function InventoryPage() {
     responsibleFilter !== "all" ||
     conditionFilter !== "all" ||
     showArchived ||
-    showWrittenOff
+    showWrittenOff ||
+    !isDefaultInventorySorting(sorting)
 
   const clearAllFilters = () => {
-    setSearch("")
-    setCategoryFilter("all")
-    setSubcategoryFilter("all")
-    setAvailabilityFilter("all")
-    setLocationFilter("all")
-    setResponsibleFilter("all")
-    setConditionFilter("all")
-    setShowArchived(false)
-    setShowWrittenOff(false)
+    setSorting([...DEFAULT_INVENTORY_SORTING])
+    setSearch(DEFAULT_INVENTORY_TABLE_VIEW.search)
+    setCategoryFilter(DEFAULT_INVENTORY_TABLE_VIEW.categoryFilter)
+    setSubcategoryFilter(DEFAULT_INVENTORY_TABLE_VIEW.subcategoryFilter)
+    setAvailabilityFilter(DEFAULT_INVENTORY_TABLE_VIEW.availabilityFilter)
+    setLocationFilter(DEFAULT_INVENTORY_TABLE_VIEW.locationFilter)
+    setResponsibleFilter(DEFAULT_INVENTORY_TABLE_VIEW.responsibleFilter)
+    setConditionFilter(DEFAULT_INVENTORY_TABLE_VIEW.conditionFilter)
+    setShowArchived(DEFAULT_INVENTORY_TABLE_VIEW.showArchived)
+    setShowWrittenOff(DEFAULT_INVENTORY_TABLE_VIEW.showWrittenOff)
     if (locationSearch) {
       navigate("/inventory", { replace: true })
     }

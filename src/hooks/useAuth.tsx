@@ -9,6 +9,7 @@ import {
   useState,
 } from "react"
 
+import { clearInventoryTableView } from "@/lib/inventoryTableView"
 import { supabase } from "@/lib/supabase"
 
 type AuthContextValue = {
@@ -52,7 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === "SIGNED_OUT") {
+        clearInventoryTableView()
+      }
       setSession(nextSession)
       setUser(nextSession?.user ?? null)
       setIsLoading(false)
@@ -65,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = useCallback(async () => {
+    clearInventoryTableView()
     await supabase.auth.signOut()
   }, [])
 
