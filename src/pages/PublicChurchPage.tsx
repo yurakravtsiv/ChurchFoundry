@@ -1,7 +1,7 @@
-import { Mail, MapPin, Phone } from "lucide-react"
+import { Building2, Mail, MapPin, Phone } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Link, useParams } from "react-router"
-import { ChurchLogo } from "@/components/ChurchLogo"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useChurchProfileQuery } from "@/hooks/queries/useChurchProfileQueries"
@@ -15,8 +15,7 @@ export function PublicChurchPage() {
   const { id } = useParams()
   const { data: profile } = useChurchProfileQuery()
 
-  const name = profile?.name.trim() || t("app.name")
-  const logoSrc = profile?.logoDataUrl || "/favicon.svg"
+  const name = profile?.name.trim() ?? ""
   const address = profile?.address.trim() ?? ""
   const phone = profile?.phone.trim() ?? ""
   const email = profile?.email.trim() ?? ""
@@ -27,12 +26,26 @@ export function PublicChurchPage() {
     <main className="mx-auto flex min-h-[var(--app-height)] w-full max-w-md flex-col justify-center bg-background px-4 py-8 pt-[max(2rem,env(safe-area-inset-top,0px))]">
       <Card>
         <CardHeader className="space-y-4 text-center">
-          <ChurchLogo src={logoSrc} size={64} roundedClassName="rounded-2xl" className="mx-auto" />
-          <CardTitle className="text-2xl font-bold tracking-tight">{name}</CardTitle>
+          <img
+            src="/favicon.svg"
+            alt=""
+            width={64}
+            height={64}
+            className="mx-auto size-16 rounded-2xl"
+          />
+          <CardTitle className="text-2xl font-bold tracking-tight">{t("app.name")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {address || phone || email ? (
+          {name || address || phone || email ? (
             <ul className="space-y-3 text-sm">
+              {name ? (
+                <li className="flex items-start gap-3">
+                  <Building2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 break-words">
+                    {t("church.public.nameWithLabel", { name })}
+                  </span>
+                </li>
+              ) : null}
               {address ? (
                 <li className="flex items-start gap-3">
                   <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

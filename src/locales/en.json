@@ -62,7 +62,7 @@
     },
     "church": {
       "title": "Church",
-      "description": "Shown in the header, on inventory QR codes, and to guests who scan an item.",
+      "description": "Shown to guests who scan an inventory QR code. The logo appears at the center of those QR codes.",
       "name": "Name",
       "namePlaceholder": "Church name",
       "address": "Address",
@@ -75,7 +75,7 @@
       "email": "Email",
       "emailPlaceholder": "Email",
       "logo": "Logo",
-      "logoHint": "Square image works best. Used in the header and at the center of inventory QR codes.",
+      "logoHint": "Square image works best. Used at the center of inventory QR codes.",
       "logoCompressing": "Compressing logo…",
       "removeLogo": "Remove logo",
       "save": "Save",
@@ -404,7 +404,8 @@
   },
   "church": {
     "public": {
-      "openMap": "Open in maps"
+      "openMap": "Open in maps",
+      "nameWithLabel": "Church {{name}}"
     }
   },
   "auth": {
