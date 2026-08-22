@@ -93,18 +93,27 @@ export function InventoryDashboardSection() {
             }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           >
-            <SplitDashboardWidget
-              colorVariant="warning"
-              onClick={() => navigate("/inventory?availability=borrowed")}
-              left={{
-                title: t("inventory.availability.borrowed"),
-                count: borrowedCount,
-              }}
-              right={{
-                title: t("inventory.availability.overdueReturn"),
-                count: overdueReturnCount,
-              }}
-            />
+            {overdueReturnCount > 0 ? (
+              <SplitDashboardWidget
+                colorVariant="warning"
+                onClick={() => navigate("/inventory?availability=borrowed")}
+                left={{
+                  title: t("inventory.availability.borrowed"),
+                  count: borrowedCount,
+                }}
+                right={{
+                  title: t("inventory.availability.overdueReturn"),
+                  count: overdueReturnCount,
+                }}
+              />
+            ) : (
+              <DashboardWidget
+                title={t("inventory.availability.borrowed")}
+                count={borrowedCount}
+                colorVariant="warning"
+                onClick={() => navigate("/inventory?availability=borrowed")}
+              />
+            )}
           </motion.div>
         </motion.div>
       )}
