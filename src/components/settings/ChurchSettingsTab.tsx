@@ -7,14 +7,7 @@ import { z } from "zod"
 import { ChurchLogo } from "@/components/ChurchLogo"
 import { AddressLookupField } from "@/components/settings/AddressLookupField"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -147,7 +140,6 @@ export function ChurchSettingsTab() {
     <Card>
       <form onSubmit={onSubmit} noValidate>
         <CardHeader className="space-y-1.5 px-4 py-4">
-          <CardTitle className="text-base">{t("settings.church.title")}</CardTitle>
           <CardDescription>{t("settings.church.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 px-4 pt-0">
