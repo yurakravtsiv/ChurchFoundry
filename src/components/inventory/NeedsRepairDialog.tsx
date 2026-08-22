@@ -139,7 +139,7 @@ export function NeedsRepairDialog({ item, open, onOpenChange, onConfirm }: Needs
           </DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={(event) => void submit(event)}>
+        <form className="space-y-4" noValidate onSubmit={(event) => void submit(event)}>
           <div className="space-y-2">
             <Label htmlFor="needs-repair-quantity">{t("inventory.needsRepair.quantity")} *</Label>
             <Input

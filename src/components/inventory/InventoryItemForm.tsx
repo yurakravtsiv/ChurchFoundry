@@ -363,7 +363,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
         name: initialData?.name ?? "",
         categoryId: initialData?.categoryId ?? "",
         subcategoryId: initialData?.subcategoryId ?? "",
-        quantity: initialData?.quantity ?? 1,
+        quantity: initialData?.quantity ?? "",
         locationId: initialData?.locationId ?? "",
         responsibleId: initialData?.responsibleId ?? "",
         availability: "in_church" as const,
@@ -643,6 +643,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
         <form
           ref={formRef}
           id={id}
+          noValidate
           className={cn(
             isPageLayout
               ? "block"

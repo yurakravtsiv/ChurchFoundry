@@ -139,7 +139,7 @@ export function BorrowDialog({ item, open, onOpenChange, onConfirm }: BorrowDial
           </DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={(event) => void submit(event)}>
+        <form className="space-y-4" noValidate onSubmit={(event) => void submit(event)}>
           <div className="space-y-2">
             <Label htmlFor="borrow-quantity">{t("inventory.borrow.quantity")} *</Label>
             <Input

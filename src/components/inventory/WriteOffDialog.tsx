@@ -139,7 +139,7 @@ export function WriteOffDialog({ item, open, onOpenChange, onConfirm }: WriteOff
           </DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={(event) => void submit(event)}>
+        <form className="space-y-4" noValidate onSubmit={(event) => void submit(event)}>
           <div className="space-y-2">
             <Label htmlFor="write-off-quantity">{t("inventory.writeOff.quantity")} *</Label>
             <Input
