@@ -1430,7 +1430,6 @@ export function InventoryPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
                       onClick={(event) => {
                         event.currentTarget.blur()
                         setColumnSettingsOpen(true)
@@ -1447,7 +1446,6 @@ export function InventoryPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
                       onClick={(event) => {
                         // Blur so the tooltip does not stick open after click (Radix keeps it on focus).
                         event.currentTarget.blur()
@@ -1465,7 +1463,6 @@ export function InventoryPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
                       onClick={(event) => {
                         event.currentTarget.blur()
                         void runExport("pdf")
