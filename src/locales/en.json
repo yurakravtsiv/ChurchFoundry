@@ -63,7 +63,7 @@
     },
     "church": {
       "title": "Church",
-      "description": "Shown to guests who scan an inventory QR code. The logo appears at the center of those QR codes.",
+      "description": "This information is shown to guests who scan an inventory QR code",
       "name": "Name",
       "namePlaceholder": "Church name",
       "address": "Address",
