@@ -25,11 +25,11 @@ import type {
 } from "@/types/inventory"
 
 const SEED_ITEM_COUNT = 20
-/** ~15% of seed items — disjoint from repair batch candidates. */
+/** Disjoint from repair/borrow picks; the whole quantity is written off. */
 const WRITE_OFF_BATCH_COUNT = 3
-/** ~15% of seed items — disjoint from write-off/repair batch candidates. */
+/** Disjoint from write-off/borrow picks; the whole quantity is marked for repair. */
 const REPAIR_BATCH_COUNT = 3
-/** ~15% of seed items — disjoint from write-off/repair batch candidates. */
+/** Disjoint from write-off/repair picks; the whole quantity is borrowed. */
 const BORROW_BATCH_COUNT = 3
 /** Share of created items that get a follow-up edit (excluding write-off/repair picks). */
 const SEED_UPDATE_RATIO = 0.3
@@ -166,11 +166,14 @@ function buildRecentIsoDate(seed: number, minDaysAgo: number, maxDaysAgo: number
   return `${year}-${month}-${day}`
 }
 
-function pickSplitQuantity(maxQuantity: number, seed: number): number {
-  if (maxQuantity <= 0) {
-    return 0
-  }
-  return 1 + pickIndex(maxQuantity, seed)
+function isCleanActiveItem(item: InventoryItem): boolean {
+  return (
+    item.condition === "good" &&
+    item.availability === "in_church" &&
+    item.quantity > 0 &&
+    item.removed !== true &&
+    item.archived !== true
+  )
 }
 
 function isTechCategory(categoryName: string): boolean {
@@ -343,18 +346,13 @@ function generateSeedUpdates(
 function generateWriteOffBatches(candidates: readonly InventoryItem[], userEmail: string): void {
   for (const [batchIndex, seedItem] of candidates.entries()) {
     const current = getInventoryItemById(seedItem.id)
-    if (!current || current.quantity <= 0) {
-      continue
-    }
-
-    const quantityToWriteOff = pickSplitQuantity(current.quantity, batchIndex + 501)
-    if (quantityToWriteOff <= 0) {
+    if (!current || !isCleanActiveItem(current)) {
       continue
     }
 
     writeOffItem(
       current.id,
-      quantityToWriteOff,
+      current.quantity,
       buildRecentIsoDate(batchIndex + 601, 30, 60),
       pickOne(writeOffReasons, batchIndex + 701),
       userEmail,
@@ -365,18 +363,13 @@ function generateWriteOffBatches(candidates: readonly InventoryItem[], userEmail
 function generateBorrowBatches(candidates: readonly InventoryItem[], userEmail: string): void {
   for (const [batchIndex, seedItem] of candidates.entries()) {
     const current = getInventoryItemById(seedItem.id)
-    if (!current || current.quantity <= 0) {
-      continue
-    }
-
-    const quantityToBorrow = pickSplitQuantity(current.quantity, batchIndex + 1101)
-    if (quantityToBorrow <= 0) {
+    if (!current || !isCleanActiveItem(current)) {
       continue
     }
 
     markAsBorrowed(
       current.id,
-      quantityToBorrow,
+      current.quantity,
       buildRecentIsoDate(batchIndex + 1201, 7, 30),
       pickOne(borrowedComments, batchIndex + 1301),
       userEmail,
@@ -387,18 +380,13 @@ function generateBorrowBatches(candidates: readonly InventoryItem[], userEmail: 
 function generateRepairBatches(candidates: readonly InventoryItem[], userEmail: string): void {
   for (const [batchIndex, seedItem] of candidates.entries()) {
     const current = getInventoryItemById(seedItem.id)
-    if (!current || current.quantity <= 0) {
-      continue
-    }
-
-    const quantityForRepair = pickSplitQuantity(current.quantity, batchIndex + 801)
-    if (quantityForRepair <= 0) {
+    if (!current || !isCleanActiveItem(current)) {
       continue
     }
 
     markAsNeedsRepair(
       current.id,
-      quantityForRepair,
+      current.quantity,
       buildRecentIsoDate(batchIndex + 901, 30, 60),
       pickOne(repairComments, batchIndex + 1001),
       userEmail,
@@ -408,6 +396,8 @@ function generateRepairBatches(candidates: readonly InventoryItem[], userEmail: 
 
 /**
  * Creates 20 varied inventory items (and seed taxonomy if storage is empty).
+ * Write-off, repair, and borrow each take the full quantity of disjoint items
+ * so those statuses never mix on one inventory row.
  * All inventory changes go through inventoryStorage mutators so audit events
  * are recorded automatically.
  */
