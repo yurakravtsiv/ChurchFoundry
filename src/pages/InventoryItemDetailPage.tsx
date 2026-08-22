@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next"
 import { useBlocker, useNavigate, useParams } from "react-router"
 
 import { BorrowDialog } from "@/components/inventory/BorrowDialog"
+import { BorrowReturnDateCell } from "@/components/inventory/BorrowReturnDateCell"
 import {
   InventoryItemForm,
   type InventoryItemFormHandle,
@@ -114,6 +115,7 @@ function toUpdatePayload(
   if (item.availability === "borrowed") {
     return {
       borrowDate: data.borrowDate ?? null,
+      returnDate: data.returnDate ?? null,
       availabilityComment: data.availabilityComment.trim(),
     }
   }
@@ -123,6 +125,7 @@ function toUpdatePayload(
     repairDate: _repairDate,
     repairComment: _repairComment,
     borrowDate: _borrowDate,
+    returnDate: _returnDate,
     ...rest
   } = data
   return rest
@@ -556,6 +559,7 @@ export function InventoryItemDetailPage() {
               <TableRow>
                 <TableHead>{t("inventory.columns.quantity")}</TableHead>
                 <TableHead>{t("inventory.columns.borrowDate")}</TableHead>
+                <TableHead>{t("inventory.columns.returnDate")}</TableHead>
                 <TableHead>{t("inventory.columns.availabilityComment")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -569,6 +573,12 @@ export function InventoryItemDetailPage() {
                   <TableCell className="tabular-nums">{batch.quantity}</TableCell>
                   <TableCell className="whitespace-nowrap tabular-nums">
                     {formatBorrowDate(batch.borrowDate)}
+                  </TableCell>
+                  <TableCell>
+                    <BorrowReturnDateCell
+                      returnDate={batch.returnDate}
+                      formattedDate={formatBorrowDate(batch.returnDate)}
+                    />
                   </TableCell>
                   <TableCell className="max-w-[10rem] truncate">
                     {batch.availabilityComment || "—"}

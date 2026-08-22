@@ -5,10 +5,12 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
 
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget"
+import { SplitDashboardWidget } from "@/components/dashboard/SplitDashboardWidget"
 import { Card } from "@/components/ui/card"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useInventoryItemsQuery } from "@/hooks/queries/useInventoryQueries"
+import { isBorrowReturnOverdue } from "@/lib/borrowDates"
 
 function DashboardWidgetSkeleton() {
   return (
@@ -26,14 +28,16 @@ export function InventoryDashboardSection() {
   const navigate = useNavigate()
   const { data: items = [], isLoading, isError, refetch } = useInventoryItemsQuery()
 
-  const { needsRepairCount, borrowedCount } = useMemo(() => {
+  const { needsRepairCount, borrowedCount, overdueReturnCount } = useMemo(() => {
     const activeItems = items.filter((item) => !item.archived && !item.removed)
+    const borrowedItems = activeItems.filter((item) => item.availability === "borrowed")
     return {
       needsRepairCount: activeItems
         .filter((item) => item.condition === "needs_repair")
         .reduce((sum, item) => sum + item.quantity, 0),
-      borrowedCount: activeItems
-        .filter((item) => item.availability === "borrowed")
+      borrowedCount: borrowedItems.reduce((sum, item) => sum + item.quantity, 0),
+      overdueReturnCount: borrowedItems
+        .filter((item) => isBorrowReturnOverdue(item.returnDate))
         .reduce((sum, item) => sum + item.quantity, 0),
     }
   }, [items])
@@ -59,7 +63,7 @@ export function InventoryDashboardSection() {
         </div>
       ) : (
         <motion.div
-          className="grid grid-cols-1 gap-4 md:grid-cols-2"
+          className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2"
           initial="hidden"
           animate="visible"
           variants={{
@@ -67,6 +71,7 @@ export function InventoryDashboardSection() {
           }}
         >
           <motion.div
+            className="flex h-full flex-col"
             variants={{
               hidden: { opacity: 0, y: 12 },
               visible: { opacity: 1, y: 0 },
@@ -81,17 +86,24 @@ export function InventoryDashboardSection() {
             />
           </motion.div>
           <motion.div
+            className="flex h-full flex-col"
             variants={{
               hidden: { opacity: 0, y: 12 },
               visible: { opacity: 1, y: 0 },
             }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           >
-            <DashboardWidget
-              title={t("inventory.availability.borrowed")}
-              count={borrowedCount}
+            <SplitDashboardWidget
               colorVariant="warning"
               onClick={() => navigate("/inventory?availability=borrowed")}
+              left={{
+                title: t("inventory.availability.borrowed"),
+                count: borrowedCount,
+              }}
+              right={{
+                title: t("inventory.availability.overdueReturn"),
+                count: overdueReturnCount,
+              }}
             />
           </motion.div>
         </motion.div>

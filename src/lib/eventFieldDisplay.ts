@@ -24,6 +24,7 @@ export const EVENT_FIELD_I18N_KEYS: Record<string, string> = {
   repairDate: "inventory.form.repairDate",
   repairComment: "inventory.form.repairComment",
   borrowDate: "inventory.form.borrowDate",
+  returnDate: "inventory.form.returnDate",
   archived: "inventory.timeline.archived",
   photos: "inventory.form.photos",
   avatarPhotoId: "inventory.timeline.avatarChanged",
@@ -85,6 +86,7 @@ export function formatEventFieldValue(
     case "writeOffDate":
     case "repairDate":
     case "borrowDate":
+    case "returnDate":
       return formatDateValue(value, locale)
     case "quantity":
       return typeof value === "number" && Number.isFinite(value) ? String(value) : "—"

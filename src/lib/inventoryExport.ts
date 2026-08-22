@@ -28,6 +28,7 @@ export type InventoryExportRow = {
   responsible: string
   availability: string
   borrowDate: string
+  returnDate: string
   availabilityComment: string
   supplier: string
   price: number | ""
@@ -105,6 +106,7 @@ export function getExportColumnHeaders(t: TFunction): Record<InventoryExportRowK
     responsible: t("export.columns.responsible"),
     availability: t("export.columns.availability"),
     borrowDate: t("export.columns.borrowDate"),
+    returnDate: t("export.columns.returnDate"),
     availabilityComment: t("export.columns.availabilityComment"),
     supplier: t("export.columns.supplier"),
     price: t("export.columns.price"),
@@ -214,6 +216,8 @@ export function prepareExportData(
         availability: availabilityLabel(item.availability, t),
         borrowDate:
           item.availability === "borrowed" ? formatWriteOffDateForExport(item.borrowDate) : "",
+        returnDate:
+          item.availability === "borrowed" ? formatWriteOffDateForExport(item.returnDate) : "",
         availabilityComment: item.availabilityComment,
         supplier: item.supplier,
         price: item.price ?? "",

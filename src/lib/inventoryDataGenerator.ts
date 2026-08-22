@@ -155,15 +155,25 @@ function shuffledIndices(count: number, seed: number): number[] {
   return indices
 }
 
+function formatLocalIsoDate(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
 function buildRecentIsoDate(seed: number, minDaysAgo: number, maxDaysAgo: number): string {
   const span = Math.max(maxDaysAgo - minDaysAgo, 0)
   const daysAgo = minDaysAgo + pickIndex(span + 1, seed)
   const date = new Date()
   date.setDate(date.getDate() - daysAgo)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
+  return formatLocalIsoDate(date)
+}
+
+function addDaysToIsoDate(isoDate: string, days: number): string {
+  const date = new Date(`${isoDate}T00:00:00`)
+  date.setDate(date.getDate() + days)
+  return formatLocalIsoDate(date)
 }
 
 function isCleanActiveItem(item: InventoryItem): boolean {
@@ -361,16 +371,25 @@ function generateWriteOffBatches(candidates: readonly InventoryItem[], userEmail
 }
 
 function generateBorrowBatches(candidates: readonly InventoryItem[], userEmail: string): void {
+  const today = formatLocalIsoDate(new Date())
+
   for (const [batchIndex, seedItem] of candidates.entries()) {
     const current = getInventoryItemById(seedItem.id)
     if (!current || !isCleanActiveItem(current)) {
       continue
     }
 
+    const overdue = batchIndex === 0
+    const borrowDate = overdue
+      ? addDaysToIsoDate(today, -14)
+      : buildRecentIsoDate(batchIndex + 1201, 3, 10)
+    const returnDate = overdue ? addDaysToIsoDate(today, -3) : addDaysToIsoDate(today, 14)
+
     markAsBorrowed(
       current.id,
       current.quantity,
-      buildRecentIsoDate(batchIndex + 1201, 7, 30),
+      borrowDate,
+      returnDate,
       pickOne(borrowedComments, batchIndex + 1301),
       userEmail,
     )

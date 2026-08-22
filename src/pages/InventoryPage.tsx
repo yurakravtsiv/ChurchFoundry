@@ -35,6 +35,7 @@ import { type Ref, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
 import { BorrowDialog } from "@/components/inventory/BorrowDialog"
+import { BorrowReturnDateCell } from "@/components/inventory/BorrowReturnDateCell"
 import { InventoryColumnSettingsDialog } from "@/components/inventory/InventoryColumnSettingsDialog"
 import { InventoryItemForm } from "@/components/inventory/InventoryItemForm"
 import { NeedsRepairDialog } from "@/components/inventory/NeedsRepairDialog"
@@ -870,6 +871,29 @@ export function InventoryPage() {
           <span className="whitespace-nowrap tabular-nums">
             {formatWriteOffDate(item.borrowDate)}
           </span>
+        )
+      },
+    })
+
+    baseColumns.push({
+      id: "returnDate",
+      accessorFn: (row) => (row.availability === "borrowed" ? (row.returnDate ?? null) : null),
+      sortingFn: createNullableDateSortingFn((item) =>
+        item.availability === "borrowed" ? parseDateMs(item.returnDate) : null,
+      ),
+      header: ({ column }) => (
+        <SortableColumnHeader label={t("inventory.columns.returnDate")} column={column} />
+      ),
+      cell: ({ row }) => {
+        const item = row.original
+        if (item.availability !== "borrowed") {
+          return <span className="text-muted-foreground">—</span>
+        }
+        return (
+          <BorrowReturnDateCell
+            returnDate={item.returnDate}
+            formattedDate={formatWriteOffDate(item.returnDate)}
+          />
         )
       },
     })

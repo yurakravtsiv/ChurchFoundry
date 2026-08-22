@@ -45,6 +45,8 @@ function getColumnSearchValues(
       return [availabilityLabel(item.availability, t)]
     case "borrowDate":
       return [item.borrowDate ?? ""]
+    case "returnDate":
+      return [item.returnDate ?? ""]
     case "writeOffDate":
       return [item.writeOffDate ?? ""]
     case "writeOffReason":

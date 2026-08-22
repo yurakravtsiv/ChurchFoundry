@@ -50,6 +50,18 @@ describe("mergeColumnPrefs", () => {
     expect(merged.hidden).not.toContain("quantity")
   })
 
+  it("inserts the returnDate column after borrowDate in saved order", () => {
+    const merged = mergeColumnPrefs({
+      version: 1,
+      order: ["name", "availability", "borrowDate", "comment"],
+      hidden: [],
+    })
+
+    const borrowDateIndex = merged.order.indexOf("borrowDate")
+    expect(merged.order[borrowDateIndex + 1]).toBe("returnDate")
+    expect(merged.hidden).not.toContain("returnDate")
+  })
+
   it("inserts the responsible column after location in saved order", () => {
     const merged = mergeColumnPrefs({
       version: 1,

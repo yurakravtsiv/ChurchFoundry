@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest"
 
+import { isBorrowReturnOverdue } from "@/lib/borrowDates"
 import { generateSeedData } from "@/lib/inventoryDataGenerator"
 import { getInventoryItems } from "@/lib/inventoryStorage"
 
@@ -72,5 +73,20 @@ describe("generateSeedData", () => {
     for (const types of splitTypesByOriginal.values()) {
       expect(types.size).toBe(1)
     }
+  })
+
+  it("gives every borrowed item a return date and at least one overdue return", () => {
+    generateSeedData("tester@example.com")
+
+    const borrowed = getInventoryItems().filter((item) => item.availability === "borrowed")
+    expect(borrowed.length).toBeGreaterThan(0)
+
+    for (const item of borrowed) {
+      expect(item.returnDate, item.name).toBeTruthy()
+      expect(item.borrowDate, item.name).toBeTruthy()
+      expect(item.returnDate! > item.borrowDate!, item.name).toBe(true)
+    }
+
+    expect(borrowed.some((item) => isBorrowReturnOverdue(item.returnDate))).toBe(true)
   })
 })

@@ -23,6 +23,7 @@
       "responsible": "Відповідальний",
       "availability": "Наявність",
       "borrowDate": "Дата позичання",
+      "returnDate": "Дата повернення",
       "availabilityComment": "Коментар наявності",
       "supplier": "Постачальник",
       "price": "Ціна",
@@ -157,7 +158,7 @@
       "borrowBatchesTitle": "Позичені предмети",
       "readOnlyWrittenOffWarning": "Можна змінити лише дату списання та причину списання.",
       "readOnlyNeedsRepairWarning": "Можна змінити лише дату несправності та коментар про несправність.",
-      "readOnlyBorrowedWarning": "Можна змінити лише дату позичання та коментар наявності.",
+      "readOnlyBorrowedWarning": "Можна змінити лише дату позичання, дату повернення та коментар наявності.",
       "writeOffDate": "Дата списання",
       "writeOffReason": "Причина списання",
       "qrTitle": "QR-код предмету",
@@ -184,7 +185,8 @@
       "markedAsBorrowed": "Позичено",
       "markedAsBorrowedQuantity": "Позичено {{quantity}} шт.",
       "markedAsBorrowedComment": "Коментар: {{comment}}",
-      "markedAsBorrowedDate": "Дата: {{date}}",
+      "markedAsBorrowedDate": "Дата позичання: {{date}}",
+      "markedAsBorrowedReturnDate": "Дата повернення: {{date}}",
       "returnedFromBorrow": "Повернено позичене",
       "returnedFromBorrowQuantity": "Повернено {{quantity}} шт. позиченого в наявність",
       "photosAdded": "Додано фото ({{count}})",
@@ -214,7 +216,8 @@
     },
     "availability": {
       "inChurch": "В церкві",
-      "borrowed": "Позичено"
+      "borrowed": "Позичено",
+      "overdueReturn": "Протерміноване повернення"
     },
     "condition": {
       "good": "Добрий",
@@ -236,6 +239,7 @@
       "availability": "Наявність",
       "availabilityComment": "Коментар наявності",
       "borrowDate": "Дата позичання",
+      "returnDate": "Дата повернення",
       "comment": "Коментар",
       "writeOffDate": "Дата списання",
       "writeOffReason": "Причина списання",
@@ -321,6 +325,7 @@
       "description": "Наявна кількість: {{quantity}}",
       "quantity": "Кількість до позичання",
       "date": "Дата позичання",
+      "returnDate": "Дата повернення",
       "comment": "Коментар наявності",
       "commentPlaceholder": "Інформація про предмет, позичальника, дату повернення",
       "validation": {
@@ -328,6 +333,8 @@
         "quantityMin": "Мінімум 1",
         "quantityMax": "Не може перевищувати наявну кількість ({{quantity}})",
         "dateRequired": "Вкажіть дату",
+        "returnDateRequired": "Вкажіть дату повернення",
+        "returnDateAfterBorrow": "Дата повернення має бути після дати позичання",
         "commentRequired": "Вкажіть коментар"
       }
     },
@@ -370,6 +377,7 @@
       "availabilityComment": "Коментар наявності",
       "availabilityCommentPlaceholder": "Інформація про предмет, позичальника, дату повернення",
       "borrowDate": "Дата позичання",
+      "returnDate": "Дата повернення",
       "condition": "Стан",
       "supplier": "Постачальник",
       "supplierPlaceholder": "Назва постачальника",

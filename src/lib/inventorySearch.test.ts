@@ -44,6 +44,7 @@ function makeItem(overrides: Partial<InventoryItem> = {}): InventoryItem {
     repairDate: null,
     repairComment: null,
     borrowDate: null,
+    returnDate: null,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,

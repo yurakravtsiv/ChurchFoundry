@@ -23,6 +23,7 @@
       "responsible": "Responsible",
       "availability": "Availability",
       "borrowDate": "Borrow date",
+      "returnDate": "Return date",
       "availabilityComment": "Availability comment",
       "supplier": "Supplier",
       "price": "Price",
@@ -157,7 +158,7 @@
       "borrowBatchesTitle": "Borrowed items",
       "readOnlyWrittenOffWarning": "Only the write-off date and write-off reason can be edited.",
       "readOnlyNeedsRepairWarning": "Only the fault date and fault comment can be edited.",
-      "readOnlyBorrowedWarning": "Only the borrow date and availability comment can be edited.",
+      "readOnlyBorrowedWarning": "Only the borrow date, return date, and availability comment can be edited.",
       "writeOffDate": "Write-off date",
       "writeOffReason": "Write-off reason",
       "qrTitle": "Item QR code",
@@ -184,7 +185,8 @@
       "markedAsBorrowed": "Borrowed",
       "markedAsBorrowedQuantity": "Borrowed {{quantity}} item(s)",
       "markedAsBorrowedComment": "Comment: {{comment}}",
-      "markedAsBorrowedDate": "Date: {{date}}",
+      "markedAsBorrowedDate": "Borrow date: {{date}}",
+      "markedAsBorrowedReturnDate": "Return date: {{date}}",
       "returnedFromBorrow": "Returned from borrow",
       "returnedFromBorrowQuantity": "Returned {{quantity}} borrowed item(s) to stock",
       "photosAdded": "Photos added ({{count}})",
@@ -214,7 +216,8 @@
     },
     "availability": {
       "inChurch": "In church",
-      "borrowed": "Borrowed"
+      "borrowed": "Borrowed",
+      "overdueReturn": "Overdue return"
     },
     "condition": {
       "good": "Good",
@@ -236,6 +239,7 @@
       "availability": "Availability",
       "availabilityComment": "Availability comment",
       "borrowDate": "Borrow date",
+      "returnDate": "Return date",
       "comment": "Comment",
       "writeOffDate": "Write-off date",
       "writeOffReason": "Write-off reason",
@@ -321,6 +325,7 @@
       "description": "Available quantity: {{quantity}}",
       "quantity": "Quantity to borrow",
       "date": "Borrow date",
+      "returnDate": "Return date",
       "comment": "Availability comment",
       "commentPlaceholder": "Information about the item, borrower, and return date",
       "validation": {
@@ -328,6 +333,8 @@
         "quantityMin": "Minimum is 1",
         "quantityMax": "Cannot exceed available quantity ({{quantity}})",
         "dateRequired": "Date is required",
+        "returnDateRequired": "Return date is required",
+        "returnDateAfterBorrow": "Return date must be after the borrow date",
         "commentRequired": "Comment is required"
       }
     },
@@ -370,6 +377,7 @@
       "availabilityComment": "Availability comment",
       "availabilityCommentPlaceholder": "Information about the item, borrower, and return date",
       "borrowDate": "Borrow date",
+      "returnDate": "Return date",
       "condition": "Condition",
       "supplier": "Supplier",
       "supplierPlaceholder": "Supplier name",

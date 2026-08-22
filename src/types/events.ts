@@ -45,6 +45,7 @@ export type RepairedEventPayload = {
 export type MarkedAsBorrowedEventPayload = {
   quantity: number
   borrowDate: string
+  returnDate?: string
   availabilityComment: string
   relatedItemId: string
 }

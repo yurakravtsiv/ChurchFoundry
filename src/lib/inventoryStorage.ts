@@ -434,6 +434,9 @@ function normalizeInventoryItem(item: InventoryItem): InventoryItem {
   if (typeof next.borrowDate !== "string" && next.borrowDate !== null) {
     next = { ...next, borrowDate: null }
   }
+  if (typeof next.returnDate !== "string" && next.returnDate !== null) {
+    next = { ...next, returnDate: null }
+  }
   if (typeof next.responsibleId !== "string") {
     next = { ...next, responsibleId: "" }
   }
@@ -617,6 +620,7 @@ export function createInventoryItem(
     repairDate: null,
     repairComment: null,
     borrowDate: null,
+    returnDate: null,
     createdAt: timestamp,
     updatedAt: timestamp,
   }
@@ -780,6 +784,7 @@ export function writeOffItem(
     repairDate: null,
     repairComment: null,
     borrowDate: null,
+    returnDate: null,
     qrCodeValue: `${origin}/inventory/${newIdValue}`,
     removed: false,
     archived: false,
@@ -922,6 +927,7 @@ export function markAsNeedsRepair(
     writeOffDate: null,
     writeOffReason: null,
     borrowDate: null,
+    returnDate: null,
     qrCodeValue: `${origin}/inventory/${newIdValue}`,
     removed: false,
     archived: false,
@@ -1013,6 +1019,7 @@ export function markAsBorrowed(
   originalItemId: string,
   quantityToBorrow: number,
   borrowDate: string,
+  returnDate: string,
   availabilityComment: string,
   userEmail: string,
 ): { updatedOriginal: InventoryItem; newBorrowedItem: InventoryItem } {
@@ -1070,6 +1077,7 @@ export function markAsBorrowed(
     availability: "borrowed",
     availabilityComment,
     borrowDate,
+    returnDate,
     originalItemId: original.id,
     writeOffDate: null,
     writeOffReason: null,
@@ -1091,6 +1099,7 @@ export function markAsBorrowed(
   recordMarkedAsBorrowed(original.id, userEmail, {
     quantity: quantityToBorrow,
     borrowDate,
+    returnDate,
     availabilityComment,
     relatedItemId: newBorrowedItem.id,
   })
@@ -1129,6 +1138,7 @@ export function returnBorrowed(
       availability: "in_church",
       availabilityComment: "",
       borrowDate: null,
+      returnDate: null,
       updatedAt: timestamp,
     }
     const next = [...items]
@@ -1162,6 +1172,7 @@ export function returnBorrowed(
     availability: "in_church",
     availabilityComment: "",
     borrowDate: null,
+    returnDate: null,
     removed: true,
     updatedAt: timestamp,
   }

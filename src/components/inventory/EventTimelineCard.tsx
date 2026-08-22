@@ -578,6 +578,13 @@ function MarkedAsBorrowedEventCard({
               date: formatEventDateOnly(payload.borrowDate, locale),
             })}
           </p>
+          {payload.returnDate ? (
+            <p>
+              {t("inventory.timeline.markedAsBorrowedReturnDate", {
+                date: formatEventDateOnly(payload.returnDate, locale),
+              })}
+            </p>
+          ) : null}
         </div>
         <EventViewLink relatedItemId={payload.relatedItemId} t={t} />
       </CardContent>

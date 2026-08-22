@@ -19,6 +19,7 @@ import { MotionDialogContent } from "@/components/ui/motion-dialog-content"
 import { Textarea } from "@/components/ui/textarea"
 import { useMarkAsBorrowedMutation } from "@/hooks/queries/useInventoryQueries"
 import { useAuth } from "@/hooks/useAuth"
+import { dayAfter, isReturnDateAfterBorrowDate } from "@/lib/borrowDates"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
 import type { InventoryItem } from "@/types/inventory"
 
@@ -32,11 +33,16 @@ type BorrowDialogProps = {
 type BorrowFormValues = {
   quantity: number
   borrowDate: string
+  returnDate: string
   availabilityComment: string
 }
 
 function todayDateInputValue() {
   return formatDateForStorage(new Date())
+}
+
+function tomorrowDateInputValue() {
+  return dayAfter(todayDateInputValue()) ?? todayDateInputValue()
 }
 
 export function BorrowDialog({ item, open, onOpenChange, onConfirm }: BorrowDialogProps) {
@@ -47,36 +53,47 @@ export function BorrowDialog({ item, open, onOpenChange, onConfirm }: BorrowDial
 
   const schema = useMemo(
     () =>
-      z.object({
-        quantity: z.preprocess(
-          (value) => {
-            if (value === "" || value === null || value === undefined) {
-              return undefined
-            }
-            const parsed = typeof value === "number" ? value : Number(value)
-            return Number.isFinite(parsed) ? parsed : undefined
-          },
-          z
-            .number({ error: t("inventory.borrow.validation.quantityInvalid") })
-            .int(t("inventory.borrow.validation.quantityInvalid"))
-            .min(1, t("inventory.borrow.validation.quantityMin"))
-            .max(
-              maxQuantity,
-              t("inventory.borrow.validation.quantityMax", { quantity: maxQuantity }),
-            ),
-        ),
-        borrowDate: z.string().min(1, t("inventory.borrow.validation.dateRequired")),
-        availabilityComment: z
-          .string()
-          .trim()
-          .min(1, t("inventory.borrow.validation.commentRequired"))
-          .max(
-            INVENTORY_FIELD_LIMITS.availabilityComment,
-            t("inventory.form.validation.stringMax", {
-              max: INVENTORY_FIELD_LIMITS.availabilityComment,
-            }),
+      z
+        .object({
+          quantity: z.preprocess(
+            (value) => {
+              if (value === "" || value === null || value === undefined) {
+                return undefined
+              }
+              const parsed = typeof value === "number" ? value : Number(value)
+              return Number.isFinite(parsed) ? parsed : undefined
+            },
+            z
+              .number({ error: t("inventory.borrow.validation.quantityInvalid") })
+              .int(t("inventory.borrow.validation.quantityInvalid"))
+              .min(1, t("inventory.borrow.validation.quantityMin"))
+              .max(
+                maxQuantity,
+                t("inventory.borrow.validation.quantityMax", { quantity: maxQuantity }),
+              ),
           ),
-      }),
+          borrowDate: z.string().min(1, t("inventory.borrow.validation.dateRequired")),
+          returnDate: z.string().min(1, t("inventory.borrow.validation.returnDateRequired")),
+          availabilityComment: z
+            .string()
+            .trim()
+            .min(1, t("inventory.borrow.validation.commentRequired"))
+            .max(
+              INVENTORY_FIELD_LIMITS.availabilityComment,
+              t("inventory.form.validation.stringMax", {
+                max: INVENTORY_FIELD_LIMITS.availabilityComment,
+              }),
+            ),
+        })
+        .superRefine((values, ctx) => {
+          if (!isReturnDateAfterBorrowDate(values.borrowDate, values.returnDate)) {
+            ctx.addIssue({
+              code: "custom",
+              path: ["returnDate"],
+              message: t("inventory.borrow.validation.returnDateAfterBorrow"),
+            })
+          }
+        }),
     [maxQuantity, t],
   )
 
@@ -91,11 +108,14 @@ export function BorrowDialog({ item, open, onOpenChange, onConfirm }: BorrowDial
     defaultValues: {
       quantity: 1,
       borrowDate: todayDateInputValue(),
+      returnDate: tomorrowDateInputValue(),
       availabilityComment: "",
     },
   })
 
   const commentValue = watch("availabilityComment") ?? ""
+  const borrowDateValue = watch("borrowDate")
+  const returnDateMin = borrowDateValue ? dayAfter(borrowDateValue) : undefined
 
   useEffect(() => {
     if (!open || !item) {
@@ -104,6 +124,7 @@ export function BorrowDialog({ item, open, onOpenChange, onConfirm }: BorrowDial
     reset({
       quantity: 1,
       borrowDate: todayDateInputValue(),
+      returnDate: tomorrowDateInputValue(),
       availabilityComment: "",
     })
   }, [item, open, reset])
@@ -117,6 +138,7 @@ export function BorrowDialog({ item, open, onOpenChange, onConfirm }: BorrowDial
         id: item.id,
         quantity: values.quantity,
         borrowDate: values.borrowDate,
+        returnDate: values.returnDate,
         availabilityComment: values.availabilityComment.trim(),
         userEmail: user?.email ?? "",
       },
@@ -166,6 +188,20 @@ export function BorrowDialog({ item, open, onOpenChange, onConfirm }: BorrowDial
             />
             {errors.borrowDate ? (
               <p className="text-sm text-destructive">{errors.borrowDate.message}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="borrow-return-date">{t("inventory.borrow.returnDate")} *</Label>
+            <Input
+              id="borrow-return-date"
+              type="date"
+              aria-label={t("inventory.borrow.returnDate")}
+              min={returnDateMin}
+              {...register("returnDate")}
+            />
+            {errors.returnDate ? (
+              <p className="text-sm text-destructive">{errors.returnDate.message}</p>
             ) : null}
           </div>
 

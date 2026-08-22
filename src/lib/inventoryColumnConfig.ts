@@ -12,6 +12,7 @@ export const INVENTORY_COLUMN_IDS = [
   "repairComment",
   "availability",
   "borrowDate",
+  "returnDate",
   "writeOffDate",
   "writeOffReason",
   "availabilityComment",
@@ -56,6 +57,7 @@ export const INVENTORY_COLUMN_DEFINITIONS: readonly InventoryColumnDefinition[] 
   { id: "repairComment", defaultVisible: true, contextual: "repair" },
   { id: "availability", defaultVisible: true },
   { id: "borrowDate", defaultVisible: true, contextual: "borrow" },
+  { id: "returnDate", defaultVisible: true, contextual: "borrow" },
   { id: "writeOffDate", defaultVisible: true, contextual: "writeOff" },
   { id: "writeOffReason", defaultVisible: true, contextual: "writeOff" },
   { id: "availabilityComment", defaultVisible: true },
@@ -112,6 +114,13 @@ function insertAppendedColumnIds(
       const locationIndex = order.indexOf("location")
       if (locationIndex !== -1) {
         order.splice(locationIndex + 1, 0, id)
+        continue
+      }
+    }
+    if (id === "returnDate") {
+      const borrowDateIndex = order.indexOf("borrowDate")
+      if (borrowDateIndex !== -1) {
+        order.splice(borrowDateIndex + 1, 0, id)
         continue
       }
     }

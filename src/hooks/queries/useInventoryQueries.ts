@@ -258,15 +258,17 @@ export function useMarkAsBorrowedMutation() {
       id,
       quantity,
       borrowDate,
+      returnDate,
       availabilityComment,
       userEmail,
     }: {
       id: string
       quantity: number
       borrowDate: string
+      returnDate: string
       availabilityComment: string
       userEmail: string
-    }) => markAsBorrowed(id, quantity, borrowDate, availabilityComment, userEmail),
+    }) => markAsBorrowed(id, quantity, borrowDate, returnDate, availabilityComment, userEmail),
     onSuccess: async () => {
       await invalidateInventoryQueries(queryClient)
     },

@@ -46,7 +46,7 @@ export function DashboardWidget({ title, count, colorVariant, onClick }: Dashboa
         }
       }}
       className={cn(
-        "cursor-pointer px-5 py-6 shadow-sm transition",
+        "h-full cursor-pointer px-5 py-6 shadow-sm transition",
         "md:hover:scale-[1.02] md:hover:shadow-md",
         "[@media(hover:none)]:hover:scale-100 [@media(hover:none)]:hover:shadow-sm",
         styles.card,

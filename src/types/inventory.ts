@@ -69,6 +69,8 @@ export type InventoryItem = {
   repairComment: string | null
   /** ISO date — only set on borrowed (split) items created via markAsBorrowed. */
   borrowDate: string | null
+  /** Planned return date — only set on borrowed (split) items. Must be after borrowDate. */
+  returnDate: string | null
   createdAt: string
   updatedAt: string
 }
@@ -87,6 +89,7 @@ export type CreateInventoryItemInput = Omit<
   | "repairDate"
   | "repairComment"
   | "borrowDate"
+  | "returnDate"
   | "createdAt"
   | "updatedAt"
   | "price"
