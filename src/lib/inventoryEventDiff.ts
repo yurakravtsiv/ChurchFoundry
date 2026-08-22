@@ -16,6 +16,11 @@ const TRACKED_FIELDS = [
   "warrantyUntil",
   "comment",
   "condition",
+  "writeOffDate",
+  "writeOffReason",
+  "repairDate",
+  "repairComment",
+  "borrowDate",
 ] as const satisfies ReadonlyArray<keyof InventoryItem>
 
 type TrackedField = (typeof TRACKED_FIELDS)[number]

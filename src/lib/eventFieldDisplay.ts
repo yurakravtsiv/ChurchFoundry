@@ -19,6 +19,11 @@ export const EVENT_FIELD_I18N_KEYS: Record<string, string> = {
   serialNumber: "inventory.form.serialNumber",
   warrantyUntil: "inventory.form.warrantyUntil",
   comment: "inventory.form.comment",
+  writeOffDate: "inventory.form.writeOffDate",
+  writeOffReason: "inventory.form.writeOffReason",
+  repairDate: "inventory.form.repairDate",
+  repairComment: "inventory.form.repairComment",
+  borrowDate: "inventory.form.borrowDate",
   archived: "inventory.timeline.archived",
 }
 
@@ -75,6 +80,9 @@ export function formatEventFieldValue(
     case "price":
       return typeof value === "number" && Number.isFinite(value) ? String(value) : "—"
     case "warrantyUntil":
+    case "writeOffDate":
+    case "repairDate":
+    case "borrowDate":
       return formatDateValue(value, locale)
     case "quantity":
       return typeof value === "number" && Number.isFinite(value) ? String(value) : "—"

@@ -22,6 +22,7 @@ import { BorrowDialog } from "@/components/inventory/BorrowDialog"
 import {
   InventoryItemForm,
   type InventoryItemFormHandle,
+  type InventoryItemFormValues,
 } from "@/components/inventory/InventoryItemForm"
 import { InventoryItemTimeline } from "@/components/inventory/InventoryItemTimeline"
 import { ItemQrCode } from "@/components/inventory/ItemQrCode"
@@ -65,6 +66,7 @@ import {
 } from "@/hooks/queries/useInventoryQueries"
 import { useAuth } from "@/hooks/useAuth"
 import { EVENT_OBJECT_TYPE } from "@/types/events"
+import type { UpdateInventoryItemInput } from "@/types/inventory"
 
 const EDIT_FORM_ID = "inventory-item-edit-form"
 
@@ -91,6 +93,39 @@ function getMdUpServerSnapshot() {
 function canNavigateBack() {
   const idx = (window.history.state as { idx?: number } | null)?.idx
   return typeof idx === "number" && idx > 0
+}
+
+function toUpdatePayload(
+  data: InventoryItemFormValues,
+  item: { availability: string; condition: string },
+): UpdateInventoryItemInput {
+  if (item.condition === "written_off") {
+    return {
+      writeOffDate: data.writeOffDate ?? null,
+      writeOffReason: data.writeOffReason?.trim() ?? "",
+    }
+  }
+  if (item.condition === "needs_repair") {
+    return {
+      repairDate: data.repairDate ?? null,
+      repairComment: data.repairComment?.trim() ?? "",
+    }
+  }
+  if (item.availability === "borrowed") {
+    return {
+      borrowDate: data.borrowDate ?? null,
+      availabilityComment: data.availabilityComment.trim(),
+    }
+  }
+  const {
+    writeOffDate: _writeOffDate,
+    writeOffReason: _writeOffReason,
+    repairDate: _repairDate,
+    repairComment: _repairComment,
+    borrowDate: _borrowDate,
+    ...rest
+  } = data
+  return rest
 }
 
 function InventoryItemDetailSkeleton() {
@@ -199,7 +234,7 @@ export function InventoryItemDetailPage() {
   const isWrittenOff = item?.condition === "written_off"
   const isNeedsRepair = item?.condition === "needs_repair"
   const isBorrowed = item?.availability === "borrowed"
-  const isReadOnly = isWrittenOff || isNeedsRepair || isBorrowed
+  const isRestrictedEdit = isWrittenOff || isNeedsRepair || isBorrowed
 
   const formatWriteOffDate = (value: string | null) => {
     if (!value) {
@@ -393,9 +428,9 @@ export function InventoryItemDetailPage() {
       id={EDIT_FORM_ID}
       mode="edit"
       layout="page"
-      autoFocusFirstField={!isReadOnly}
+      autoFocusFirstField
       initialData={item}
-      readOnly={isReadOnly}
+      readOnly={isRestrictedEdit}
       onBusyChange={setFormBusy}
       onDirtyChange={setFormDirty}
       onCancel={requestLeave}
@@ -403,11 +438,8 @@ export function InventoryItemDetailPage() {
         clearPendingLeave()
       }}
       onSubmit={(data) => {
-        if (isReadOnly) {
-          return
-        }
         updateItemMutation.mutate(
-          { id: item.id, data, userEmail },
+          { id: item.id, data: toUpdatePayload(data, item), userEmail },
           {
             onSuccess: (updated) => {
               if (!updated) {
@@ -855,7 +887,7 @@ export function InventoryItemDetailPage() {
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              {isReadOnly ? (
+              {formDirty ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -867,43 +899,27 @@ export function InventoryItemDetailPage() {
                   <X className="size-4 sm:hidden" aria-hidden />
                   <span className="hidden sm:inline">{t("inventory.actions.cancel")}</span>
                 </Button>
-              ) : (
-                <>
-                  {formDirty ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="sm:h-9 sm:w-auto sm:px-4"
-                      aria-label={t("inventory.actions.cancel")}
-                      onClick={requestLeave}
-                    >
-                      <X className="size-4 sm:hidden" aria-hidden />
-                      <span className="hidden sm:inline">{t("inventory.actions.cancel")}</span>
-                    </Button>
-                  ) : null}
-                  <Button
-                    type="button"
-                    size="icon"
-                    className="sm:h-9 sm:w-auto sm:px-4"
-                    disabled={formBusy}
-                    aria-label={t("inventory.form.save")}
-                    onClick={() => {
-                      if (!formDirty) {
-                        navigateBackOrInventory()
-                        return
-                      }
-                      const form = document.getElementById(EDIT_FORM_ID)
-                      if (form instanceof HTMLFormElement) {
-                        form.requestSubmit()
-                      }
-                    }}
-                  >
-                    <Check className="size-4 sm:hidden" aria-hidden />
-                    <span className="hidden sm:inline">{t("inventory.form.save")}</span>
-                  </Button>
-                </>
-              )}
+              ) : null}
+              <Button
+                type="button"
+                size="icon"
+                className="sm:h-9 sm:w-auto sm:px-4"
+                disabled={formBusy}
+                aria-label={t("inventory.form.save")}
+                onClick={() => {
+                  if (!formDirty) {
+                    navigateBackOrInventory()
+                    return
+                  }
+                  const form = document.getElementById(EDIT_FORM_ID)
+                  if (form instanceof HTMLFormElement) {
+                    form.requestSubmit()
+                  }
+                }}
+              >
+                <Check className="size-4 sm:hidden" aria-hidden />
+                <span className="hidden sm:inline">{t("inventory.form.save")}</span>
+              </Button>
             </div>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { z } from "zod"
 import { CreateReferenceEntityDialog } from "@/components/inventory/CreateReferenceEntityDialog"
 import { CreateSubcategoryDialog } from "@/components/inventory/CreateSubcategoryDialog"
 import { Button } from "@/components/ui/button"
+import { toDateInputValue as formatDateForStorage } from "@/components/ui/date-picker"
 import { DisabledTooltip } from "@/components/ui/disabled-tooltip"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -43,7 +44,13 @@ import type {
   Responsible,
 } from "@/types/inventory"
 
-export type InventoryItemFormValues = CreateInventoryItemInput
+export type InventoryItemFormValues = CreateInventoryItemInput & {
+  writeOffDate?: string | null
+  writeOffReason?: string | null
+  repairDate?: string | null
+  repairComment?: string | null
+  borrowDate?: string | null
+}
 
 export type InventoryItemFormHandle = {
   /** Validate all fields and scroll to the first error when invalid. */
@@ -67,7 +74,7 @@ type InventoryItemFormProps = {
   /** Form element id — use with external submit buttons (`form` attribute). */
   id?: string
   onBusyChange?: (busy: boolean) => void
-  /** Disables all fields (e.g. written-off items). */
+  /** Locks regular fields on written-off / repair / borrowed items. Status date and comment stay editable. */
   readOnly?: boolean
   /** Focus the name field after the form mounts (create dialog / edit page). */
   autoFocusFirstField?: boolean
@@ -138,6 +145,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
     const isNeedsRepair = initialData?.condition === "needs_repair"
     const isBorrowed = initialData?.availability === "borrowed"
     const { t, i18n } = useTranslation()
+    const todayDateValue = formatDateForStorage(new Date())
     const readOnlyWarningMessage = isWrittenOff
       ? t("inventory.detail.readOnlyWrittenOffWarning")
       : isNeedsRepair
@@ -229,16 +237,60 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           locationId: z.string().min(1, t("inventory.form.validation.locationRequired")),
           responsibleId: z.string().min(1, t("inventory.form.validation.responsibleRequired")),
           availability: z.literal("in_church"),
-          availabilityComment: z
-            .string()
-            .max(
-              INVENTORY_FIELD_LIMITS.availabilityComment,
-              t("inventory.form.validation.stringMax", {
-                max: INVENTORY_FIELD_LIMITS.availabilityComment,
-              }),
-            )
-            .optional()
-            .default(""),
+          availabilityComment: isBorrowed
+            ? z
+                .string()
+                .trim()
+                .min(1, t("inventory.borrow.validation.commentRequired"))
+                .max(
+                  INVENTORY_FIELD_LIMITS.availabilityComment,
+                  t("inventory.form.validation.stringMax", {
+                    max: INVENTORY_FIELD_LIMITS.availabilityComment,
+                  }),
+                )
+            : z
+                .string()
+                .max(
+                  INVENTORY_FIELD_LIMITS.availabilityComment,
+                  t("inventory.form.validation.stringMax", {
+                    max: INVENTORY_FIELD_LIMITS.availabilityComment,
+                  }),
+                )
+                .optional()
+                .default(""),
+          borrowDate: isBorrowed
+            ? z.string().min(1, t("inventory.borrow.validation.dateRequired"))
+            : z.string().optional(),
+          writeOffDate: isWrittenOff
+            ? z.string().min(1, t("inventory.writeOff.validation.dateRequired"))
+            : z.string().optional(),
+          writeOffReason: isWrittenOff
+            ? z
+                .string()
+                .trim()
+                .min(1, t("inventory.writeOff.validation.reasonRequired"))
+                .max(
+                  INVENTORY_FIELD_LIMITS.writeOffReason,
+                  t("inventory.form.validation.stringMax", {
+                    max: INVENTORY_FIELD_LIMITS.writeOffReason,
+                  }),
+                )
+            : z.string().optional(),
+          repairDate: isNeedsRepair
+            ? z.string().min(1, t("inventory.needsRepair.validation.dateRequired"))
+            : z.string().optional(),
+          repairComment: isNeedsRepair
+            ? z
+                .string()
+                .trim()
+                .min(1, t("inventory.needsRepair.validation.commentRequired"))
+                .max(
+                  INVENTORY_FIELD_LIMITS.repairComment,
+                  t("inventory.form.validation.stringMax", {
+                    max: INVENTORY_FIELD_LIMITS.repairComment,
+                  }),
+                )
+            : z.string().optional(),
           supplier: z
             .string()
             .max(
@@ -297,7 +349,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
             .default([]),
           avatarPhotoId: z.string().nullable().optional().default(null),
         }),
-      [t],
+      [isBorrowed, isNeedsRepair, isWrittenOff, t],
     )
 
     type FormValues = z.infer<typeof schema>
@@ -315,7 +367,12 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
         locationId: initialData?.locationId ?? "",
         responsibleId: initialData?.responsibleId ?? "",
         availability: "in_church" as const,
-        availabilityComment: "",
+        availabilityComment: initialData?.availabilityComment ?? "",
+        borrowDate: toDateInputValue(initialData?.borrowDate),
+        writeOffDate: toDateInputValue(initialData?.writeOffDate),
+        writeOffReason: initialData?.writeOffReason ?? "",
+        repairDate: toDateInputValue(initialData?.repairDate),
+        repairComment: initialData?.repairComment ?? "",
         supplier: initialData?.supplier ?? "",
         price: initialData?.price ?? null,
         serialNumber: initialData?.serialNumber ?? "",
@@ -347,14 +404,26 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
     const { ref: nameFieldRef, ...nameFieldRegister } = register("name")
 
     useEffect(() => {
-      if (!autoFocusFirstField || readOnly) {
+      if (!autoFocusFirstField) {
+        return
+      }
+      const fieldId = isWrittenOff
+        ? "inventory-item-write-off-date"
+        : isNeedsRepair
+          ? "inventory-item-repair-date"
+          : isBorrowed
+            ? "inventory-item-borrow-date"
+            : readOnly
+              ? null
+              : "inventory-item-name"
+      if (!fieldId) {
         return
       }
       const frame = requestAnimationFrame(() => {
-        document.getElementById("inventory-item-name")?.focus({ preventScroll: true })
+        document.getElementById(fieldId)?.focus({ preventScroll: true })
       })
       return () => cancelAnimationFrame(frame)
-    }, [autoFocusFirstField, readOnly])
+    }, [autoFocusFirstField, isBorrowed, isNeedsRepair, isWrittenOff, readOnly])
 
     // Keep defaults in sync and clear false dirty state after mount/effects.
     useEffect(() => {
@@ -505,7 +574,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           locationId: values.locationId,
           responsibleId: values.responsibleId,
           availability: "in_church",
-          availabilityComment: "",
+          availabilityComment: isBorrowed ? (values.availabilityComment?.trim() ?? "") : "",
           supplier: values.supplier?.trim() ?? "",
           price: values.price ?? null,
           serialNumber: values.serialNumber?.trim() ?? "",
@@ -513,6 +582,23 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           comment: values.comment?.trim() ?? "",
           photos: values.photos ?? [],
           avatarPhotoId: values.avatarPhotoId ?? null,
+          ...(isWrittenOff
+            ? {
+                writeOffDate: values.writeOffDate || null,
+                writeOffReason: values.writeOffReason?.trim() ?? "",
+              }
+            : {}),
+          ...(isNeedsRepair
+            ? {
+                repairDate: values.repairDate || null,
+                repairComment: values.repairComment?.trim() ?? "",
+              }
+            : {}),
+          ...(isBorrowed
+            ? {
+                borrowDate: values.borrowDate || null,
+              }
+            : {}),
         }
         onSubmit(payload)
       },
@@ -571,10 +657,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
               isPageLayout ? "space-y-4" : "min-h-0 flex-1 overflow-y-auto overscroll-contain",
             )}
           >
-            <fieldset
-              disabled={readOnly}
-              className="min-w-0 space-y-4 border-0 p-0 disabled:opacity-90"
-            >
+            <fieldset className="min-w-0 space-y-4 border-0 p-0">
               {readOnly ? (
                 <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
                   <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -732,6 +815,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                   max={INVENTORY_FIELD_LIMITS.quantityMax}
                   step={1}
                   {...register("quantity", { valueAsNumber: true })}
+                  disabled={readOnly}
                 />
                 {errors.quantity ? (
                   <p className="text-sm text-destructive" data-field-error>
@@ -743,18 +827,38 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
               {isWrittenOff ? (
                 <>
                   <div className="space-y-2">
-                    <Label>{t("inventory.form.writeOffDate")}</Label>
-                    <Input value={toDateInputValue(initialData?.writeOffDate)} readOnly disabled />
+                    <Label htmlFor="inventory-item-write-off-date">
+                      {t("inventory.form.writeOffDate")} *
+                    </Label>
+                    <Input
+                      id="inventory-item-write-off-date"
+                      type="date"
+                      aria-label={t("inventory.form.writeOffDate")}
+                      max={todayDateValue}
+                      {...register("writeOffDate")}
+                    />
+                    {errors.writeOffDate ? (
+                      <p className="text-sm text-destructive" data-field-error>
+                        {errors.writeOffDate.message}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
-                    <Label>{t("inventory.form.writeOffReason")}</Label>
+                    <Label htmlFor="inventory-item-write-off-reason">
+                      {t("inventory.form.writeOffReason")} *
+                    </Label>
                     <Textarea
-                      value={initialData?.writeOffReason ?? ""}
+                      id="inventory-item-write-off-reason"
                       rows={4}
-                      readOnly
-                      disabled
+                      maxLength={INVENTORY_FIELD_LIMITS.writeOffReason}
+                      {...register("writeOffReason")}
                       className="min-h-0 resize-none"
                     />
+                    {errors.writeOffReason ? (
+                      <p className="text-sm text-destructive" data-field-error>
+                        {errors.writeOffReason.message}
+                      </p>
+                    ) : null}
                   </div>
                 </>
               ) : null}
@@ -762,18 +866,38 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
               {isNeedsRepair ? (
                 <>
                   <div className="space-y-2">
-                    <Label>{t("inventory.form.repairDate")}</Label>
-                    <Input value={toDateInputValue(initialData?.repairDate)} readOnly disabled />
+                    <Label htmlFor="inventory-item-repair-date">
+                      {t("inventory.form.repairDate")} *
+                    </Label>
+                    <Input
+                      id="inventory-item-repair-date"
+                      type="date"
+                      aria-label={t("inventory.form.repairDate")}
+                      max={todayDateValue}
+                      {...register("repairDate")}
+                    />
+                    {errors.repairDate ? (
+                      <p className="text-sm text-destructive" data-field-error>
+                        {errors.repairDate.message}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
-                    <Label>{t("inventory.form.repairComment")}</Label>
+                    <Label htmlFor="inventory-item-repair-comment">
+                      {t("inventory.form.repairComment")} *
+                    </Label>
                     <Textarea
-                      value={initialData?.repairComment ?? ""}
+                      id="inventory-item-repair-comment"
                       rows={4}
-                      readOnly
-                      disabled
+                      maxLength={INVENTORY_FIELD_LIMITS.repairComment}
+                      {...register("repairComment")}
                       className="min-h-0 resize-none"
                     />
+                    {errors.repairComment ? (
+                      <p className="text-sm text-destructive" data-field-error>
+                        {errors.repairComment.message}
+                      </p>
+                    ) : null}
                   </div>
                 </>
               ) : null}
@@ -781,18 +905,38 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
               {isBorrowed ? (
                 <>
                   <div className="space-y-2">
-                    <Label>{t("inventory.form.borrowDate")}</Label>
-                    <Input value={toDateInputValue(initialData?.borrowDate)} readOnly disabled />
+                    <Label htmlFor="inventory-item-borrow-date">
+                      {t("inventory.form.borrowDate")} *
+                    </Label>
+                    <Input
+                      id="inventory-item-borrow-date"
+                      type="date"
+                      aria-label={t("inventory.form.borrowDate")}
+                      max={todayDateValue}
+                      {...register("borrowDate")}
+                    />
+                    {errors.borrowDate ? (
+                      <p className="text-sm text-destructive" data-field-error>
+                        {errors.borrowDate.message}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
-                    <Label>{t("inventory.form.availabilityComment")}</Label>
+                    <Label htmlFor="inventory-item-availability-comment">
+                      {t("inventory.form.availabilityComment")} *
+                    </Label>
                     <Textarea
-                      value={initialData?.availabilityComment ?? ""}
+                      id="inventory-item-availability-comment"
                       rows={4}
-                      readOnly
-                      disabled
+                      maxLength={INVENTORY_FIELD_LIMITS.availabilityComment}
+                      {...register("availabilityComment")}
                       className="min-h-0 resize-none"
                     />
+                    {errors.availabilityComment ? (
+                      <p className="text-sm text-destructive" data-field-error>
+                        {errors.availabilityComment.message}
+                      </p>
+                    ) : null}
                   </div>
                 </>
               ) : null}
@@ -898,6 +1042,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                   {...register("supplier")}
                   maxLength={INVENTORY_FIELD_LIMITS.supplier}
                   placeholder={t("inventory.form.supplierPlaceholder")}
+                  disabled={readOnly}
                 />
               </div>
 
@@ -911,6 +1056,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                   max={INVENTORY_FIELD_LIMITS.priceMax}
                   {...register("price")}
                   placeholder={t("inventory.form.pricePlaceholder")}
+                  disabled={readOnly}
                 />
                 {errors.price ? (
                   <p className="text-sm text-destructive" data-field-error>
@@ -926,6 +1072,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                   {...register("serialNumber")}
                   maxLength={INVENTORY_FIELD_LIMITS.serialNumber}
                   placeholder={t("inventory.form.serialNumberPlaceholder")}
+                  disabled={readOnly}
                 />
               </div>
 
@@ -951,6 +1098,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                   maxLength={INVENTORY_FIELD_LIMITS.comment}
                   placeholder={t("inventory.form.commentPlaceholder")}
                   className="min-h-0 resize-none"
+                  disabled={readOnly}
                 />
               </div>
 
@@ -990,9 +1138,11 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                           <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-black/50 p-1">
                             <button
                               type="button"
+                              disabled={readOnly}
                               className={cn(
                                 "rounded p-0.5 text-white transition-colors",
                                 isAvatar ? "text-amber-300" : "text-white/80 hover:text-amber-200",
+                                readOnly && "pointer-events-none opacity-50",
                               )}
                               aria-label={t("inventory.form.setAvatar")}
                               aria-pressed={isAvatar}
@@ -1008,7 +1158,11 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                             </button>
                             <button
                               type="button"
-                              className="rounded p-0.5 text-white/80 transition-colors hover:text-white"
+                              disabled={readOnly}
+                              className={cn(
+                                "rounded p-0.5 text-white/80 transition-colors hover:text-white",
+                                readOnly && "pointer-events-none opacity-50",
+                              )}
                               aria-label={t("inventory.form.removePhoto")}
                               onClick={() => removePhoto(photo.id)}
                             >
