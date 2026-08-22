@@ -207,11 +207,13 @@ export function useReturnToStockMutation() {
   return useMutation({
     mutationFn: async ({
       writtenOffItemId,
+      quantity,
       userEmail,
     }: {
       writtenOffItemId: string
+      quantity: number
       userEmail: string
-    }) => returnToStock(writtenOffItemId, userEmail),
+    }) => returnToStock(writtenOffItemId, quantity, userEmail),
     onSuccess: async () => {
       await invalidateInventoryQueries(queryClient)
     },
@@ -243,8 +245,15 @@ export function useMarkAsNeedsRepairMutation() {
 export function useMarkAsRepairedMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ repairItemId, userEmail }: { repairItemId: string; userEmail: string }) =>
-      markAsRepaired(repairItemId, userEmail),
+    mutationFn: async ({
+      repairItemId,
+      quantity,
+      userEmail,
+    }: {
+      repairItemId: string
+      quantity: number
+      userEmail: string
+    }) => markAsRepaired(repairItemId, quantity, userEmail),
     onSuccess: async () => {
       await invalidateInventoryQueries(queryClient)
     },
@@ -280,11 +289,13 @@ export function useReturnBorrowedMutation() {
   return useMutation({
     mutationFn: async ({
       borrowedItemId,
+      quantity,
       userEmail,
     }: {
       borrowedItemId: string
+      quantity: number
       userEmail: string
-    }) => returnBorrowed(borrowedItemId, userEmail),
+    }) => returnBorrowed(borrowedItemId, quantity, userEmail),
     onSuccess: async () => {
       await invalidateInventoryQueries(queryClient)
     },

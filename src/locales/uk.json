@@ -300,7 +300,13 @@
     },
     "returnToStock": {
       "title": "Повернути в наявність?",
-      "description": "Повернути {{quantity}} шт. предмета «{{name}}» в наявність оригінального предмету?"
+      "description": "Наявна кількість: {{quantity}}",
+      "quantity": "Кількість до повернення",
+      "validation": {
+        "quantityInvalid": "Вкажіть ціле число",
+        "quantityMin": "Мінімум 1",
+        "quantityMax": "Не може перевищувати наявну кількість ({{quantity}})"
+      }
     },
     "needsRepair": {
       "title": "Потребує ремонту «{{name}}»",
@@ -318,7 +324,13 @@
     },
     "repaired": {
       "title": "Відремонтовано?",
-      "description": "Позначити {{quantity}} шт. предмета «{{name}}» як відремонтовані і повернути в наявність оригінального предмету?"
+      "description": "Наявна кількість: {{quantity}}",
+      "quantity": "Кількість до повернення",
+      "validation": {
+        "quantityInvalid": "Вкажіть ціле число",
+        "quantityMin": "Мінімум 1",
+        "quantityMax": "Не може перевищувати наявну кількість ({{quantity}})"
+      }
     },
     "borrow": {
       "title": "Позичити «{{name}}»",
@@ -340,7 +352,13 @@
     },
     "returnBorrowed": {
       "title": "Повернути позичене?",
-      "description": "Повернути {{quantity}} шт. предмета «{{name}}» в наявність оригінального предмету?"
+      "description": "Наявна кількість: {{quantity}}",
+      "quantity": "Кількість до повернення",
+      "validation": {
+        "quantityInvalid": "Вкажіть ціле число",
+        "quantityMin": "Мінімум 1",
+        "quantityMax": "Не може перевищувати наявну кількість ({{quantity}})"
+      }
     },
     "form": {
       "createDescription": "Заповніть дані предмета інвентарю",

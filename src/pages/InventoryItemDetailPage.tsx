@@ -1061,7 +1061,13 @@ export function InventoryItemDetailPage() {
         open={returnToStockOpen}
         onOpenChange={setReturnToStockOpen}
         onConfirm={() => {
-          navigateBackOrInventory()
+          setFormDirty(false)
+          void refetch().then((result) => {
+            const refreshed = result.data?.find((entry) => entry.id === id)
+            if (!refreshed) {
+              navigateBackOrInventory()
+            }
+          })
         }}
       />
 
@@ -1085,7 +1091,13 @@ export function InventoryItemDetailPage() {
         open={repairedConfirmOpen}
         onOpenChange={setRepairedConfirmOpen}
         onConfirm={() => {
-          navigateBackOrInventory()
+          setFormDirty(false)
+          void refetch().then((result) => {
+            const refreshed = result.data?.find((entry) => entry.id === id)
+            if (!refreshed) {
+              navigateBackOrInventory()
+            }
+          })
         }}
       />
 

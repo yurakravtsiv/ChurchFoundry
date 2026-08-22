@@ -300,7 +300,13 @@
     },
     "returnToStock": {
       "title": "Return to stock?",
-      "description": "Return {{quantity}} pcs of “{{name}}” to the original item’s stock?"
+      "description": "Available quantity: {{quantity}}",
+      "quantity": "Quantity to return",
+      "validation": {
+        "quantityInvalid": "Enter a whole number",
+        "quantityMin": "Minimum is 1",
+        "quantityMax": "Cannot exceed available quantity ({{quantity}})"
+      }
     },
     "needsRepair": {
       "title": "Needs repair “{{name}}”",
@@ -318,7 +324,13 @@
     },
     "repaired": {
       "title": "Mark as repaired?",
-      "description": "Mark {{quantity}} pcs of “{{name}}” as repaired and return them to the original item’s stock?"
+      "description": "Available quantity: {{quantity}}",
+      "quantity": "Quantity to return",
+      "validation": {
+        "quantityInvalid": "Enter a whole number",
+        "quantityMin": "Minimum is 1",
+        "quantityMax": "Cannot exceed available quantity ({{quantity}})"
+      }
     },
     "borrow": {
       "title": "Borrow “{{name}}”",
@@ -340,7 +352,13 @@
     },
     "returnBorrowed": {
       "title": "Return borrowed items?",
-      "description": "Return {{quantity}} pcs of “{{name}}” to the original item’s stock?"
+      "description": "Available quantity: {{quantity}}",
+      "quantity": "Quantity to return",
+      "validation": {
+        "quantityInvalid": "Enter a whole number",
+        "quantityMin": "Minimum is 1",
+        "quantityMax": "Cannot exceed available quantity ({{quantity}})"
+      }
     },
     "form": {
       "createDescription": "Fill in the inventory item details",

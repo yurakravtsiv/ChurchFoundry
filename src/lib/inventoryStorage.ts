@@ -809,16 +809,28 @@ export function writeOffItem(
   return { updatedOriginal, newWrittenOffItem }
 }
 
+function assertReturnQuantity(quantity: number, available: number, fnName: string): void {
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    throw new Error(`[inventoryStorage] ${fnName}: quantity must be > 0`)
+  }
+  if (quantity > available) {
+    throw new Error(
+      `[inventoryStorage] ${fnName}: quantity (${quantity}) exceeds available quantity (${available})`,
+    )
+  }
+}
+
 /**
- * Returns a written-off split item back into its original stock.
- * Soft-deletes the written-off row and restores the original (`removed: false`).
+ * Returns quantity from a written-off split item back into its original stock.
+ * Soft-deletes the written-off row when the remaining quantity is 0.
  */
 export function returnToStock(
   writtenOffItemId: string,
+  quantityToReturn: number,
   userEmail: string,
 ): {
   updatedOriginal: InventoryItem
-  removedWrittenOffItem: InventoryItem
+  removedWrittenOffItem: InventoryItem | null
 } {
   const items = getAllInventoryItemsRaw()
   const writtenOffIndex = items.findIndex((item) => item.id === writtenOffItemId)
@@ -833,6 +845,8 @@ export function returnToStock(
     )
   }
 
+  assertReturnQuantity(quantityToReturn, writtenOffItem.quantity, "returnToStock")
+
   const originalIndex = items.findIndex((item) => item.id === writtenOffItem.originalItemId)
   if (originalIndex === -1) {
     throw new Error(
@@ -842,30 +856,41 @@ export function returnToStock(
 
   const timestamp = nowIso()
   const original = items[originalIndex]
+  const remainingQuantity = writtenOffItem.quantity - quantityToReturn
   const updatedOriginal: InventoryItem = {
     ...original,
-    quantity: original.quantity + writtenOffItem.quantity,
+    quantity: original.quantity + quantityToReturn,
     removed: false,
     updatedAt: timestamp,
   }
-  const removedWrittenOffItem: InventoryItem = {
+  const nextWrittenOffItem: InventoryItem = {
     ...writtenOffItem,
-    removed: true,
+    quantity: remainingQuantity,
+    removed: remainingQuantity === 0 ? true : writtenOffItem.removed,
     updatedAt: timestamp,
   }
 
   const next = [...items]
   next[originalIndex] = updatedOriginal
-  next[writtenOffIndex] = removedWrittenOffItem
+  next[writtenOffIndex] = nextWrittenOffItem
   saveInventoryItems(next)
 
   recordInventoryUpdatedExcludingQuantity(original, updatedOriginal, userEmail)
   recordReturnedToStock(original.id, userEmail, {
-    quantity: writtenOffItem.quantity,
+    quantity: quantityToReturn,
     relatedItemId: writtenOffItemId,
   })
+  if (remainingQuantity > 0) {
+    recordReturnedToStock(writtenOffItemId, userEmail, {
+      quantity: quantityToReturn,
+      relatedItemId: original.id,
+    })
+  }
 
-  return { updatedOriginal, removedWrittenOffItem }
+  return {
+    updatedOriginal,
+    removedWrittenOffItem: remainingQuantity === 0 ? nextWrittenOffItem : null,
+  }
 }
 
 /**
@@ -953,15 +978,16 @@ export function markAsNeedsRepair(
 }
 
 /**
- * Returns a needs-repair split item back into its original stock.
- * Soft-deletes the repair row and restores the original (`removed: false`).
+ * Returns quantity from a needs-repair split item back into its original stock.
+ * Soft-deletes the repair row when the remaining quantity is 0.
  */
 export function markAsRepaired(
   repairItemId: string,
+  quantityToReturn: number,
   userEmail: string,
 ): {
   updatedOriginal: InventoryItem
-  removedRepairItem: InventoryItem
+  removedRepairItem: InventoryItem | null
 } {
   const items = getAllInventoryItemsRaw()
   const repairIndex = items.findIndex((item) => item.id === repairItemId)
@@ -976,6 +1002,8 @@ export function markAsRepaired(
     )
   }
 
+  assertReturnQuantity(quantityToReturn, repairItem.quantity, "markAsRepaired")
+
   const originalIndex = items.findIndex((item) => item.id === repairItem.originalItemId)
   if (originalIndex === -1) {
     throw new Error(
@@ -985,30 +1013,41 @@ export function markAsRepaired(
 
   const timestamp = nowIso()
   const original = items[originalIndex]
+  const remainingQuantity = repairItem.quantity - quantityToReturn
   const updatedOriginal: InventoryItem = {
     ...original,
-    quantity: original.quantity + repairItem.quantity,
+    quantity: original.quantity + quantityToReturn,
     removed: false,
     updatedAt: timestamp,
   }
-  const removedRepairItem: InventoryItem = {
+  const nextRepairItem: InventoryItem = {
     ...repairItem,
-    removed: true,
+    quantity: remainingQuantity,
+    removed: remainingQuantity === 0 ? true : repairItem.removed,
     updatedAt: timestamp,
   }
 
   const next = [...items]
   next[originalIndex] = updatedOriginal
-  next[repairIndex] = removedRepairItem
+  next[repairIndex] = nextRepairItem
   saveInventoryItems(next)
 
   recordInventoryUpdatedExcludingQuantity(original, updatedOriginal, userEmail)
   recordRepaired(original.id, userEmail, {
-    quantity: repairItem.quantity,
+    quantity: quantityToReturn,
     relatedItemId: repairItemId,
   })
+  if (remainingQuantity > 0) {
+    recordRepaired(repairItemId, userEmail, {
+      quantity: quantityToReturn,
+      relatedItemId: original.id,
+    })
+  }
 
-  return { updatedOriginal, removedRepairItem }
+  return {
+    updatedOriginal,
+    removedRepairItem: remainingQuantity === 0 ? nextRepairItem : null,
+  }
 }
 
 /**
@@ -1109,11 +1148,13 @@ export function markAsBorrowed(
 }
 
 /**
- * Returns a borrowed item back into its original stock.
- * Split rows are soft-deleted; legacy whole-item borrowed rows are updated in place.
+ * Returns quantity from a borrowed item back into its original stock.
+ * Split rows are soft-deleted when the remaining quantity is 0.
+ * Legacy whole-item borrowed rows convert to a split when only part is returned.
  */
 export function returnBorrowed(
   borrowedItemId: string,
+  quantityToReturn: number,
   userEmail: string,
 ): {
   updatedOriginal: InventoryItem
@@ -1130,25 +1171,63 @@ export function returnBorrowed(
     throw new Error(`[inventoryStorage] returnBorrowed: item is not borrowed (${borrowedItemId})`)
   }
 
+  assertReturnQuantity(quantityToReturn, borrowedItem.quantity, "returnBorrowed")
+
   const timestamp = nowIso()
 
   if (!borrowedItem.originalItemId) {
+    const remainingQuantity = borrowedItem.quantity - quantityToReturn
+    if (remainingQuantity === 0) {
+      const updatedOriginal: InventoryItem = {
+        ...borrowedItem,
+        availability: "in_church",
+        availabilityComment: "",
+        borrowDate: null,
+        returnDate: null,
+        updatedAt: timestamp,
+      }
+      const next = [...items]
+      next[borrowedIndex] = updatedOriginal
+      saveInventoryItems(next)
+
+      recordReturnedFromBorrow(updatedOriginal.id, userEmail, {
+        quantity: quantityToReturn,
+        relatedItemId: borrowedItemId,
+      })
+
+      return { updatedOriginal, removedBorrowedItem: null }
+    }
+
     const updatedOriginal: InventoryItem = {
       ...borrowedItem,
       availability: "in_church",
       availabilityComment: "",
       borrowDate: null,
       returnDate: null,
+      quantity: quantityToReturn,
+      updatedAt: timestamp,
+    }
+    const newIdValue = newId()
+    const origin = typeof window !== "undefined" ? window.location.origin : ""
+    const remainingBorrowedItem: InventoryItem = {
+      ...borrowedItem,
+      id: newIdValue,
+      quantity: remainingQuantity,
+      originalItemId: borrowedItem.id,
+      qrCodeValue: `${origin}/inventory/${newIdValue}`,
+      createdAt: timestamp,
       updatedAt: timestamp,
     }
     const next = [...items]
     next[borrowedIndex] = updatedOriginal
+    next.push(remainingBorrowedItem)
     saveInventoryItems(next)
 
     recordReturnedFromBorrow(updatedOriginal.id, userEmail, {
-      quantity: updatedOriginal.quantity,
-      relatedItemId: borrowedItemId,
+      quantity: quantityToReturn,
+      relatedItemId: remainingBorrowedItem.id,
     })
+    recordInventoryCreated(remainingBorrowedItem, userEmail)
 
     return { updatedOriginal, removedBorrowedItem: null }
   }
@@ -1161,34 +1240,45 @@ export function returnBorrowed(
   }
 
   const original = items[originalIndex]
+  const remainingQuantity = borrowedItem.quantity - quantityToReturn
   const updatedOriginal: InventoryItem = {
     ...original,
-    quantity: original.quantity + borrowedItem.quantity,
+    quantity: original.quantity + quantityToReturn,
     removed: false,
     updatedAt: timestamp,
   }
-  const removedBorrowedItem: InventoryItem = {
+  const nextBorrowedItem: InventoryItem = {
     ...borrowedItem,
-    availability: "in_church",
-    availabilityComment: "",
-    borrowDate: null,
-    returnDate: null,
-    removed: true,
+    quantity: remainingQuantity,
+    availability: remainingQuantity === 0 ? "in_church" : borrowedItem.availability,
+    availabilityComment: remainingQuantity === 0 ? "" : borrowedItem.availabilityComment,
+    borrowDate: remainingQuantity === 0 ? null : borrowedItem.borrowDate,
+    returnDate: remainingQuantity === 0 ? null : borrowedItem.returnDate,
+    removed: remainingQuantity === 0 ? true : borrowedItem.removed,
     updatedAt: timestamp,
   }
 
   const next = [...items]
   next[originalIndex] = updatedOriginal
-  next[borrowedIndex] = removedBorrowedItem
+  next[borrowedIndex] = nextBorrowedItem
   saveInventoryItems(next)
 
   recordInventoryUpdatedExcludingQuantity(original, updatedOriginal, userEmail)
   recordReturnedFromBorrow(original.id, userEmail, {
-    quantity: borrowedItem.quantity,
+    quantity: quantityToReturn,
     relatedItemId: borrowedItemId,
   })
+  if (remainingQuantity > 0) {
+    recordReturnedFromBorrow(borrowedItemId, userEmail, {
+      quantity: quantityToReturn,
+      relatedItemId: original.id,
+    })
+  }
 
-  return { updatedOriginal, removedBorrowedItem }
+  return {
+    updatedOriginal,
+    removedBorrowedItem: remainingQuantity === 0 ? nextBorrowedItem : null,
+  }
 }
 
 /**
