@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 import { z } from "zod"
 
+import { OverdueReturnHint } from "@/components/inventory/BorrowReturnDateCell"
 import { CreateReferenceEntityDialog } from "@/components/inventory/CreateReferenceEntityDialog"
 import { CreateSubcategoryDialog } from "@/components/inventory/CreateSubcategoryDialog"
 import { Button } from "@/components/ui/button"
@@ -31,7 +32,7 @@ import {
   useResponsiblesQuery,
   useSubcategoriesQuery,
 } from "@/hooks/queries/useInventoryQueries"
-import { dayAfter, isReturnDateAfterBorrowDate } from "@/lib/borrowDates"
+import { dayAfter, isBorrowReturnOverdue, isReturnDateAfterBorrowDate } from "@/lib/borrowDates"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
 import { optionsWithCurrent } from "@/lib/inventoryReferenceOptions"
 import { compressImage } from "@/lib/inventoryStorage"
@@ -465,7 +466,9 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
     const photos = watch("photos") ?? []
     const avatarPhotoId = watch("avatarPhotoId")
     const borrowDateValue = watch("borrowDate")
+    const returnDateValue = watch("returnDate")
     const returnDateMin = borrowDateValue ? dayAfter(borrowDateValue) : undefined
+    const returnDateOverdue = isBorrowed && isBorrowReturnOverdue(returnDateValue)
 
     const categoryOptions = useMemo(
       () => sortByName(optionsWithCurrent(categories, lookupCategories, categoryId), i18n.language),
@@ -966,13 +969,25 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                     <Label htmlFor="inventory-item-return-date">
                       {t("inventory.form.returnDate")} *
                     </Label>
-                    <Input
-                      id="inventory-item-return-date"
-                      type="date"
-                      aria-label={t("inventory.form.returnDate")}
-                      min={returnDateMin}
-                      {...register("returnDate")}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="inventory-item-return-date"
+                        type="date"
+                        aria-label={t("inventory.form.returnDate")}
+                        min={returnDateMin}
+                        className={
+                          returnDateOverdue
+                            ? "pr-10 [&::-webkit-calendar-picker-indicator]:mr-6"
+                            : undefined
+                        }
+                        {...register("returnDate")}
+                      />
+                      {returnDateOverdue ? (
+                        <span className="absolute inset-y-0 right-2 z-10 flex items-center">
+                          <OverdueReturnHint className="[&_svg]:size-4" />
+                        </span>
+                      ) : null}
+                    </div>
                     {errors.returnDate ? (
                       <p className="text-sm text-destructive" data-field-error>
                         {errors.returnDate.message}
