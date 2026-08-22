@@ -1349,10 +1349,11 @@ export function InventoryPage() {
       includeWriteOffColumns: showWrittenOff,
       visibleColumnIds,
     }
+    const sortedItems = table.getRowModel().rows.map((row) => row.original)
     const exportItems =
       showWrittenOff || showArchived
-        ? filteredItems
-        : filteredItems.filter((item) => !item.removed && !item.archived)
+        ? sortedItems
+        : sortedItems.filter((item) => !item.removed && !item.archived)
     if (exportItems.length === 0) {
       window.alert(t("inventory.export.empty"))
       return

@@ -11,6 +11,7 @@ import {
   resolveVisibleColumnIds,
 } from "@/lib/inventoryColumnConfig"
 import { availabilityLabel, conditionLabel } from "@/lib/inventoryLabels"
+import { toSquareRoundedPng } from "@/lib/squareRoundedImage"
 import type { Category, InventoryItem, Location, Responsible, Subcategory } from "@/types/inventory"
 
 export type InventoryExportRow = {
@@ -89,6 +90,38 @@ const CONDITION_CELL_STYLES = {
 
 const PDF_ROW_MIN_HEIGHT_MM = 18
 const PDF_PHOTO_SIZE_MM = 12
+const PDF_PLACEHOLDER_ICON_PX = 96
+
+/**
+ * Lucide `Package` as in the inventory table when an item has no photo.
+ * Colors match `bg-muted` / `text-muted-foreground` on the light theme.
+ */
+const INVENTORY_PHOTO_PLACEHOLDER_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <rect width="96" height="96" rx="14" fill="#F0F0F0"/>
+  <g fill="none" stroke="#666666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(24 24) scale(2)">
+    <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
+    <path d="M12 22V12"/>
+    <polyline points="3.29 7 12 12 20.71 7"/>
+    <path d="m7.5 4.27 9 5.15"/>
+  </g>
+</svg>
+`.trim()
+
+const INVENTORY_PHOTO_PLACEHOLDER_DATA_URL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(INVENTORY_PHOTO_PLACEHOLDER_SVG)}`
+
+async function getPdfPlaceholderIconPng(): Promise<string | null> {
+  try {
+    return await toSquareRoundedPng(
+      INVENTORY_PHOTO_PLACEHOLDER_DATA_URL,
+      PDF_PLACEHOLDER_ICON_PX,
+      0,
+    )
+  } catch (error) {
+    console.error("[inventoryExport] Failed to rasterize placeholder icon", error)
+    return null
+  }
+}
 
 export function getExportColumnHeaders(t: TFunction): Record<InventoryExportRowKey, string> {
   return {
@@ -306,6 +339,7 @@ export async function exportToPdf(
   const headers = getExportColumnHeaders(t)
   const visibleColumnIds = resolveExportVisibleColumnIds(options)
   const photoColumnIndex = visibleColumnIds.indexOf("photo")
+  const placeholderIconPng = photoColumnIndex >= 0 ? await getPdfPlaceholderIconPng() : null
   const conditionColumnIndex = visibleColumnIds.indexOf("condition")
   const availabilityColumnIndex = visibleColumnIds.indexOf("availability")
   const availabilityCommentColumnIndex = visibleColumnIds.indexOf("availabilityComment")
@@ -411,7 +445,7 @@ export async function exportToPdf(
       ) {
         return
       }
-      const source = rowMeta[hookData.row.index]?.avatarDataUrl
+      const source = rowMeta[hookData.row.index]?.avatarDataUrl ?? placeholderIconPng
       if (!source) {
         return
       }
