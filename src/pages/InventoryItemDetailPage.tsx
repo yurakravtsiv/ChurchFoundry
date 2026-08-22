@@ -186,6 +186,12 @@ export function InventoryItemDetailPage() {
   const archiveItemMutation = useArchiveInventoryItemMutation()
 
   const item = useMemo(() => items.find((entry) => entry.id === id), [id, items])
+  const originalItem = useMemo(() => {
+    if (!item?.originalItemId) {
+      return undefined
+    }
+    return items.find((entry) => entry.id === item.originalItemId)
+  }, [item, items])
   const relatedWriteOffs = useMemo(() => {
     if (!item || item.condition === "written_off") {
       return []
@@ -434,6 +440,7 @@ export function InventoryItemDetailPage() {
       autoFocusFirstField
       initialData={item}
       readOnly={isRestrictedEdit}
+      originalItem={originalItem}
       onBusyChange={setFormBusy}
       onDirtyChange={setFormDirty}
       onCancel={requestLeave}

@@ -156,6 +156,8 @@
       "writeOffBatchesTitle": "Списані предмети",
       "repairBatchesTitle": "Потребують ремонту",
       "borrowBatchesTitle": "Позичені предмети",
+      "originalItemHint": "Інші одиниці цього предмета ще є в інвентарі.",
+      "originalItemLink": "Відкрити «{{name}}»",
       "readOnlyWrittenOffWarning": "Можна змінити лише дату списання та причину списання.",
       "readOnlyNeedsRepairWarning": "Можна змінити лише дату несправності та коментар про несправність.",
       "readOnlyBorrowedWarning": "Можна змінити лише дату позичання, дату повернення та коментар наявності.",

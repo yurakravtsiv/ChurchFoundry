@@ -156,6 +156,8 @@
       "writeOffBatchesTitle": "Written-off items",
       "repairBatchesTitle": "Needs repair",
       "borrowBatchesTitle": "Borrowed items",
+      "originalItemHint": "More of this item is still in inventory.",
+      "originalItemLink": "Open “{{name}}”",
       "readOnlyWrittenOffWarning": "Only the write-off date and write-off reason can be edited.",
       "readOnlyNeedsRepairWarning": "Only the fault date and fault comment can be edited.",
       "readOnlyBorrowedWarning": "Only the borrow date, return date, and availability comment can be edited.",

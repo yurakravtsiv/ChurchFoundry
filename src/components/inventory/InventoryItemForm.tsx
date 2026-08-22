@@ -3,6 +3,7 @@ import { Info, Plus, Star, X } from "lucide-react"
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
+import { Link } from "react-router"
 import { z } from "zod"
 
 import { CreateReferenceEntityDialog } from "@/components/inventory/CreateReferenceEntityDialog"
@@ -78,6 +79,8 @@ type InventoryItemFormProps = {
   onBusyChange?: (busy: boolean) => void
   /** Locks regular fields on written-off / repair / borrowed items. Status date and comment stay editable. */
   readOnly?: boolean
+  /** Visible original item this split was created from. Hidden when the original is removed. */
+  originalItem?: InventoryItem
   /** Focus the name field after the form mounts (create dialog / edit page). */
   autoFocusFirstField?: boolean
 }
@@ -138,6 +141,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
       id,
       onBusyChange,
       readOnly = false,
+      originalItem,
       autoFocusFirstField = false,
     },
     ref,
@@ -681,6 +685,20 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
             )}
           >
             <fieldset className="min-w-0 space-y-4 border-0 p-0">
+              {originalItem ? (
+                <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm">
+                  <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <p>
+                    {t("inventory.detail.originalItemHint")}{" "}
+                    <Link
+                      to={`/inventory/${originalItem.id}`}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {t("inventory.detail.originalItemLink", { name: originalItem.name })}
+                    </Link>
+                  </p>
+                </div>
+              ) : null}
               {readOnly ? (
                 <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
                   <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
