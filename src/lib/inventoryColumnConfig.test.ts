@@ -49,6 +49,18 @@ describe("mergeColumnPrefs", () => {
     expect(merged.hidden).toContain("supplier")
     expect(merged.hidden).not.toContain("quantity")
   })
+
+  it("inserts the responsible column after location in saved order", () => {
+    const merged = mergeColumnPrefs({
+      version: 1,
+      order: ["name", "location", "condition", "comment"],
+      hidden: [],
+    })
+
+    const locationIndex = merged.order.indexOf("location")
+    expect(merged.order[locationIndex + 1]).toBe("responsible")
+    expect(merged.hidden).not.toContain("responsible")
+  })
 })
 
 describe("resolveVisibleColumnIds", () => {
@@ -60,6 +72,7 @@ describe("resolveVisibleColumnIds", () => {
       "subcategory",
       "quantity",
       "location",
+      "responsible",
       "condition",
       "availability",
       "availabilityComment",
@@ -95,6 +108,7 @@ describe("resolveVisibleColumnIds", () => {
       "category",
       "subcategory",
       "location",
+      "responsible",
       "condition",
       "availability",
       "availabilityComment",
@@ -114,6 +128,7 @@ describe("getSearchableColumnIds", () => {
     expect(ids).not.toContain("inventoryNumberId")
     expect(ids).toContain("name")
     expect(ids).toContain("supplier")
+    expect(ids).toContain("responsible")
   })
 })
 

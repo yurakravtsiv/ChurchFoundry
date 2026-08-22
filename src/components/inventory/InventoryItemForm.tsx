@@ -23,13 +23,16 @@ import {
   useCategoriesQuery,
   useCreateCategoryMutation,
   useCreateLocationMutation,
+  useCreateResponsibleMutation,
   useInventoryReferenceLookupsQuery,
   useLocationsQuery,
+  useResponsiblesQuery,
   useSubcategoriesQuery,
 } from "@/hooks/queries/useInventoryQueries"
 import { INVENTORY_FIELD_LIMITS } from "@/lib/inventoryFieldLimits"
 import { optionsWithCurrent } from "@/lib/inventoryReferenceOptions"
 import { compressImage } from "@/lib/inventoryStorage"
+import { sortByName } from "@/lib/localeCompare"
 import { cn } from "@/lib/utils"
 import type {
   Category,
@@ -37,6 +40,7 @@ import type {
   InventoryItem,
   InventoryPhoto,
   Location,
+  Responsible,
 } from "@/types/inventory"
 
 export type InventoryItemFormValues = CreateInventoryItemInput
@@ -133,7 +137,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
     const isWrittenOff = initialData?.condition === "written_off"
     const isNeedsRepair = initialData?.condition === "needs_repair"
     const isBorrowed = initialData?.availability === "borrowed"
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
     const readOnlyWarningMessage = isWrittenOff
       ? t("inventory.detail.readOnlyWrittenOffWarning")
       : isNeedsRepair
@@ -159,16 +163,25 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
       isError: locationsError,
       refetch: refetchLocations,
     } = useLocationsQuery()
+    const {
+      data: responsibles = [],
+      isLoading: responsiblesLoading,
+      isError: responsiblesError,
+      refetch: refetchResponsibles,
+    } = useResponsiblesQuery()
     const { data: lookups, isLoading: lookupsLoading } = useInventoryReferenceLookupsQuery()
     const lookupCategories = lookups?.categories ?? []
     const lookupSubcategories = lookups?.subcategories ?? []
     const lookupLocations = lookups?.locations ?? []
+    const lookupResponsibles = lookups?.responsibles ?? []
     const [createCategoryOpen, setCreateCategoryOpen] = useState(false)
     const [createSubcategoryOpen, setCreateSubcategoryOpen] = useState(false)
     const [createLocationOpen, setCreateLocationOpen] = useState(false)
+    const [createResponsibleOpen, setCreateResponsibleOpen] = useState(false)
     const [categorySelectOpen, setCategorySelectOpen] = useState(false)
     const [subcategorySelectOpen, setSubcategorySelectOpen] = useState(false)
     const [locationSelectOpen, setLocationSelectOpen] = useState(false)
+    const [responsibleSelectOpen, setResponsibleSelectOpen] = useState(false)
     const [isCompressing, setIsCompressing] = useState(false)
 
     useEffect(() => {
@@ -178,6 +191,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
     const pendingCategoryIdRef = useRef<string | null>(null)
     const pendingSubcategoryIdRef = useRef<string | null>(null)
     const pendingLocationIdRef = useRef<string | null>(null)
+    const pendingResponsibleIdRef = useRef<string | null>(null)
     const formRef = useRef<HTMLFormElement | null>(null)
 
     const schema = useMemo(
@@ -213,6 +227,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
               ),
           ),
           locationId: z.string().min(1, t("inventory.form.validation.locationRequired")),
+          responsibleId: z.string().min(1, t("inventory.form.validation.responsibleRequired")),
           availability: z.literal("in_church"),
           availabilityComment: z
             .string()
@@ -298,6 +313,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
         subcategoryId: initialData?.subcategoryId ?? "",
         quantity: initialData?.quantity ?? 1,
         locationId: initialData?.locationId ?? "",
+        responsibleId: initialData?.responsibleId ?? "",
         availability: "in_church" as const,
         availabilityComment: "",
         supplier: initialData?.supplier ?? "",
@@ -353,23 +369,35 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
     const categoryId = watch("categoryId")
     const subcategoryId = watch("subcategoryId")
     const locationId = watch("locationId")
+    const responsibleId = watch("responsibleId")
     const photos = watch("photos") ?? []
     const avatarPhotoId = watch("avatarPhotoId")
 
     const categoryOptions = useMemo(
-      () => optionsWithCurrent(categories, lookupCategories, categoryId),
-      [categories, categoryId, lookupCategories],
+      () => sortByName(optionsWithCurrent(categories, lookupCategories, categoryId), i18n.language),
+      [categories, categoryId, i18n.language, lookupCategories],
     )
     const filteredSubcategories = useMemo(() => {
       const visible = subcategories.filter((subcategory) => subcategory.categoryId === categoryId)
       const lookupForCategory = lookupSubcategories.filter(
         (subcategory) => subcategory.categoryId === categoryId,
       )
-      return optionsWithCurrent(visible, lookupForCategory, subcategoryId)
-    }, [categoryId, lookupSubcategories, subcategoryId, subcategories])
+      return sortByName(
+        optionsWithCurrent(visible, lookupForCategory, subcategoryId),
+        i18n.language,
+      )
+    }, [categoryId, i18n.language, lookupSubcategories, subcategoryId, subcategories])
     const locationOptions = useMemo(
-      () => optionsWithCurrent(locations, lookupLocations, locationId),
-      [locationId, locations, lookupLocations],
+      () => sortByName(optionsWithCurrent(locations, lookupLocations, locationId), i18n.language),
+      [i18n.language, locationId, locations, lookupLocations],
+    )
+    const responsibleOptions = useMemo(
+      () =>
+        sortByName(
+          optionsWithCurrent(responsibles, lookupResponsibles, responsibleId),
+          i18n.language,
+        ),
+      [i18n.language, lookupResponsibles, responsibleId, responsibles],
     )
 
     // Reset subcategory only when the user actually changes category.
@@ -422,6 +450,17 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
       setLocationSelectOpen(false)
     }, [locations, setValue])
 
+    // Select newly created responsible once it is in the options list.
+    useEffect(() => {
+      const pendingId = pendingResponsibleIdRef.current
+      if (!pendingId || !responsibles.some((responsible) => responsible.id === pendingId)) {
+        return
+      }
+      pendingResponsibleIdRef.current = null
+      setValue("responsibleId", pendingId, { shouldDirty: true, shouldValidate: true })
+      setResponsibleSelectOpen(false)
+    }, [responsibles, setValue])
+
     // If selected category no longer exists at all, clear both selects.
     // Soft-deleted categories stay as the current value via lookups.
     useEffect(() => {
@@ -464,6 +503,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           subcategoryId: values.subcategoryId,
           quantity: values.quantity,
           locationId: values.locationId,
+          responsibleId: values.responsibleId,
           availability: "in_church",
           availabilityComment: "",
           supplier: values.supplier?.trim() ?? "",
@@ -542,7 +582,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                 </div>
               ) : null}
 
-              {categoriesError || subcategoriesError || locationsError ? (
+              {categoriesError || subcategoriesError || locationsError || responsiblesError ? (
                 <div className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
                   <p className="text-destructive">{t("common.loadError")}</p>
                   <Button
@@ -553,6 +593,7 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
                       void refetchCategories()
                       void refetchSubcategories()
                       void refetchLocations()
+                      void refetchResponsibles()
                     }}
                   >
                     {t("common.retry")}
@@ -804,6 +845,53 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
               </div>
 
               <div className="space-y-2">
+                <Label>{t("inventory.form.responsible")} *</Label>
+                <Controller
+                  control={control}
+                  name="responsibleId"
+                  render={({ field }) => (
+                    <Select
+                      open={responsibleSelectOpen}
+                      onOpenChange={setResponsibleSelectOpen}
+                      value={field.value || undefined}
+                      onValueChange={field.onChange}
+                      disabled={readOnly || responsiblesLoading}
+                    >
+                      <SelectTrigger aria-label={t("inventory.form.responsible")}>
+                        <SelectValue
+                          placeholder={
+                            responsiblesLoading
+                              ? t("common.loading")
+                              : t("inventory.form.responsiblePlaceholder")
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {responsibleOptions.map((responsible) => (
+                          <SelectItem key={responsible.id} value={responsible.id}>
+                            {responsible.name}
+                          </SelectItem>
+                        ))}
+                        <SelectCreateAction
+                          label={t("inventory.form.createResponsible")}
+                          disabled={readOnly}
+                          onCreate={() => {
+                            setResponsibleSelectOpen(false)
+                            setCreateResponsibleOpen(true)
+                          }}
+                        />
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.responsibleId ? (
+                  <p className="text-sm text-destructive" data-field-error>
+                    {errors.responsibleId.message}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="inventory-item-supplier">{t("inventory.form.supplier")}</Label>
                 <Input
                   id="inventory-item-supplier"
@@ -997,6 +1085,22 @@ export const InventoryItemForm = forwardRef<InventoryItemFormHandle, InventoryIt
           validationRequiredKey="inventory.form.validation.locationNameRequired"
           inputIdPrefix="create-location-name"
           createMutationHook={useCreateLocationMutation}
+        />
+
+        <CreateReferenceEntityDialog<Responsible>
+          open={createResponsibleOpen}
+          onOpenChange={setCreateResponsibleOpen}
+          onCreated={(responsible) => {
+            pendingResponsibleIdRef.current = responsible.id
+            setValue("responsibleId", responsible.id, { shouldDirty: true, shouldValidate: true })
+            setResponsibleSelectOpen(false)
+          }}
+          titleKey="inventory.form.createResponsibleTitle"
+          labelKey="inventory.form.responsibleName"
+          placeholderKey="inventory.form.responsibleNamePlaceholder"
+          validationRequiredKey="inventory.form.validation.responsibleNameRequired"
+          inputIdPrefix="create-responsible-name"
+          createMutationHook={useCreateResponsibleMutation}
         />
       </>
     )

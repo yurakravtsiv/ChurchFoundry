@@ -21,18 +21,23 @@ import {
   useCategoriesQuery,
   useCreateCategoryMutation,
   useCreateLocationMutation,
+  useCreateResponsibleMutation,
   useCreateSubcategoryMutation,
   useDeleteCategoryMutation,
   useDeleteLocationMutation,
+  useDeleteResponsibleMutation,
   useDeleteSubcategoryMutation,
   useInventoryItemsQuery,
   useLocationsQuery,
+  useResponsiblesQuery,
   useSubcategoriesQuery,
   useUpdateCategoryMutation,
   useUpdateLocationMutation,
+  useUpdateResponsibleMutation,
   useUpdateSubcategoryMutation,
 } from "@/hooks/queries/useInventoryQueries"
-import type { Category, Location, Subcategory } from "@/types/inventory"
+import { sortByName } from "@/lib/localeCompare"
+import type { Category, Location, Responsible, Subcategory } from "@/types/inventory"
 
 type NameDialogState =
   | { kind: "category"; mode: "create" }
@@ -40,11 +45,14 @@ type NameDialogState =
   | { kind: "subcategory"; mode: "edit"; entity: Subcategory }
   | { kind: "location"; mode: "create" }
   | { kind: "location"; mode: "edit"; entity: Location }
+  | { kind: "responsible"; mode: "create" }
+  | { kind: "responsible"; mode: "edit"; entity: Responsible }
 
 type DeleteState =
   | { kind: "category"; entity: Category; usageCount: number }
   | { kind: "subcategory"; entity: Subcategory; usageCount: number }
   | { kind: "location"; entity: Location; usageCount: number }
+  | { kind: "responsible"; entity: Responsible; usageCount: number }
 
 function EntityRow({
   name,
@@ -77,7 +85,7 @@ function EntityRow({
 }
 
 export function InventorySettingsTab() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const {
     data: items = [],
     isLoading: itemsLoading,
@@ -102,6 +110,12 @@ export function InventorySettingsTab() {
     isError: locationsError,
     refetch: refetchLocations,
   } = useLocationsQuery()
+  const {
+    data: responsibles = [],
+    isLoading: responsiblesLoading,
+    isError: responsiblesError,
+    refetch: refetchResponsibles,
+  } = useResponsiblesQuery()
 
   const createCategoryMutation = useCreateCategoryMutation()
   const updateCategoryMutation = useUpdateCategoryMutation()
@@ -112,20 +126,45 @@ export function InventorySettingsTab() {
   const createLocationMutation = useCreateLocationMutation()
   const updateLocationMutation = useUpdateLocationMutation()
   const deleteLocationMutation = useDeleteLocationMutation()
+  const createResponsibleMutation = useCreateResponsibleMutation()
+  const updateResponsibleMutation = useUpdateResponsibleMutation()
+  const deleteResponsibleMutation = useDeleteResponsibleMutation()
 
   const [nameDialog, setNameDialog] = useState<NameDialogState | null>(null)
   const [createSubcategoryOpen, setCreateSubcategoryOpen] = useState(false)
   const [deleteState, setDeleteState] = useState<DeleteState | null>(null)
 
-  const isLoading = itemsLoading || categoriesLoading || subcategoriesLoading || locationsLoading
-  const isError = itemsError || categoriesError || subcategoriesError || locationsError
+  const isLoading =
+    itemsLoading ||
+    categoriesLoading ||
+    subcategoriesLoading ||
+    locationsLoading ||
+    responsiblesLoading
+  const isError =
+    itemsError || categoriesError || subcategoriesError || locationsError || responsiblesError
+
+  const sortedCategories = useMemo(
+    () => sortByName(categories, i18n.language),
+    [categories, i18n.language],
+  )
+  const sortedLocations = useMemo(
+    () => sortByName(locations, i18n.language),
+    [i18n.language, locations],
+  )
+  const sortedResponsibles = useMemo(
+    () => sortByName(responsibles, i18n.language),
+    [i18n.language, responsibles],
+  )
 
   const subcategoriesByCategory = useMemo(() => {
-    return categories.map((category) => ({
+    return sortedCategories.map((category) => ({
       category,
-      items: subcategories.filter((subcategory) => subcategory.categoryId === category.id),
+      items: sortByName(
+        subcategories.filter((subcategory) => subcategory.categoryId === category.id),
+        i18n.language,
+      ),
     }))
-  }, [categories, subcategories])
+  }, [i18n.language, sortedCategories, subcategories])
 
   const nameDialogMeta = useMemo(() => {
     if (!nameDialog) {
@@ -156,24 +195,40 @@ export function InventorySettingsTab() {
         isPending: updateSubcategoryMutation.isPending,
       }
     }
+    if (nameDialog.kind === "location") {
+      return {
+        titleKey:
+          nameDialog.mode === "create"
+            ? "settings.inventory.createLocationTitle"
+            : "settings.inventory.editLocationTitle",
+        labelKey: "inventory.form.locationName",
+        placeholderKey: "inventory.form.locationNamePlaceholder",
+        validationRequiredKey: "inventory.form.validation.locationNameRequired",
+        inputId: "settings-location-name",
+        initialName: nameDialog.mode === "edit" ? nameDialog.entity.name : "",
+        isPending: createLocationMutation.isPending || updateLocationMutation.isPending,
+      }
+    }
     return {
       titleKey:
         nameDialog.mode === "create"
-          ? "settings.inventory.createLocationTitle"
-          : "settings.inventory.editLocationTitle",
-      labelKey: "inventory.form.locationName",
-      placeholderKey: "inventory.form.locationNamePlaceholder",
-      validationRequiredKey: "inventory.form.validation.locationNameRequired",
-      inputId: "settings-location-name",
+          ? "settings.inventory.createResponsibleTitle"
+          : "settings.inventory.editResponsibleTitle",
+      labelKey: "inventory.form.responsibleName",
+      placeholderKey: "inventory.form.responsibleNamePlaceholder",
+      validationRequiredKey: "inventory.form.validation.responsibleNameRequired",
+      inputId: "settings-responsible-name",
       initialName: nameDialog.mode === "edit" ? nameDialog.entity.name : "",
-      isPending: createLocationMutation.isPending || updateLocationMutation.isPending,
+      isPending: createResponsibleMutation.isPending || updateResponsibleMutation.isPending,
     }
   }, [
     createCategoryMutation.isPending,
     createLocationMutation.isPending,
+    createResponsibleMutation.isPending,
     nameDialog,
     updateCategoryMutation.isPending,
     updateLocationMutation.isPending,
+    updateResponsibleMutation.isPending,
     updateSubcategoryMutation.isPending,
   ])
 
@@ -199,11 +254,22 @@ export function InventorySettingsTab() {
       )
       return
     }
-    if (nameDialog.mode === "create") {
-      createLocationMutation.mutate(name, { onSuccess: () => setNameDialog(null) })
+    if (nameDialog.kind === "location") {
+      if (nameDialog.mode === "create") {
+        createLocationMutation.mutate(name, { onSuccess: () => setNameDialog(null) })
+        return
+      }
+      updateLocationMutation.mutate(
+        { id: nameDialog.entity.id, name },
+        { onSuccess: () => setNameDialog(null) },
+      )
       return
     }
-    updateLocationMutation.mutate(
+    if (nameDialog.mode === "create") {
+      createResponsibleMutation.mutate(name, { onSuccess: () => setNameDialog(null) })
+      return
+    }
+    updateResponsibleMutation.mutate(
       { id: nameDialog.entity.id, name },
       { onSuccess: () => setNameDialog(null) },
     )
@@ -222,13 +288,18 @@ export function InventorySettingsTab() {
       deleteSubcategoryMutation.mutate(deleteState.entity.id, { onSuccess })
       return
     }
-    deleteLocationMutation.mutate(deleteState.entity.id, { onSuccess })
+    if (deleteState.kind === "location") {
+      deleteLocationMutation.mutate(deleteState.entity.id, { onSuccess })
+      return
+    }
+    deleteResponsibleMutation.mutate(deleteState.entity.id, { onSuccess })
   }
 
   const isDeleting =
     deleteCategoryMutation.isPending ||
     deleteSubcategoryMutation.isPending ||
-    deleteLocationMutation.isPending
+    deleteLocationMutation.isPending ||
+    deleteResponsibleMutation.isPending
 
   if (isError) {
     return (
@@ -238,6 +309,7 @@ export function InventorySettingsTab() {
           void refetchCategories()
           void refetchSubcategories()
           void refetchLocations()
+          void refetchResponsibles()
         }}
       />
     )
@@ -246,6 +318,7 @@ export function InventorySettingsTab() {
   if (isLoading) {
     return (
       <div className="space-y-4">
+        <Skeleton className="h-48 w-full rounded-xl" />
         <Skeleton className="h-48 w-full rounded-xl" />
         <Skeleton className="h-48 w-full rounded-xl" />
         <Skeleton className="h-48 w-full rounded-xl" />
@@ -274,7 +347,7 @@ export function InventorySettingsTab() {
             </p>
           ) : (
             <ul className="divide-y divide-border">
-              {categories.map((category) => (
+              {sortedCategories.map((category) => (
                 <EntityRow
                   key={category.id}
                   name={category.name}
@@ -383,7 +456,7 @@ export function InventorySettingsTab() {
             </p>
           ) : (
             <ul className="divide-y divide-border">
-              {locations.map((location) => (
+              {sortedLocations.map((location) => (
                 <EntityRow
                   key={location.id}
                   name={location.name}
@@ -395,6 +468,49 @@ export function InventorySettingsTab() {
                       kind: "location",
                       entity: location,
                       usageCount: items.filter((item) => item.locationId === location.id).length,
+                    })
+                  }
+                />
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-4 py-4">
+          <CardTitle className="text-base">{t("settings.inventory.responsibles")}</CardTitle>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setNameDialog({ kind: "responsible", mode: "create" })}
+          >
+            <Plus className="size-4" />
+            {t("settings.inventory.create")}
+          </Button>
+        </CardHeader>
+        <CardContent className="px-4 pb-4 pt-0">
+          {sortedResponsibles.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("settings.inventory.emptyResponsibles")}
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {sortedResponsibles.map((responsible) => (
+                <EntityRow
+                  key={responsible.id}
+                  name={responsible.name}
+                  editLabel={t("settings.inventory.edit")}
+                  deleteLabel={t("settings.inventory.delete")}
+                  onEdit={() =>
+                    setNameDialog({ kind: "responsible", mode: "edit", entity: responsible })
+                  }
+                  onDelete={() =>
+                    setDeleteState({
+                      kind: "responsible",
+                      entity: responsible,
+                      usageCount: items.filter((item) => item.responsibleId === responsible.id)
+                        .length,
                     })
                   }
                 />
@@ -426,7 +542,7 @@ export function InventorySettingsTab() {
 
       <CreateSubcategorySettingsDialog
         open={createSubcategoryOpen}
-        categories={categories}
+        categories={sortedCategories}
         isPending={createSubcategoryMutation.isPending}
         onOpenChange={setCreateSubcategoryOpen}
         onSubmit={(payload) => {

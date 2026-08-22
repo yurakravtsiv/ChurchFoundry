@@ -20,6 +20,7 @@
       "writeOffDate": "Дата списання",
       "writeOffReason": "Причина списання",
       "location": "Локація",
+      "responsible": "Відповідальний",
       "availability": "Наявність",
       "borrowDate": "Дата позичання",
       "availabilityComment": "Коментар наявності",
@@ -88,6 +89,7 @@
       "categories": "Категорії",
       "subcategories": "Підкатегорії",
       "locations": "Локації",
+      "responsibles": "Відповідальні",
       "create": "Створити",
       "edit": "Редагувати",
       "delete": "Видалити",
@@ -95,6 +97,7 @@
       "emptyCategories": "Категорій ще немає",
       "emptySubcategories": "Підкатегорій ще немає",
       "emptyLocations": "Локацій ще немає",
+      "emptyResponsibles": "Відповідальних ще немає",
       "emptyGroup": "Немає",
       "createCategoryTitle": "Нова категорія",
       "editCategoryTitle": "Редагувати категорію",
@@ -102,6 +105,8 @@
       "editSubcategoryTitle": "Редагувати підкатегорію",
       "createLocationTitle": "Нова локація",
       "editLocationTitle": "Редагувати локацію",
+      "createResponsibleTitle": "Новий відповідальний",
+      "editResponsibleTitle": "Редагувати відповідального",
       "categoryField": "Категорія",
       "categoryPlaceholder": "Оберіть категорію",
       "name": "Назва",
@@ -112,7 +117,7 @@
     },
     "generateData": {
       "title": "Згенерувати тестові дані?",
-      "description": "Буде створено {{count}} нових тестових предметів інвентарю з різними категоріями, підкатегоріями, локаціями та станами.",
+      "description": "Буде створено {{count}} нових тестових предметів інвентарю з різними категоріями, підкатегоріями, локаціями, відповідальними та станами.",
       "confirm": "Згенерувати",
       "generating": "Генерація..."
     }
@@ -198,6 +203,7 @@
       "subcategory": "Підкатегорія",
       "availability": "Наявність",
       "location": "Локація",
+      "responsible": "Відповідальний",
       "condition": "Стан",
       "clear": "Скинути",
       "clearAll": "Скинути всі фільтри",
@@ -220,6 +226,7 @@
       "subcategory": "Підкатегорія",
       "quantity": "Кількість",
       "location": "Локація",
+      "responsible": "Відповідальний",
       "condition": "Стан",
       "repairDate": "Дата несправності",
       "repairComment": "Несправність",
@@ -350,6 +357,12 @@
       "locationNamePlaceholder": "Наприклад, Склад",
       "createLocation": "Створити локацію",
       "createLocationTitle": "Нова локація",
+      "responsible": "Відповідальний",
+      "responsiblePlaceholder": "Оберіть відповідального",
+      "responsibleName": "Назва відповідального",
+      "responsibleNamePlaceholder": "Наприклад, Команда звуку",
+      "createResponsible": "Створити відповідального",
+      "createResponsibleTitle": "Новий відповідальний",
       "availability": "Наявність",
       "availabilityComment": "Коментар наявності",
       "availabilityCommentPlaceholder": "Інформація про предмет, позичальника, дату повернення",
@@ -379,6 +392,7 @@
         "categoryRequired": "Оберіть категорію",
         "subcategoryRequired": "Оберіть підкатегорію",
         "locationRequired": "Оберіть локацію",
+        "responsibleRequired": "Оберіть відповідального",
         "quantityRequired": "Вкажіть кількість",
         "quantityMin": "Кількість має бути щонайменше 1",
         "quantityMax": "Кількість не може перевищувати {{max}}",
@@ -389,7 +403,8 @@
         "availabilityCommentRequired": "Вкажіть коментар для позиченого предмета",
         "categoryNameRequired": "Вкажіть назву категорії",
         "subcategoryNameRequired": "Вкажіть назву підкатегорії",
-        "locationNameRequired": "Вкажіть назву локації"
+        "locationNameRequired": "Вкажіть назву локації",
+        "responsibleNameRequired": "Вкажіть назву відповідального"
       }
     }
   },

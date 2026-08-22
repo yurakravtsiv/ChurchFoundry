@@ -3,28 +3,34 @@ import { afterEach, describe, expect, it } from "vitest"
 import {
   createCategory,
   createLocation,
+  createResponsible,
   createSubcategory,
   deleteCategory,
   deleteLocation,
+  deleteResponsible,
   deleteSubcategory,
   getCategories,
   getInventoryReferenceLookups,
   getLocations,
+  getResponsibles,
   getSubcategories,
   updateCategory,
   updateLocation,
+  updateResponsible,
   updateSubcategory,
 } from "@/lib/inventoryStorage"
 
 const CATEGORIES_KEY = "churchfoundry:categories"
 const SUBCATEGORIES_KEY = "churchfoundry:subcategories"
 const LOCATIONS_KEY = "churchfoundry:locations"
+const RESPONSIBLES_KEY = "churchfoundry:responsibles"
 
 describe("inventory reference entity storage", () => {
   afterEach(() => {
     localStorage.removeItem(CATEGORIES_KEY)
     localStorage.removeItem(SUBCATEGORIES_KEY)
     localStorage.removeItem(LOCATIONS_KEY)
+    localStorage.removeItem(RESPONSIBLES_KEY)
   })
 
   it("hides soft-deleted categories from getCategories but keeps them in lookups", () => {
@@ -102,5 +108,17 @@ describe("inventory reference entity storage", () => {
     const lookups = getInventoryReferenceLookups()
     expect(lookups.locations).toHaveLength(2)
     expect(lookups.locations.find((item) => item.id === oldLocation.id)?.removed).toBe(true)
+  })
+
+  it("soft-deletes and renames responsibles without dropping removed rows on create", () => {
+    const oldResponsible = createResponsible("Choir")
+    deleteResponsible(oldResponsible.id)
+    const next = createResponsible("Sound team")
+    expect(updateResponsible(next.id, "Worship team")?.name).toBe("Worship team")
+
+    expect(getResponsibles().map((item) => item.name)).toEqual(["Worship team"])
+    const lookups = getInventoryReferenceLookups()
+    expect(lookups.responsibles).toHaveLength(2)
+    expect(lookups.responsibles.find((item) => item.id === oldResponsible.id)?.removed).toBe(true)
   })
 })

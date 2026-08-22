@@ -6,7 +6,7 @@ import {
   type InventoryColumnId,
 } from "@/lib/inventoryColumnConfig"
 import { availabilityLabel, conditionLabel } from "@/lib/inventoryLabels"
-import type { Category, InventoryItem, Location, Subcategory } from "@/types/inventory"
+import type { Category, InventoryItem, Location, Responsible, Subcategory } from "@/types/inventory"
 
 function getColumnSearchValues(
   columnId: InventoryColumnId,
@@ -14,6 +14,7 @@ function getColumnSearchValues(
   categories: Category[],
   subcategories: Subcategory[],
   locations: Location[],
+  responsibles: Responsible[],
   t: TFunction,
 ): string[] {
   switch (columnId) {
@@ -32,6 +33,8 @@ function getColumnSearchValues(
       return [String(item.quantity)]
     case "location":
       return [locations.find((location) => location.id === item.locationId)?.name ?? ""]
+    case "responsible":
+      return [responsibles.find((responsible) => responsible.id === item.responsibleId)?.name ?? ""]
     case "condition":
       return [conditionLabel(item.condition, t)]
     case "repairDate":
@@ -74,13 +77,14 @@ export function getInventoryItemSearchableValues(
   categories: Category[],
   subcategories: Subcategory[],
   locations: Location[],
+  responsibles: Responsible[],
   t: TFunction,
   searchableColumnIds: readonly InventoryColumnId[] = getSearchableColumnIds(
     getDefaultColumnPrefs(),
   ),
 ): string[] {
   return searchableColumnIds.flatMap((columnId) =>
-    getColumnSearchValues(columnId, item, categories, subcategories, locations, t),
+    getColumnSearchValues(columnId, item, categories, subcategories, locations, responsibles, t),
   )
 }
 
@@ -90,6 +94,7 @@ export function itemMatchesSearch(
   categories: Category[],
   subcategories: Subcategory[],
   locations: Location[],
+  responsibles: Responsible[],
   t: TFunction,
   searchableColumnIds?: readonly InventoryColumnId[],
 ): boolean {
@@ -103,6 +108,7 @@ export function itemMatchesSearch(
     categories,
     subcategories,
     locations,
+    responsibles,
     t,
     searchableColumnIds,
   ).some((value) => value.toLowerCase().includes(normalizedQuery))

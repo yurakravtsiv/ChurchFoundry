@@ -8,6 +8,8 @@ export type {
   InventoryItem,
   InventoryPhoto,
   ItemCondition,
+  Location,
+  Responsible,
   Subcategory,
   UpdateInventoryItemInput,
 } from "@/types/inventory"

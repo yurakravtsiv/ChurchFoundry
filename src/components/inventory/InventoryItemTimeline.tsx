@@ -39,6 +39,7 @@ export function InventoryItemTimeline({
   const categories = referenceLookups?.categories ?? []
   const subcategories = referenceLookups?.subcategories ?? []
   const locations = referenceLookups?.locations ?? []
+  const responsibles = referenceLookups?.responsibles ?? []
 
   const lookups = useMemo<EventTaxonomyLookups>(
     () => ({
@@ -47,8 +48,11 @@ export function InventoryItemTimeline({
         subcategories.map((subcategory) => [subcategory.id, subcategory.name]),
       ),
       locationNameById: new Map(locations.map((location) => [location.id, location.name])),
+      responsibleNameById: new Map(
+        responsibles.map((responsible) => [responsible.id, responsible.name]),
+      ),
     }),
-    [categories, locations, subcategories],
+    [categories, locations, responsibles, subcategories],
   )
 
   return (

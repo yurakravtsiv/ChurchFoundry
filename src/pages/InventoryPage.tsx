@@ -98,6 +98,7 @@ import { exportToPdf, exportToXlsx, prepareExportData } from "@/lib/inventoryExp
 import { availabilityLabel, conditionLabel } from "@/lib/inventoryLabels"
 import { optionsUsedByItems } from "@/lib/inventoryReferenceOptions"
 import { itemMatchesSearch } from "@/lib/inventorySearch"
+import { compareLocaleText, sortByName } from "@/lib/localeCompare"
 import { filterVisible } from "@/lib/removedEntity"
 import { cn } from "@/lib/utils"
 import type { AvailabilityStatus, InventoryItem, ItemCondition } from "@/types/inventory"
@@ -110,10 +111,6 @@ const rowMenuListVariants = {
 const rowMenuItemVariants = {
   hidden: { opacity: 0, x: -4 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.1 } },
-}
-
-function compareLocaleText(a: string, b: string, locale: string) {
-  return a.localeCompare(b, locale, { sensitivity: "base" })
 }
 
 function parseDateMs(value: string | null | undefined): number | null {
@@ -338,6 +335,7 @@ export function InventoryPage() {
   const categories = lookups?.categories ?? []
   const subcategories = lookups?.subcategories ?? []
   const locations = lookups?.locations ?? []
+  const responsibles = lookups?.responsibles ?? []
 
   const isLoading = itemsLoading || lookupsLoading
   const isError = itemsError || lookupsError
@@ -360,6 +358,7 @@ export function InventoryPage() {
     initialAvailabilityFilter(new URLSearchParams(locationSearch)),
   )
   const [locationFilter, setLocationFilter] = useState("all")
+  const [responsibleFilter, setResponsibleFilter] = useState("all")
   const [conditionFilter, setConditionFilter] = useState(() =>
     initialConditionFilter(new URLSearchParams(locationSearch)),
   )
@@ -485,21 +484,42 @@ export function InventoryPage() {
     return new Map(locations.map((location) => [location.id, location.name]))
   }, [locations])
 
+  const responsibleNameById = useMemo(() => {
+    return new Map(responsibles.map((responsible) => [responsible.id, responsible.name]))
+  }, [responsibles])
+
   const categoryFilterOptions = useMemo(() => {
-    return optionsUsedByItems(
-      filterVisible(categories),
-      categories,
-      items.map((item) => item.categoryId),
+    return sortByName(
+      optionsUsedByItems(
+        filterVisible(categories),
+        categories,
+        items.map((item) => item.categoryId),
+      ),
+      i18n.language,
     )
-  }, [categories, items])
+  }, [categories, i18n.language, items])
 
   const locationFilterOptions = useMemo(() => {
-    return optionsUsedByItems(
-      filterVisible(locations),
-      locations,
-      items.map((item) => item.locationId),
+    return sortByName(
+      optionsUsedByItems(
+        filterVisible(locations),
+        locations,
+        items.map((item) => item.locationId),
+      ),
+      i18n.language,
     )
-  }, [items, locations])
+  }, [i18n.language, items, locations])
+
+  const responsibleFilterOptions = useMemo(() => {
+    return sortByName(
+      optionsUsedByItems(
+        filterVisible(responsibles),
+        responsibles,
+        items.map((item) => item.responsibleId),
+      ),
+      i18n.language,
+    )
+  }, [i18n.language, items, responsibles])
 
   const filteredSubcategories = useMemo(() => {
     if (categoryFilter === "all") {
@@ -514,8 +534,8 @@ export function InventoryPage() {
     const usedIds = items
       .filter((item) => item.categoryId === categoryFilter)
       .map((item) => item.subcategoryId)
-    return optionsUsedByItems(visible, lookupForCategory, usedIds)
-  }, [categoryFilter, items, subcategories])
+    return sortByName(optionsUsedByItems(visible, lookupForCategory, usedIds), i18n.language)
+  }, [categoryFilter, i18n.language, items, subcategories])
 
   const searchableColumnIds = useMemo(() => getSearchableColumnIds(columnPrefs), [columnPrefs])
 
@@ -549,6 +569,9 @@ export function InventoryPage() {
       if (locationFilter !== "all" && item.locationId !== locationFilter) {
         return false
       }
+      if (responsibleFilter !== "all" && item.responsibleId !== responsibleFilter) {
+        return false
+      }
       if (
         !showWrittenOff &&
         !showArchived &&
@@ -564,6 +587,7 @@ export function InventoryPage() {
           categories,
           subcategories,
           locations,
+          responsibles,
           t,
           searchableColumnIds,
         )
@@ -580,6 +604,8 @@ export function InventoryPage() {
     items,
     locationFilter,
     locations,
+    responsibleFilter,
+    responsibles,
     search,
     searchableColumnIds,
     showArchived,
@@ -723,6 +749,22 @@ export function InventoryPage() {
           <SortableColumnHeader label={t("inventory.columns.location")} column={column} />
         ),
         cell: ({ row }) => <TruncatedCell value={locationNameById.get(row.original.locationId)} />,
+      },
+      {
+        id: "responsible",
+        accessorFn: (row) => responsibleNameById.get(row.responsibleId) ?? "",
+        sortingFn: (rowA, rowB) =>
+          compareLocaleText(
+            responsibleNameById.get(rowA.original.responsibleId) ?? "",
+            responsibleNameById.get(rowB.original.responsibleId) ?? "",
+            i18n.language,
+          ),
+        header: ({ column }) => (
+          <SortableColumnHeader label={t("inventory.columns.responsible")} column={column} />
+        ),
+        cell: ({ row }) => (
+          <TruncatedCell value={responsibleNameById.get(row.original.responsibleId)} />
+        ),
       },
       {
         id: "condition",
@@ -1203,6 +1245,7 @@ export function InventoryPage() {
     i18n.language,
     locationNameById,
     navigate,
+    responsibleNameById,
     subcategoryNameById,
     t,
     visibleColumnIds,
@@ -1257,6 +1300,7 @@ export function InventoryPage() {
     subcategoryFilter !== "all" ||
     availabilityFilter !== "all" ||
     locationFilter !== "all" ||
+    responsibleFilter !== "all" ||
     conditionFilter !== "all" ||
     showArchived ||
     showWrittenOff
@@ -1267,6 +1311,7 @@ export function InventoryPage() {
     setSubcategoryFilter("all")
     setAvailabilityFilter("all")
     setLocationFilter("all")
+    setResponsibleFilter("all")
     setConditionFilter("all")
     setShowArchived(false)
     setShowWrittenOff(false)
@@ -1290,13 +1335,29 @@ export function InventoryPage() {
     }
     if (format === "xlsx") {
       exportToXlsx(
-        prepareExportData(exportItems, categories, subcategories, locations, t, exportOptions),
+        prepareExportData(
+          exportItems,
+          categories,
+          subcategories,
+          locations,
+          responsibles,
+          t,
+          exportOptions,
+        ),
         t,
         exportOptions,
       )
       return
     }
-    await exportToPdf(exportItems, categories, subcategories, locations, t, exportOptions)
+    await exportToPdf(
+      exportItems,
+      categories,
+      subcategories,
+      locations,
+      responsibles,
+      t,
+      exportOptions,
+    )
   }
 
   const isStorageEmpty = items.length === 0
@@ -1397,7 +1458,7 @@ export function InventoryPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end md:gap-2">
+        <div className="flex flex-col gap-2 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end md:gap-2">
           <div className="grid grid-cols-3 items-end gap-2 md:contents">
             <div className="flex min-w-0 flex-col gap-1.5 md:hidden">
               <Label htmlFor="inventory-search-mobile" className="truncate">
@@ -1510,7 +1571,7 @@ export function InventoryPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2 md:contents">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2 md:contents">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="inventory-filter-availability" className="truncate">
                 {t("inventory.filters.availability")}
@@ -1580,6 +1641,47 @@ export function InventoryPage() {
                   label={t("inventory.filters.clear")}
                   className="right-2"
                   onClear={() => setLocationFilter("all")}
+                />
+              </div>
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="inventory-filter-responsible" className="truncate">
+                {t("inventory.filters.responsible")}
+              </Label>
+              <div className="relative min-w-0">
+                <Select
+                  value={responsibleFilter}
+                  onValueChange={setResponsibleFilter}
+                  disabled={lookupsLoading}
+                >
+                  <SelectTrigger
+                    id="inventory-filter-responsible"
+                    className={cn(
+                      "h-9 w-full min-w-0",
+                      responsibleFilter !== "all" && "pr-8 [&>svg]:hidden",
+                    )}
+                  >
+                    <SelectValue
+                      placeholder={
+                        lookupsLoading ? t("common.loading") : t("inventory.filters.all")
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("inventory.filters.all")}</SelectItem>
+                    {responsibleFilterOptions.map((responsible) => (
+                      <SelectItem key={responsible.id} value={responsible.id}>
+                        {responsible.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FilterClearButton
+                  visible={responsibleFilter !== "all"}
+                  label={t("inventory.filters.clear")}
+                  className="right-2"
+                  onClear={() => setResponsibleFilter("all")}
                 />
               </div>
             </div>

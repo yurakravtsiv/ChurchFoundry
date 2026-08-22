@@ -20,6 +20,7 @@
       "writeOffDate": "Write-off date",
       "writeOffReason": "Write-off reason",
       "location": "Location",
+      "responsible": "Responsible",
       "availability": "Availability",
       "borrowDate": "Borrow date",
       "availabilityComment": "Availability comment",
@@ -88,6 +89,7 @@
       "categories": "Categories",
       "subcategories": "Subcategories",
       "locations": "Locations",
+      "responsibles": "Responsibles",
       "create": "Create",
       "edit": "Edit",
       "delete": "Delete",
@@ -95,6 +97,7 @@
       "emptyCategories": "No categories yet",
       "emptySubcategories": "No subcategories yet",
       "emptyLocations": "No locations yet",
+      "emptyResponsibles": "No responsibles yet",
       "emptyGroup": "None",
       "createCategoryTitle": "New category",
       "editCategoryTitle": "Edit category",
@@ -102,6 +105,8 @@
       "editSubcategoryTitle": "Edit subcategory",
       "createLocationTitle": "New location",
       "editLocationTitle": "Edit location",
+      "createResponsibleTitle": "New responsible",
+      "editResponsibleTitle": "Edit responsible",
       "categoryField": "Category",
       "categoryPlaceholder": "Select a category",
       "name": "Name",
@@ -112,7 +117,7 @@
     },
     "generateData": {
       "title": "Generate test data?",
-      "description": "{{count}} new test inventory items will be created with varied categories, subcategories, locations, and conditions.",
+      "description": "{{count}} new test inventory items will be created with varied categories, subcategories, locations, responsibles, and conditions.",
       "confirm": "Generate",
       "generating": "Generating..."
     }
@@ -198,6 +203,7 @@
       "subcategory": "Subcategory",
       "availability": "Availability",
       "location": "Location",
+      "responsible": "Responsible",
       "condition": "Condition",
       "clear": "Clear",
       "clearAll": "Clear all filters",
@@ -220,6 +226,7 @@
       "subcategory": "Subcategory",
       "quantity": "Quantity",
       "location": "Location",
+      "responsible": "Responsible",
       "condition": "Condition",
       "repairDate": "Fault date",
       "repairComment": "Fault",
@@ -350,6 +357,12 @@
       "locationNamePlaceholder": "e.g. Storage room",
       "createLocation": "Create location",
       "createLocationTitle": "New location",
+      "responsible": "Responsible",
+      "responsiblePlaceholder": "Select a responsible",
+      "responsibleName": "Responsible name",
+      "responsibleNamePlaceholder": "e.g. Sound team",
+      "createResponsible": "Create responsible",
+      "createResponsibleTitle": "New responsible",
       "availability": "Availability",
       "availabilityComment": "Availability comment",
       "availabilityCommentPlaceholder": "Information about the item, borrower, and return date",
@@ -379,6 +392,7 @@
         "categoryRequired": "Category is required",
         "subcategoryRequired": "Subcategory is required",
         "locationRequired": "Location is required",
+        "responsibleRequired": "Responsible is required",
         "quantityRequired": "Quantity is required",
         "quantityMin": "Quantity must be at least 1",
         "quantityMax": "Quantity cannot exceed {{max}}",
@@ -389,7 +403,8 @@
         "availabilityCommentRequired": "Comment is required for borrowed items",
         "categoryNameRequired": "Category name is required",
         "subcategoryNameRequired": "Subcategory name is required",
-        "locationNameRequired": "Location name is required"
+        "locationNameRequired": "Location name is required",
+        "responsibleNameRequired": "Responsible name is required"
       }
     }
   },

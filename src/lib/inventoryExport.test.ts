@@ -16,6 +16,7 @@ describe("getExportRowKeys", () => {
       "subcategory",
       "quantity",
       "location",
+      "responsible",
       "condition",
       "availability",
       "availabilityComment",

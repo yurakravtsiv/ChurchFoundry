@@ -19,14 +19,14 @@ alwaysApply: true
 - Для внутрішніх мутацій (знайти запис навіть якщо він `removed`) —
   окрема "raw"-функція, явно внутрішня, не для UI-коду.
 
-## Довідники (Category / Subcategory / Location)
+## Довідники (Category / Subcategory / Location / Responsible)
 
 Виняток для відображення на предметах, які вже посилаються на видалений
 запис:
 
-- Публічні getters (`getCategories`, `getSubcategories`, `getLocations`)
-  повертають лише видимі записи — ними користуються Settings і дропдауни
-  вибору для нових / інших предметів.
+- Публічні getters (`getCategories`, `getSubcategories`, `getLocations`,
+  `getResponsibles`) повертають лише видимі записи — ними користуються
+  Settings і дропдауни вибору для нових / інших предметів.
 - Назви на вже прив'язаних предметах (таблиця, деталі/редагування, пошук,
   експорт, таймлайн, фільтри для «сирітських» рядків) резолвляться через
   `getInventoryReferenceLookups()` — включно з `removed === true`.

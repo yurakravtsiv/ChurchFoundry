@@ -7,7 +7,7 @@ export const INVENTORY_FIELD_LIMITS = {
   comment: 200,
   writeOffReason: 200,
   repairComment: 200,
-  entityName: 80, // category / subcategory / location
+  entityName: 80, // category / subcategory / location / responsible
   quantityMin: 1,
   quantityMax: 999_999,
   priceMin: 0,

@@ -17,6 +17,12 @@ export type Location = {
   removed: boolean
 }
 
+export type Responsible = {
+  id: string
+  name: string
+  removed: boolean
+}
+
 export type AvailabilityStatus = "in_church" | "borrowed"
 
 export type ItemCondition = "good" | "needs_repair" | "written_off"
@@ -35,6 +41,7 @@ export type InventoryItem = {
   subcategoryId: string // обов'язкове
   quantity: number // обов'язкове
   locationId: string // обов'язкове
+  responsibleId: string // обов'язкове
   availability: AvailabilityStatus // обов'язкове
   /** Обов'язкове тільки якщо availability === "borrowed". */
   availabilityComment: string

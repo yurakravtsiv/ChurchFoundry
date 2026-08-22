@@ -25,6 +25,7 @@ export function GenerateDataSettingsTab() {
         queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.categories }),
         queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.subcategories }),
         queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.locations }),
+        queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.responsibles }),
         queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.lookups }),
         queryClient.invalidateQueries({ queryKey: ["events"] }),
       ])

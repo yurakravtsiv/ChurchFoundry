@@ -11,7 +11,7 @@ import {
   resolveVisibleColumnIds,
 } from "@/lib/inventoryColumnConfig"
 import { availabilityLabel, conditionLabel } from "@/lib/inventoryLabels"
-import type { Category, InventoryItem, Location, Subcategory } from "@/types/inventory"
+import type { Category, InventoryItem, Location, Responsible, Subcategory } from "@/types/inventory"
 
 export type InventoryExportRow = {
   inventoryNumberId: number
@@ -25,6 +25,7 @@ export type InventoryExportRow = {
   writeOffDate?: string
   writeOffReason?: string
   location: string
+  responsible: string
   availability: string
   borrowDate: string
   availabilityComment: string
@@ -101,6 +102,7 @@ export function getExportColumnHeaders(t: TFunction): Record<InventoryExportRowK
     writeOffDate: t("export.columns.writeOffDate"),
     writeOffReason: t("export.columns.writeOffReason"),
     location: t("export.columns.location"),
+    responsible: t("export.columns.responsible"),
     availability: t("export.columns.availability"),
     borrowDate: t("export.columns.borrowDate"),
     availabilityComment: t("export.columns.availabilityComment"),
@@ -187,6 +189,7 @@ export function prepareExportData(
   categories: Category[],
   subcategories: Subcategory[],
   locations: Location[],
+  responsibles: Responsible[],
   t: TFunction,
   options: InventoryExportOptions = {},
 ): InventoryExportRow[] {
@@ -206,6 +209,8 @@ export function prepareExportData(
           item.condition === "needs_repair" ? formatWriteOffDateForExport(item.repairDate) : "",
         repairComment: item.condition === "needs_repair" ? (item.repairComment ?? "") : "",
         location: locations.find((location) => location.id === item.locationId)?.name ?? "",
+        responsible:
+          responsibles.find((responsible) => responsible.id === item.responsibleId)?.name ?? "",
         availability: availabilityLabel(item.availability, t),
         borrowDate:
           item.availability === "borrowed" ? formatWriteOffDateForExport(item.borrowDate) : "",
@@ -277,6 +282,7 @@ export async function exportToPdf(
   categories: Category[],
   subcategories: Subcategory[],
   locations: Location[],
+  responsibles: Responsible[],
   t: TFunction,
   options: InventoryExportOptions = {},
 ): Promise<void> {
@@ -284,7 +290,15 @@ export async function exportToPdf(
   const exportItems = items.filter(
     (item) => !item.removed && (includeWriteOffColumns || !item.archived),
   )
-  const rows = prepareExportData(exportItems, categories, subcategories, locations, t, options)
+  const rows = prepareExportData(
+    exportItems,
+    categories,
+    subcategories,
+    locations,
+    responsibles,
+    t,
+    options,
+  )
   const headers = getExportColumnHeaders(t)
   const visibleColumnIds = resolveExportVisibleColumnIds(options)
   const photoColumnIndex = visibleColumnIds.indexOf("photo")

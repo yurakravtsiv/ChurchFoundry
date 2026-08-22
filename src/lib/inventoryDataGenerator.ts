@@ -2,10 +2,12 @@ import {
   createCategory,
   createInventoryItem,
   createLocation,
+  createResponsible,
   createSubcategory,
   getCategories,
   getInventoryItemById,
   getLocations,
+  getResponsibles,
   getSubcategories,
   markAsBorrowed,
   markAsNeedsRepair,
@@ -17,6 +19,7 @@ import type {
   CreateInventoryItemInput,
   InventoryItem,
   Location,
+  Responsible,
   Subcategory,
   UpdateInventoryItemInput,
 } from "@/types/inventory"
@@ -49,6 +52,14 @@ const seedLocations = [
   "Дитяча кімната",
   "Кухня",
   "Підвал",
+]
+
+const seedResponsibles = [
+  "Команда звуку",
+  "Адміністрація",
+  "Молодіжне служіння",
+  "Дитяче служіння",
+  "Команда кухні",
 ]
 
 const sampleNames = [
@@ -169,10 +180,12 @@ function isTechCategory(categoryName: string): boolean {
 function ensureSeedTaxonomy(): {
   pairs: CategorySubcategoryPair[]
   locations: Location[]
+  responsibles: Responsible[]
 } {
   let categories = getCategories()
   let subcategories = getSubcategories()
   let locations = getLocations()
+  let responsibles = getResponsibles()
 
   if (categories.length === 0) {
     for (const seed of seedCategories) {
@@ -192,6 +205,13 @@ function ensureSeedTaxonomy(): {
     locations = getLocations()
   }
 
+  if (responsibles.length === 0) {
+    for (const responsibleName of seedResponsibles) {
+      createResponsible(responsibleName)
+    }
+    responsibles = getResponsibles()
+  }
+
   const pairs = categories.flatMap((category) =>
     subcategories
       .filter((subcategory) => subcategory.categoryId === category.id)
@@ -206,7 +226,11 @@ function ensureSeedTaxonomy(): {
     throw new Error("No locations available for seed data")
   }
 
-  return { pairs, locations }
+  if (responsibles.length === 0) {
+    throw new Error("No responsibles available for seed data")
+  }
+
+  return { pairs, locations, responsibles }
 }
 
 function buildSerialNumber(index: number, categoryName: string): string {
@@ -234,10 +258,12 @@ function buildItemInput(
   index: number,
   pairs: CategorySubcategoryPair[],
   locations: Location[],
+  responsibles: Responsible[],
 ): CreateInventoryItemInput {
   const name = sampleNames[index % sampleNames.length]!
   const pair = pickOne(pairs, index + 11)
   const location = pickOne(locations, index + 23)
+  const responsible = pickOne(responsibles, index + 31)
   const supplier = pickOne(suppliers, index + 5)
   const hasPrice = index % 3 !== 0
   const price = hasPrice ? 50 + pickIndex(4951, index + 41) : null
@@ -248,6 +274,7 @@ function buildItemInput(
     subcategoryId: pair.subcategory.id,
     quantity: 1 + pickIndex(15, index + 3),
     locationId: location.id,
+    responsibleId: responsible.id,
     availability: "in_church",
     availabilityComment: "",
     supplier,
@@ -385,11 +412,13 @@ function generateRepairBatches(candidates: readonly InventoryItem[], userEmail: 
  * are recorded automatically.
  */
 function generateSeedData(userEmail: string): void {
-  const { pairs, locations } = ensureSeedTaxonomy()
+  const { pairs, locations, responsibles } = ensureSeedTaxonomy()
 
   const createdItems: InventoryItem[] = []
   for (let index = 0; index < SEED_ITEM_COUNT; index += 1) {
-    createdItems.push(createInventoryItem(buildItemInput(index, pairs, locations), userEmail))
+    createdItems.push(
+      createInventoryItem(buildItemInput(index, pairs, locations, responsibles), userEmail),
+    )
   }
 
   const shuffled = shuffledIndices(createdItems.length, 17)

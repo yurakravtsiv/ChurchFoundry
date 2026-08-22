@@ -6,13 +6,14 @@ import {
   type InventoryColumnPrefs,
 } from "@/lib/inventoryColumnConfig"
 import { itemMatchesSearch } from "@/lib/inventorySearch"
-import type { Category, InventoryItem, Location, Subcategory } from "@/types/inventory"
+import type { Category, InventoryItem, Location, Responsible, Subcategory } from "@/types/inventory"
 
 const categories: Category[] = [{ id: "cat-1", name: "Sound", removed: false }]
 const subcategories: Subcategory[] = [
   { id: "sub-1", categoryId: "cat-1", name: "Microphones", removed: false },
 ]
 const locations: Location[] = [{ id: "loc-1", name: "Storage", removed: false }]
+const responsibles: Responsible[] = [{ id: "resp-1", name: "Choir", removed: false }]
 
 function makeItem(overrides: Partial<InventoryItem> = {}): InventoryItem {
   return {
@@ -23,6 +24,7 @@ function makeItem(overrides: Partial<InventoryItem> = {}): InventoryItem {
     subcategoryId: "sub-1",
     quantity: 3,
     locationId: "loc-1",
+    responsibleId: "resp-1",
     availability: "in_church",
     availabilityComment: "",
     condition: "good",
@@ -52,15 +54,74 @@ describe("itemMatchesSearch", () => {
   it("matches visible default columns", () => {
     const ids = getSearchableColumnIds(getDefaultColumnPrefs())
     const item = makeItem()
-    expect(itemMatchesSearch(item, "SM58", categories, subcategories, locations, i18n.t, ids)).toBe(
-      true,
-    )
     expect(
-      itemMatchesSearch(item, "Sound", categories, subcategories, locations, i18n.t, ids),
+      itemMatchesSearch(
+        item,
+        "SM58",
+        categories,
+        subcategories,
+        locations,
+        responsibles,
+        i18n.t,
+        ids,
+      ),
     ).toBe(true)
     expect(
-      itemMatchesSearch(item, "vocal", categories, subcategories, locations, i18n.t, ids),
+      itemMatchesSearch(
+        item,
+        "Sound",
+        categories,
+        subcategories,
+        locations,
+        responsibles,
+        i18n.t,
+        ids,
+      ),
     ).toBe(true)
+    expect(
+      itemMatchesSearch(
+        item,
+        "vocal",
+        categories,
+        subcategories,
+        locations,
+        responsibles,
+        i18n.t,
+        ids,
+      ),
+    ).toBe(true)
+    expect(
+      itemMatchesSearch(
+        item,
+        "Choir",
+        categories,
+        subcategories,
+        locations,
+        responsibles,
+        i18n.t,
+        ids,
+      ),
+    ).toBe(true)
+  })
+
+  it("does not search a hidden responsible column", () => {
+    const prefs: InventoryColumnPrefs = {
+      ...getDefaultColumnPrefs(),
+      hidden: [...getDefaultColumnPrefs().hidden, "responsible"],
+    }
+    const ids = getSearchableColumnIds(prefs)
+    expect(
+      itemMatchesSearch(
+        makeItem(),
+        "Choir",
+        categories,
+        subcategories,
+        locations,
+        responsibles,
+        i18n.t,
+        ids,
+      ),
+    ).toBe(false)
   })
 
   it("does not search inventoryNumberId even when the column is enabled", () => {
@@ -71,7 +132,16 @@ describe("itemMatchesSearch", () => {
     }
     const ids = getSearchableColumnIds(prefs)
     expect(
-      itemMatchesSearch(makeItem(), "42", categories, subcategories, locations, i18n.t, ids),
+      itemMatchesSearch(
+        makeItem(),
+        "42",
+        categories,
+        subcategories,
+        locations,
+        responsibles,
+        i18n.t,
+        ids,
+      ),
     ).toBe(false)
   })
 
@@ -83,10 +153,28 @@ describe("itemMatchesSearch", () => {
     const ids = getSearchableColumnIds(prefs)
     const item = makeItem()
     expect(
-      itemMatchesSearch(item, "vocal", categories, subcategories, locations, i18n.t, ids),
+      itemMatchesSearch(
+        item,
+        "vocal",
+        categories,
+        subcategories,
+        locations,
+        responsibles,
+        i18n.t,
+        ids,
+      ),
     ).toBe(false)
     expect(
-      itemMatchesSearch(item, "MusicShop", categories, subcategories, locations, i18n.t, ids),
+      itemMatchesSearch(
+        item,
+        "MusicShop",
+        categories,
+        subcategories,
+        locations,
+        responsibles,
+        i18n.t,
+        ids,
+      ),
     ).toBe(false)
   })
 
@@ -94,7 +182,16 @@ describe("itemMatchesSearch", () => {
     const defaults = getSearchableColumnIds(getDefaultColumnPrefs())
     const item = makeItem()
     expect(
-      itemMatchesSearch(item, "MusicShop", categories, subcategories, locations, i18n.t, defaults),
+      itemMatchesSearch(
+        item,
+        "MusicShop",
+        categories,
+        subcategories,
+        locations,
+        responsibles,
+        i18n.t,
+        defaults,
+      ),
     ).toBe(false)
 
     const enabled: InventoryColumnPrefs = {
@@ -109,6 +206,7 @@ describe("itemMatchesSearch", () => {
         categories,
         subcategories,
         locations,
+        responsibles,
         i18n.t,
         getSearchableColumnIds(enabled),
       ),

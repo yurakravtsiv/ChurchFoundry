@@ -6,6 +6,7 @@ export const INVENTORY_COLUMN_IDS = [
   "subcategory",
   "quantity",
   "location",
+  "responsible",
   "condition",
   "repairDate",
   "repairComment",
@@ -49,6 +50,7 @@ export const INVENTORY_COLUMN_DEFINITIONS: readonly InventoryColumnDefinition[] 
   { id: "subcategory", defaultVisible: true },
   { id: "quantity", defaultVisible: true },
   { id: "location", defaultVisible: true },
+  { id: "responsible", defaultVisible: true },
   { id: "condition", defaultVisible: true },
   { id: "repairDate", defaultVisible: true, contextual: "repair" },
   { id: "repairComment", defaultVisible: true, contextual: "repair" },
@@ -99,6 +101,25 @@ export function getDefaultColumnPrefs(): InventoryColumnPrefs {
   }
 }
 
+/** Insert newly registered columns at their default neighbor when possible. */
+function insertAppendedColumnIds(
+  savedOrder: InventoryColumnId[],
+  appended: readonly InventoryColumnId[],
+): InventoryColumnId[] {
+  const order = [...savedOrder]
+  for (const id of appended) {
+    if (id === "responsible") {
+      const locationIndex = order.indexOf("location")
+      if (locationIndex !== -1) {
+        order.splice(locationIndex + 1, 0, id)
+        continue
+      }
+    }
+    order.push(id)
+  }
+  return order
+}
+
 function uniqueColumnIds(values: unknown[]): InventoryColumnId[] {
   const seen = new Set<InventoryColumnId>()
   const ids: InventoryColumnId[] = []
@@ -130,7 +151,7 @@ export function mergeColumnPrefs(stored: unknown): InventoryColumnPrefs {
   const savedOrder = uniqueColumnIds(record.order)
   const savedOrderSet = new Set(savedOrder)
   const appended = INVENTORY_COLUMN_IDS.filter((id) => !savedOrderSet.has(id))
-  const order = [...savedOrder, ...appended]
+  const order = insertAppendedColumnIds(savedOrder, appended)
 
   const hidden = new Set<InventoryColumnId>()
   if (Array.isArray(record.hidden)) {

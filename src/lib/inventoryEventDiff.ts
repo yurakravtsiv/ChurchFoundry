@@ -7,6 +7,7 @@ const TRACKED_FIELDS = [
   "subcategoryId",
   "quantity",
   "locationId",
+  "responsibleId",
   "availability",
   "availabilityComment",
   "supplier",

@@ -19,6 +19,7 @@ import type {
   InventoryItem,
   ItemCondition,
   Location,
+  Responsible,
   Subcategory,
   UpdateInventoryItemInput,
 } from "@/types/inventory"
@@ -28,6 +29,7 @@ const ITEM_CONDITIONS: ItemCondition[] = ["good", "needs_repair", "written_off"]
 const CATEGORIES_KEY = "churchfoundry:categories"
 const SUBCATEGORIES_KEY = "churchfoundry:subcategories"
 const LOCATIONS_KEY = "churchfoundry:locations"
+const RESPONSIBLES_KEY = "churchfoundry:responsibles"
 const INVENTORY_ITEMS_KEY = "churchfoundry:inventory-items"
 
 function newId() {
@@ -284,11 +286,29 @@ export function saveLocations(locations: Location[]): void {
   writeJson(LOCATIONS_KEY, locations)
 }
 
+/**
+ * Internal: all responsibles including soft-deleted (`removed === true`).
+ * For mutations and lookups only — never use this from dropdown/settings list UI.
+ */
+function getAllResponsiblesRaw(): Responsible[] {
+  return normalizeEntityList(RESPONSIBLES_KEY, readJsonArray<Responsible>(RESPONSIBLES_KEY))
+}
+
+/** Visible responsibles only (`removed !== true`). */
+export function getResponsibles(): Responsible[] {
+  return filterVisible(getAllResponsiblesRaw())
+}
+
+export function saveResponsibles(responsibles: Responsible[]): void {
+  writeJson(RESPONSIBLES_KEY, responsibles)
+}
+
 /** All reference entities including soft-deleted — for resolving names on items. */
 export type InventoryReferenceLookups = {
   categories: Category[]
   subcategories: Subcategory[]
   locations: Location[]
+  responsibles: Responsible[]
 }
 
 export function getInventoryReferenceLookups(): InventoryReferenceLookups {
@@ -296,6 +316,7 @@ export function getInventoryReferenceLookups(): InventoryReferenceLookups {
     categories: getAllCategoriesRaw(),
     subcategories: getAllSubcategoriesRaw(),
     locations: getAllLocationsRaw(),
+    responsibles: getAllResponsiblesRaw(),
   }
 }
 
@@ -413,6 +434,9 @@ function normalizeInventoryItem(item: InventoryItem): InventoryItem {
   if (typeof next.borrowDate !== "string" && next.borrowDate !== null) {
     next = { ...next, borrowDate: null }
   }
+  if (typeof next.responsibleId !== "string") {
+    next = { ...next, responsibleId: "" }
+  }
   return next
 }
 
@@ -474,6 +498,12 @@ export function createLocation(name: string): Location {
   return location
 }
 
+export function createResponsible(name: string): Responsible {
+  const responsible: Responsible = { id: newId(), name: name.trim(), removed: false }
+  saveResponsibles([...getAllResponsiblesRaw(), responsible])
+  return responsible
+}
+
 export function updateCategory(id: string, name: string): Category | undefined {
   const all = getAllCategoriesRaw()
   const index = all.findIndex((category) => category.id === id)
@@ -513,6 +543,19 @@ export function updateLocation(id: string, name: string): Location | undefined {
   return updated
 }
 
+export function updateResponsible(id: string, name: string): Responsible | undefined {
+  const all = getAllResponsiblesRaw()
+  const index = all.findIndex((responsible) => responsible.id === id)
+  if (index === -1 || all[index].removed) {
+    return undefined
+  }
+  const updated: Responsible = { ...all[index], name: name.trim() }
+  const next = [...all]
+  next[index] = updated
+  saveResponsibles(next)
+  return updated
+}
+
 /** Soft-deletes a category and all of its subcategories. */
 export function deleteCategory(id: string): void {
   saveCategories(
@@ -539,6 +582,14 @@ export function deleteLocation(id: string): void {
   saveLocations(
     getAllLocationsRaw().map((location) =>
       location.id === id ? { ...location, removed: true } : location,
+    ),
+  )
+}
+
+export function deleteResponsible(id: string): void {
+  saveResponsibles(
+    getAllResponsiblesRaw().map((responsible) =>
+      responsible.id === id ? { ...responsible, removed: true } : responsible,
     ),
   )
 }

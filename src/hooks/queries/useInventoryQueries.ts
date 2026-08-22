@@ -5,14 +5,17 @@ import {
   createCategory,
   createInventoryItem,
   createLocation,
+  createResponsible,
   createSubcategory,
   deleteCategory,
   deleteLocation,
+  deleteResponsible,
   deleteSubcategory,
   getCategories,
   getInventoryItems,
   getInventoryReferenceLookups,
   getLocations,
+  getResponsibles,
   getSubcategories,
   markAsBorrowed,
   markAsNeedsRepair,
@@ -23,6 +26,7 @@ import {
   updateCategory,
   updateInventoryItem,
   updateLocation,
+  updateResponsible,
   updateSubcategory,
   writeOffItem,
 } from "@/lib/inventoryStorage"
@@ -33,6 +37,7 @@ export const inventoryQueryKeys = {
   categories: ["categories"] as const,
   subcategories: ["subcategories"] as const,
   locations: ["locations"] as const,
+  responsibles: ["responsibles"] as const,
   lookups: ["inventory-reference-lookups"] as const,
 }
 
@@ -50,6 +55,7 @@ async function invalidateReferenceQueries(queryClient: ReturnType<typeof useQuer
     queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.categories }),
     queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.subcategories }),
     queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.locations }),
+    queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.responsibles }),
     queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.lookups }),
   ])
 }
@@ -95,6 +101,16 @@ export function useLocationsQuery() {
     queryFn: async () => {
       await delay(FAKE_QUERY_DELAY_MS)
       return getLocations()
+    },
+  })
+}
+
+export function useResponsiblesQuery() {
+  return useQuery({
+    queryKey: inventoryQueryKeys.responsibles,
+    queryFn: async () => {
+      await delay(FAKE_QUERY_DELAY_MS)
+      return getResponsibles()
     },
   })
 }
@@ -304,6 +320,16 @@ export function useCreateLocationMutation() {
   })
 }
 
+export function useCreateResponsibleMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (name: string) => createResponsible(name),
+    onSuccess: async () => {
+      await invalidateReferenceQueries(queryClient)
+    },
+  })
+}
+
 export function useUpdateCategoryMutation() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -334,6 +360,16 @@ export function useUpdateLocationMutation() {
   })
 }
 
+export function useUpdateResponsibleMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => updateResponsible(id, name),
+    onSuccess: async () => {
+      await invalidateReferenceQueries(queryClient)
+    },
+  })
+}
+
 export function useDeleteCategoryMutation() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -358,6 +394,16 @@ export function useDeleteLocationMutation() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => deleteLocation(id),
+    onSuccess: async () => {
+      await invalidateReferenceQueries(queryClient)
+    },
+  })
+}
+
+export function useDeleteResponsibleMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => deleteResponsible(id),
     onSuccess: async () => {
       await invalidateReferenceQueries(queryClient)
     },

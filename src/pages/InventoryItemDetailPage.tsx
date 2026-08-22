@@ -111,6 +111,7 @@ function InventoryItemDetailSkeleton() {
             "quantity",
             "condition",
             "location",
+            "responsible",
             "availability",
             "comment",
           ].map((fieldKey) => (

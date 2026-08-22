@@ -10,6 +10,7 @@ export const EVENT_FIELD_I18N_KEYS: Record<string, string> = {
   subcategoryId: "inventory.form.subcategory",
   quantity: "inventory.form.quantity",
   locationId: "inventory.form.location",
+  responsibleId: "inventory.form.responsible",
   availability: "inventory.form.availability",
   availabilityComment: "inventory.form.availabilityComment",
   condition: "inventory.form.condition",
@@ -25,6 +26,7 @@ export type EventTaxonomyLookups = {
   categoryNameById: ReadonlyMap<string, string>
   subcategoryNameById: ReadonlyMap<string, string>
   locationNameById: ReadonlyMap<string, string>
+  responsibleNameById: ReadonlyMap<string, string>
 }
 
 function isAvailabilityStatus(value: unknown): value is AvailabilityStatus {
@@ -64,6 +66,8 @@ export function formatEventFieldValue(
       return typeof value === "string" ? (lookups.subcategoryNameById.get(value) ?? "—") : "—"
     case "locationId":
       return typeof value === "string" ? (lookups.locationNameById.get(value) ?? "—") : "—"
+    case "responsibleId":
+      return typeof value === "string" ? (lookups.responsibleNameById.get(value) ?? "—") : "—"
     case "availability":
       return isAvailabilityStatus(value) ? availabilityLabel(value, t) : String(value)
     case "condition":
