@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it } from "vitest"
 import {
   CHURCH_PROFILE_KEY,
   churchProfileHasBranding,
+  churchWebsiteHref,
   getChurchProfile,
+  isValidChurchWebsite,
   parseChurchProfile,
   saveChurchProfile,
 } from "@/lib/churchProfileStorage"
@@ -24,6 +26,7 @@ describe("churchProfileStorage", () => {
       address: "  Kyiv  ",
       phone: "  +380 00 000 00 00  ",
       email: "  hello@example.com  ",
+      website: "  church.example  ",
       logoDataUrl: "data:image/jpeg;base64,abc",
     })
 
@@ -32,6 +35,7 @@ describe("churchProfileStorage", () => {
       address: "Kyiv",
       phone: "+380 00 000 00 00",
       email: "hello@example.com",
+      website: "church.example",
       logoDataUrl: "data:image/jpeg;base64,abc",
     })
     expect(getChurchProfile()).toEqual(saved)
@@ -66,5 +70,14 @@ describe("churchProfileStorage", () => {
         logoDataUrl: "data:image/jpeg;base64,abc",
       }),
     ).toBe(true)
+  })
+
+  it("accepts empty or http(s) websites and prefixes https when needed", () => {
+    expect(isValidChurchWebsite("")).toBe(true)
+    expect(isValidChurchWebsite("church.example")).toBe(true)
+    expect(isValidChurchWebsite("https://church.example")).toBe(true)
+    expect(isValidChurchWebsite("javascript:alert(1)")).toBe(false)
+    expect(churchWebsiteHref("church.example")).toBe("https://church.example")
+    expect(churchWebsiteHref("https://church.example")).toBe("https://church.example")
   })
 })

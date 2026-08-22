@@ -21,7 +21,7 @@ import {
   useChurchProfileQuery,
   useSaveChurchProfileMutation,
 } from "@/hooks/queries/useChurchProfileQueries"
-import { compressChurchLogo } from "@/lib/churchProfileStorage"
+import { compressChurchLogo, isValidChurchWebsite } from "@/lib/churchProfileStorage"
 import {
   CHURCH_PROFILE_FIELD_LIMITS,
   type ChurchProfile,
@@ -33,6 +33,7 @@ type ChurchFormValues = {
   address: string
   phone: string
   email: string
+  website: string
   logoDataUrl: string | null
 }
 
@@ -42,6 +43,7 @@ function toFormValues(profile: ChurchProfile): ChurchFormValues {
     address: profile.address,
     phone: profile.phone,
     email: profile.email,
+    website: profile.website,
     logoDataUrl: profile.logoDataUrl,
   }
 }
@@ -79,6 +81,15 @@ export function ChurchSettingsTab() {
       )
       .refine((value) => value.trim() === "" || z.email().safeParse(value.trim()).success, {
         message: t("settings.church.validation.email"),
+      }),
+    website: z
+      .string()
+      .max(
+        CHURCH_PROFILE_FIELD_LIMITS.website,
+        t("inventory.form.validation.stringMax", { max: CHURCH_PROFILE_FIELD_LIMITS.website }),
+      )
+      .refine((value) => isValidChurchWebsite(value), {
+        message: t("settings.church.validation.website"),
       }),
     logoDataUrl: z.string().nullable(),
   })
@@ -126,6 +137,7 @@ export function ChurchSettingsTab() {
       address: values.address,
       phone: values.phone,
       email: values.email,
+      website: values.website,
       logoDataUrl: values.logoDataUrl,
     })
     reset(toFormValues(saved))
@@ -202,6 +214,23 @@ export function ChurchSettingsTab() {
             />
             {errors.email ? (
               <p className="text-sm text-destructive">{errors.email.message}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="church-website">{t("settings.church.website")}</Label>
+            <Input
+              id="church-website"
+              type="url"
+              inputMode="url"
+              autoComplete="url"
+              maxLength={CHURCH_PROFILE_FIELD_LIMITS.website}
+              placeholder={t("settings.church.websitePlaceholder")}
+              aria-invalid={Boolean(errors.website)}
+              {...register("website")}
+            />
+            {errors.website ? (
+              <p className="text-sm text-destructive">{errors.website.message}</p>
             ) : null}
           </div>
 

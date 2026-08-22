@@ -1,4 +1,4 @@
-import { Building2, Mail, MapPin, Phone } from "lucide-react"
+import { Building2, Globe, Mail, MapPin, Phone } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Link, useParams } from "react-router"
 
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useChurchProfileQuery } from "@/hooks/queries/useChurchProfileQueries"
 import { mapsSearchUrl } from "@/lib/addressLookup"
+import { churchWebsiteHref } from "@/lib/churchProfileStorage"
 
 export function PublicChurchPage() {
   const { t } = useTranslation()
@@ -16,6 +17,8 @@ export function PublicChurchPage() {
   const address = profile?.address.trim() ?? ""
   const phone = profile?.phone.trim() ?? ""
   const email = profile?.email.trim() ?? ""
+  const website = profile?.website.trim() ?? ""
+  const websiteHref = website ? churchWebsiteHref(website) : ""
   const nextPath = id ? `/inventory/${id}` : "/"
   const loginTo = `/login?next=${encodeURIComponent(nextPath)}`
 
@@ -33,7 +36,7 @@ export function PublicChurchPage() {
           <CardTitle className="text-2xl font-bold tracking-tight">{t("app.name")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {name || address || phone || email ? (
+          {name || address || phone || email || website ? (
             <ul className="space-y-3 text-sm">
               {name ? (
                 <li className="flex items-start gap-3">
@@ -76,6 +79,20 @@ export function PublicChurchPage() {
                     className="min-w-0 break-all text-primary underline-offset-4 hover:underline"
                   >
                     {email}
+                  </a>
+                </li>
+              ) : null}
+              {website ? (
+                <li className="flex items-start gap-3">
+                  <Globe className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  <a
+                    href={websiteHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="min-w-0 break-all text-primary underline-offset-4 hover:underline"
+                  >
+                    {website}
+                    <span className="sr-only"> ({t("church.public.openWebsite")})</span>
                   </a>
                 </li>
               ) : null}

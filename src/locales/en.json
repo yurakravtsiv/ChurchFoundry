@@ -76,6 +76,8 @@
       "phonePlaceholder": "Phone number",
       "email": "Email",
       "emailPlaceholder": "Email",
+      "website": "Website",
+      "websitePlaceholder": "https://example.com",
       "logo": "Logo",
       "logoHint": "Square image works best. Used at the center of inventory QR codes.",
       "logoCompressing": "Compressing logo…",
@@ -83,7 +85,8 @@
       "save": "Save",
       "saving": "Saving…",
       "validation": {
-        "email": "Enter a valid email"
+        "email": "Enter a valid email",
+        "website": "Enter a valid website address"
       }
     },
     "inventory": {
@@ -451,6 +454,7 @@
   "church": {
     "public": {
       "openMap": "Open in maps",
+      "openWebsite": "Open website",
       "nameWithLabel": "Church {{name}}"
     }
   },

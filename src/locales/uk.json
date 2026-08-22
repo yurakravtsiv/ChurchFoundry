@@ -76,6 +76,8 @@
       "phonePlaceholder": "Номер телефону",
       "email": "Email",
       "emailPlaceholder": "Email",
+      "website": "Сайт",
+      "websitePlaceholder": "https://example.com",
       "logo": "Логотип",
       "logoHint": "Найкраще квадратне зображення. Використовується в центрі QR-кодів інвентарю.",
       "logoCompressing": "Стиснення логотипу…",
@@ -83,7 +85,8 @@
       "save": "Зберегти",
       "saving": "Збереження…",
       "validation": {
-        "email": "Введіть коректний email"
+        "email": "Введіть коректний email",
+        "website": "Введіть коректну адресу сайту"
       }
     },
     "inventory": {
@@ -451,6 +454,7 @@
   "church": {
     "public": {
       "openMap": "Відкрити на карті",
+      "openWebsite": "Відкрити сайт",
       "nameWithLabel": "Церква {{name}}"
     }
   },

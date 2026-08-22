@@ -21,6 +21,7 @@ export function parseChurchProfile(value: unknown): ChurchProfile {
     address: typeof value.address === "string" ? value.address : "",
     phone: typeof value.phone === "string" ? value.phone : "",
     email: typeof value.email === "string" ? value.email : "",
+    website: typeof value.website === "string" ? value.website : "",
     logoDataUrl,
   }
 }
@@ -44,6 +45,7 @@ export function saveChurchProfile(profile: ChurchProfile): ChurchProfile {
     address: profile.address.trim(),
     phone: profile.phone.trim(),
     email: profile.email.trim(),
+    website: profile.website.trim(),
     logoDataUrl: profile.logoDataUrl,
   }
 
@@ -72,6 +74,27 @@ export async function compressChurchLogo(file: File): Promise<string> {
 
   const compressedFile = await imageCompression(file, options)
   return imageCompression.getDataUrlFromFile(compressedFile)
+}
+
+export function churchWebsiteHref(website: string): string {
+  const trimmed = website.trim()
+  if (!trimmed) {
+    return ""
+  }
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+}
+
+export function isValidChurchWebsite(website: string): boolean {
+  const trimmed = website.trim()
+  if (!trimmed) {
+    return true
+  }
+  try {
+    const url = new URL(churchWebsiteHref(trimmed))
+    return url.protocol === "http:" || url.protocol === "https:"
+  } catch {
+    return false
+  }
 }
 
 export function churchProfileHasBranding(profile: ChurchProfile | undefined): boolean {
