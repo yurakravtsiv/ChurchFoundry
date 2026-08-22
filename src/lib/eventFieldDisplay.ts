@@ -25,6 +25,8 @@ export const EVENT_FIELD_I18N_KEYS: Record<string, string> = {
   repairComment: "inventory.form.repairComment",
   borrowDate: "inventory.form.borrowDate",
   archived: "inventory.timeline.archived",
+  photos: "inventory.form.photos",
+  avatarPhotoId: "inventory.timeline.avatarChanged",
 }
 
 export type EventTaxonomyLookups = {

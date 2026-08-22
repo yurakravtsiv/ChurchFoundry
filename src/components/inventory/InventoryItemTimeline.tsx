@@ -9,10 +9,12 @@ import { useInventoryReferenceLookupsQuery } from "@/hooks/queries/useInventoryQ
 import type { EventTaxonomyLookups } from "@/lib/eventFieldDisplay"
 import { cn } from "@/lib/utils"
 import type { EventObjectType } from "@/types/events"
+import type { InventoryPhoto } from "@/types/inventory"
 
 type InventoryItemTimelineProps = {
   objectId: EventObjectType
   entityId: string
+  photos?: readonly InventoryPhoto[]
   className?: string
 }
 
@@ -31,6 +33,7 @@ function TimelineSkeleton() {
 export function InventoryItemTimeline({
   objectId,
   entityId,
+  photos = [],
   className,
 }: InventoryItemTimelineProps) {
   const { t } = useTranslation()
@@ -68,7 +71,7 @@ export function InventoryItemTimeline({
         ) : (
           <div className="space-y-3">
             {events.map((event) => (
-              <EventTimelineCard key={event.id} event={event} lookups={lookups} />
+              <EventTimelineCard key={event.id} event={event} lookups={lookups} photos={photos} />
             ))}
           </div>
         )}

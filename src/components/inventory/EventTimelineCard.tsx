@@ -3,10 +3,12 @@ import {
   CheckCircle2,
   ChevronDown,
   Handshake,
+  ImageOff,
   PackageMinus,
   PackagePlus,
   Pencil,
   PlusCircle,
+  Star,
   Undo2,
   Wrench,
 } from "lucide-react"
@@ -23,7 +25,7 @@ import {
   formatEventDateTime,
   formatEventFieldValue,
 } from "@/lib/eventFieldDisplay"
-import { TRACKED_FIELDS } from "@/lib/inventoryEventDiff"
+import { diffPhotoIds, TRACKED_FIELDS } from "@/lib/inventoryEventDiff"
 import { cn } from "@/lib/utils"
 import type {
   AppEvent,
@@ -36,10 +38,12 @@ import type {
   UpdatedEventPayload,
   WrittenOffEventPayload,
 } from "@/types/events"
+import type { InventoryPhoto } from "@/types/inventory"
 
 type EventTimelineCardProps = {
   event: AppEvent
   lookups: EventTaxonomyLookups
+  photos?: readonly InventoryPhoto[]
 }
 
 type ParsedPayload = Record<string, unknown>
@@ -175,6 +179,113 @@ function ArchivedPayloadRow({
   )
 }
 
+function TimelinePhotoThumb({
+  photoId,
+  photosById,
+  markedAsAvatar = false,
+}: {
+  photoId: string | null
+  photosById: ReadonlyMap<string, string>
+  markedAsAvatar?: boolean
+}) {
+  const dataUrl = photoId ? photosById.get(photoId) : undefined
+  return (
+    <span
+      className={cn(
+        "relative inline-flex size-10 shrink-0 overflow-hidden rounded-md border bg-muted",
+        markedAsAvatar && "ring-2 ring-amber-400",
+      )}
+    >
+      {dataUrl ? (
+        <img src={dataUrl} alt="" className="size-full object-cover" />
+      ) : (
+        <span className="flex size-full items-center justify-center">
+          <ImageOff className="size-3.5 text-muted-foreground" aria-hidden />
+        </span>
+      )}
+      {markedAsAvatar ? (
+        <Star
+          className="absolute bottom-0.5 right-0.5 size-2.5 fill-amber-400 text-amber-400 drop-shadow"
+          aria-hidden
+        />
+      ) : null}
+    </span>
+  )
+}
+
+function PhotosChangeRows({
+  oldIds,
+  newIds,
+  photosById,
+  t,
+}: {
+  oldIds: unknown
+  newIds: unknown
+  photosById: ReadonlyMap<string, string>
+  t: ReturnType<typeof useTranslation>["t"]
+}) {
+  const { added, removed } = diffPhotoIds(oldIds, newIds)
+  const addedStillPresent = added.filter((photoId) => photosById.has(photoId))
+  return (
+    <>
+      {added.length > 0 ? (
+        <li className="space-y-1.5">
+          <span className="text-muted-foreground">
+            {t("inventory.timeline.photosAdded", { count: added.length })}
+          </span>
+          {addedStillPresent.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {addedStillPresent.map((photoId) => (
+                <TimelinePhotoThumb key={photoId} photoId={photoId} photosById={photosById} />
+              ))}
+            </div>
+          ) : null}
+        </li>
+      ) : null}
+      {removed.length > 0 ? (
+        <li>
+          <span className="text-muted-foreground">
+            {t("inventory.timeline.photosRemoved", { count: removed.length })}
+          </span>
+        </li>
+      ) : null}
+    </>
+  )
+}
+
+function AvatarChangeRow({
+  oldId,
+  newId,
+  photosById,
+  t,
+}: {
+  oldId: unknown
+  newId: unknown
+  photosById: ReadonlyMap<string, string>
+  t: ReturnType<typeof useTranslation>["t"]
+}) {
+  const oldPhotoId = typeof oldId === "string" ? oldId : null
+  const newPhotoId = typeof newId === "string" ? newId : null
+  return (
+    <li>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-muted-foreground">{t("inventory.timeline.avatarChanged")}:</span>
+        <TimelinePhotoThumb
+          photoId={oldPhotoId}
+          photosById={photosById}
+          markedAsAvatar={oldPhotoId !== null}
+        />
+        <span className="text-muted-foreground">→</span>
+        <TimelinePhotoThumb
+          photoId={newPhotoId}
+          photosById={photosById}
+          markedAsAvatar={newPhotoId !== null}
+        />
+      </div>
+    </li>
+  )
+}
+
 function CreatedPayloadDetails({
   payload,
   lookups,
@@ -205,11 +316,13 @@ function CreatedPayloadDetails({
 function UpdatedPayloadDetails({
   payload,
   lookups,
+  photosById,
   t,
   locale,
 }: {
   payload: UpdatedEventPayload
   lookups: EventTaxonomyLookups
+  photosById: ReadonlyMap<string, string>
   t: ReturnType<typeof useTranslation>["t"]
   locale: string
 }) {
@@ -228,6 +341,30 @@ function UpdatedPayloadDetails({
             <li key={field}>
               <ArchivedPayloadRow newValue={change.new} t={t} />
             </li>
+          )
+        }
+
+        if (field === "photos") {
+          return (
+            <PhotosChangeRows
+              key={field}
+              oldIds={change.old}
+              newIds={change.new}
+              photosById={photosById}
+              t={t}
+            />
+          )
+        }
+
+        if (field === "avatarPhotoId") {
+          return (
+            <AvatarChangeRow
+              key={field}
+              oldId={change.old}
+              newId={change.new}
+              photosById={photosById}
+              t={t}
+            />
           )
         }
 
@@ -482,12 +619,14 @@ function CollapsibleEventCard({
   event,
   payload,
   lookups,
+  photosById,
   locale,
   t,
 }: {
   event: AppEvent
   payload: ParsedPayload | null
   lookups: EventTaxonomyLookups
+  photosById: ReadonlyMap<string, string>
   locale: string
   t: ReturnType<typeof useTranslation>["t"]
 }) {
@@ -538,6 +677,7 @@ function CollapsibleEventCard({
                     <UpdatedPayloadDetails
                       payload={payload}
                       lookups={lookups}
+                      photosById={photosById}
                       t={t}
                       locale={locale}
                     />
@@ -552,9 +692,13 @@ function CollapsibleEventCard({
   )
 }
 
-export function EventTimelineCard({ event, lookups }: EventTimelineCardProps) {
+export function EventTimelineCard({ event, lookups, photos = [] }: EventTimelineCardProps) {
   const { t, i18n } = useTranslation()
   const payload = useMemo(() => parseEventPayload(event.payload), [event.payload])
+  const photosById = useMemo(
+    () => new Map(photos.map((photo) => [photo.id, photo.dataUrl])),
+    [photos],
+  )
 
   if (event.type === "written_off") {
     const writtenOffPayload = payload ? parseWrittenOffPayload(payload) : null
@@ -640,6 +784,7 @@ export function EventTimelineCard({ event, lookups }: EventTimelineCardProps) {
       event={event}
       payload={payload}
       lookups={lookups}
+      photosById={photosById}
       locale={i18n.language}
       t={t}
     />

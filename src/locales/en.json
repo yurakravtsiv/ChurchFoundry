@@ -186,7 +186,10 @@
       "markedAsBorrowedComment": "Comment: {{comment}}",
       "markedAsBorrowedDate": "Date: {{date}}",
       "returnedFromBorrow": "Returned from borrow",
-      "returnedFromBorrowQuantity": "Returned {{quantity}} borrowed item(s) to stock"
+      "returnedFromBorrowQuantity": "Returned {{quantity}} borrowed item(s) to stock",
+      "photosAdded": "Photos added ({{count}})",
+      "photosRemoved": "Photos removed ({{count}})",
+      "avatarChanged": "Main photo"
     },
     "archiveConfirmTitle": "Archive “{{name}}”?",
     "archiveConfirmDescription": "Archived items can be shown again with the archive toggle.",

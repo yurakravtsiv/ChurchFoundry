@@ -186,7 +186,10 @@
       "markedAsBorrowedComment": "Коментар: {{comment}}",
       "markedAsBorrowedDate": "Дата: {{date}}",
       "returnedFromBorrow": "Повернено позичене",
-      "returnedFromBorrowQuantity": "Повернено {{quantity}} шт. позиченого в наявність"
+      "returnedFromBorrowQuantity": "Повернено {{quantity}} шт. позиченого в наявність",
+      "photosAdded": "Додано фото ({{count}})",
+      "photosRemoved": "Видалено фото ({{count}})",
+      "avatarChanged": "Головне фото"
     },
     "archiveConfirmTitle": "Архівувати «{{name}}»?",
     "archiveConfirmDescription": "Архівовані предмети можна знову показати через перемикач архіву.",

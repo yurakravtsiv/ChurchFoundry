@@ -942,6 +942,7 @@ export function InventoryItemDetailPage() {
             <InventoryItemTimeline
               objectId={EVENT_OBJECT_TYPE.INVENTORY_ITEM}
               entityId={item.id}
+              photos={item.photos}
               className="max-h-[900px]"
             />
           </div>
@@ -952,7 +953,11 @@ export function InventoryItemDetailPage() {
             {isMdUp ? null : renderEditForm()}
           </div>
 
-          <InventoryItemTimeline objectId={EVENT_OBJECT_TYPE.INVENTORY_ITEM} entityId={item.id} />
+          <InventoryItemTimeline
+            objectId={EVENT_OBJECT_TYPE.INVENTORY_ITEM}
+            entityId={item.id}
+            photos={item.photos}
+          />
 
           {renderBorrowsTable()}
           {renderRepairsTable()}
